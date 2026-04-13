@@ -1,6 +1,6 @@
 /**
- * 人物图谱UI管理
- * 提供配置界面和人物管理界面
+ * Quản lý UI Sơ đồ nhân vật
+ * Cung cấp giao diện cấu hình và giao diện quản lý nhân vật
  */
 
 class CharacterGraphUI {
@@ -9,14 +9,14 @@ class CharacterGraphUI {
     }
 
     /**
-     * 初始化UI
+     * Khởi tạo UI
      */
     async init() {
         if (this.isInitialized) {
             return;
         }
 
-        // 等待DOM加载
+        // Đợi DOM tải xong
         if (document.readyState === 'loading') {
             await new Promise(resolve => {
                 document.addEventListener('DOMContentLoaded', resolve);
@@ -24,114 +24,114 @@ class CharacterGraphUI {
         }
 
         this.isInitialized = true;
-        console.log('[人物图谱UI] 初始化完成');
+        console.log('[UI Sơ đồ nhân vật] Khởi tạo hoàn tất');
     }
 
     /**
-     * 创建配置面板HTML
+     * Tạo HTML cho bảng cấu hình
      */
     createConfigPanelHTML() {
         return `
             <div class="config-section" id="characterGraphSection" style="display: none;">
                 <div class="config-section-header" onclick="toggleSection('characterGraphSection')">
-                    <span>👥 人物图谱设置</span>
+                    <span>👥 Cài đặt Sơ đồ nhân vật</span>
                     <span class="toggle-icon">▼</span>
                 </div>
                 <div class="config-section-content">
                     <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
                         <div style="font-size: 14px; color: white; margin-bottom: 8px;">
-                            <strong>🌟 人物图谱系统</strong>
+                            <strong>🌟 Hệ thống Sơ đồ nhân vật</strong>
                         </div>
                         <div style="font-size: 12px; color: rgba(255,255,255,0.9); line-height: 1.6;">
-                            自动提取人物的<strong>姓名、性格、外貌</strong>到向量图谱库，通过向量匹配智能检索相关人物，只将匹配度高的人物加入上下文，避免上下文过长。
+                            Tự động trích xuất <strong>Tên, Tính cách, Ngoại hình</strong> của nhân vật vào kho sơ đồ vector, truy xuất thông minh các nhân vật liên quan thông qua so khớp vector. Chỉ thêm các nhân vật có độ khớp cao vào ngữ cảnh để tránh ngữ cảnh quá dài.
                         </div>
                     </div>
 
                     <div class="form-group">
                         <label style="display: flex; align-items: center; gap: 8px;">
                             <input type="checkbox" id="enableCharacterGraph" onchange="characterGraphUI.toggleCharacterGraph()" checked>
-                            <span>启用人物图谱系统</span>
+                            <span>Kích hoạt hệ thống Sơ đồ nhân vật</span>
                         </label>
                         <small style="color: #999; display: block; margin-top: 5px;">
-                            启用后，人物信息将存储到图谱，通过向量匹配动态加载到上下文
+                            Sau khi kích hoạt, thông tin nhân vật sẽ được lưu vào sơ đồ và tải động vào ngữ cảnh qua so khớp vector.
                         </small>
                     </div>
 
                     <div id="characterGraphFields" style="display: block;">
                         <div class="form-group">
                             <label>
-                                <span>匹配阈值</span>
+                                <span>Ngưỡng so khớp</span>
                                 <input type="range" id="graphMatchThreshold" min="0" max="100" value="40" 
                                     oninput="document.getElementById('graphMatchThresholdValue').textContent = this.value + '%'">
                                 <span id="graphMatchThresholdValue" style="margin-left: 10px;">40%</span>
                             </label>
                             <small style="color: #999; display: block; margin-top: 5px;">
-                                只有相似度高于此值的人物才会被加入上下文
+                                Chỉ những nhân vật có độ tương đồng cao hơn giá trị này mới được thêm vào ngữ cảnh.
                             </small>
                         </div>
 
                         <div class="form-group">
                             <label>
-                                <span>上下文最大人物数</span>
+                                <span>Số nhân vật tối đa trong ngữ cảnh</span>
                                 <input type="number" id="graphMaxCharacters" min="1" max="10" value="3" style="width: 80px;">
                             </label>
                             <small style="color: #999; display: block; margin-top: 5px;">
-                                每次对话最多加载多少个相关人物到上下文
+                                Số lượng nhân vật liên quan tối đa được tải vào ngữ cảnh trong mỗi lần đối thoại.
                             </small>
                         </div>
 
                         <div class="form-group">
                             <label>
-                                <span>姓名权重</span>
+                                <span>Trọng số Tên</span>
                                 <input type="range" id="graphNameWeight" min="1" max="5" step="0.5" value="3" 
                                     oninput="document.getElementById('graphNameWeightValue').textContent = this.value">
                                 <span id="graphNameWeightValue" style="margin-left: 10px;">3</span>
                             </label>
                             <small style="color: #999; display: block; margin-top: 5px;">
-                                姓名在向量匹配中的权重（相对于性格和外貌）
+                                Trọng số của Tên trong so khớp vector (so với Tính cách và Ngoại hình).
                             </small>
                         </div>
 
                         <div class="form-group">
                             <label style="display: flex; align-items: center; gap: 8px;">
                                 <input type="checkbox" id="graphAutoExtract" checked>
-                                <span>自动提取AI响应中的人物</span>
+                                <span>Tự động trích xuất nhân vật từ phản hồi AI</span>
                             </label>
                         </div>
 
                         <div class="form-group">
                             <label style="display: flex; align-items: center; gap: 8px;">
                                 <input type="checkbox" id="graphAutoMatch" checked>
-                                <span>自动匹配相关人物到上下文</span>
+                                <span>Tự động khớp nhân vật liên quan vào ngữ cảnh</span>
                             </label>
                         </div>
 
                         <div class="form-group">
                             <label style="display: flex; align-items: center; gap: 8px;">
                                 <input type="checkbox" id="graphDebugMode" checked>
-                                <span>启用调试日志</span>
+                                <span>Kích hoạt nhật ký gỡ lỗi (Debug Log)</span>
                             </label>
                         </div>
 
                         <div style="display: flex; gap: 10px; margin-top: 15px;">
                             <button onclick="characterGraphUI.saveConfig()" 
                                 style="flex: 1; padding: 10px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer;">
-                                💾 保存配置
+                                💾 Lưu cấu hình
                             </button>
                             <button onclick="characterGraphUI.openManagementPanel()" 
                                 style="flex: 1; padding: 10px; background: #764ba2; color: white; border: none; border-radius: 5px; cursor: pointer;">
-                                📊 管理图谱
+                                📊 Quản lý sơ đồ
                             </button>
                         </div>
 
                         <div style="display: flex; gap: 10px; margin-top: 10px;">
                             <button onclick="characterGraphUI.migrateRelationships()" 
                                 style="flex: 1; padding: 10px; background: #f39c12; color: white; border: none; border-radius: 5px; cursor: pointer;">
-                                🚀 迁移现有人物
+                                🚀 Di chuyển nhân vật hiện có
                             </button>
                             <button onclick="characterGraphUI.testMatch()" 
                                 style="flex: 1; padding: 10px; background: #27ae60; color: white; border: none; border-radius: 5px; cursor: pointer;">
-                                🔍 测试匹配
+                                🔍 Kiểm tra so khớp
                             </button>
                         </div>
                     </div>
@@ -141,7 +141,7 @@ class CharacterGraphUI {
     }
 
     /**
-     * 创建管理面板HTML
+     * Tạo HTML cho bảng quản lý
      */
     createManagementPanelHTML() {
         return `
@@ -152,53 +152,49 @@ class CharacterGraphUI {
                         ×
                     </button>
 
-                    <h2 style="color: white; margin-bottom: 20px;">👥 人物图谱管理</h2>
+                    <h2 style="color: white; margin-bottom: 20px;">👥 Quản lý Sơ đồ nhân vật</h2>
 
-                    <!-- 统计信息 -->
                     <div id="graphStatsPanel" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 8px; margin-bottom: 20px; color: white;">
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
                             <div>
-                                <div style="font-size: 12px; opacity: 0.8;">总人物数</div>
+                                <div style="font-size: 12px; opacity: 0.8;">Tổng số nhân vật</div>
                                 <div id="statTotalCharacters" style="font-size: 24px; font-weight: bold;">0</div>
                             </div>
                             <div>
-                                <div style="font-size: 12px; opacity: 0.8;">匹配次数</div>
+                                <div style="font-size: 12px; opacity: 0.8;">Số lần so khớp</div>
                                 <div id="statMatchCount" style="font-size: 24px; font-weight: bold;">0</div>
                             </div>
                             <div>
-                                <div style="font-size: 12px; opacity: 0.8;">平均匹配度</div>
+                                <div style="font-size: 12px; opacity: 0.8;">Độ khớp trung bình</div>
                                 <div id="statAvgScore" style="font-size: 24px; font-weight: bold;">0%</div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- 搜索框 -->
                     <div style="margin-bottom: 20px;">
-                        <input type="text" id="characterSearchInput" placeholder="🔍 搜索人物姓名、性格或外貌..." 
+                        <input type="text" id="characterSearchInput" placeholder="🔍 Tìm kiếm tên, tính cách hoặc ngoại hình..." 
                             style="width: 100%; padding: 12px; border: 1px solid #444; background: #2a2a3e; color: white; border-radius: 5px; font-size: 14px;"
                             onkeyup="characterGraphUI.searchCharacters()">
                     </div>
 
-                    <!-- 人物列表 -->
                     <div id="characterListPanel" style="max-height: 400px; overflow-y: auto; background: #2a2a3e; border-radius: 8px; padding: 15px;">
                         <div style="text-align: center; color: #999; padding: 40px;">
-                            加载中...
+                            Đang tải...
                         </div>
                     </div>
 
-                    <!-- 操作按钮 -->
                     <div style="display: flex; gap: 10px; margin-top: 20px;">
                         <button onclick="characterGraphUI.exportGraph()" 
                             style="flex: 1; padding: 12px; background: #27ae60; color: white; border: none; border-radius: 5px; cursor: pointer;">
-                            📤 导出图谱
+                            📤 Xuất sơ đồ
                         </button>
                         <button onclick="characterGraphUI.importGraph()" 
                             style="flex: 1; padding: 12px; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer;">
-                            📥 导入图谱
+                            📥 Nhập sơ đồ
                         </button>
                         <button onclick="characterGraphUI.clearGraph()" 
                             style="flex: 1; padding: 12px; background: #e74c3c; color: white; border: none; border-radius: 5px; cursor: pointer;">
-                            🗑️ 清空图谱
+                            🗑️ Xóa sạch sơ đồ
                         </button>
                     </div>
                 </div>
@@ -207,7 +203,7 @@ class CharacterGraphUI {
     }
 
     /**
-     * 渲染人物列表
+     * Render danh sách nhân vật
      */
     async renderCharacterList(searchQuery = '') {
         const listPanel = document.getElementById('characterListPanel');
@@ -215,13 +211,13 @@ class CharacterGraphUI {
 
         const manager = window.characterGraphManager;
         if (!manager || !manager.isInitialized) {
-            listPanel.innerHTML = '<div style="text-align: center; color: #999; padding: 40px;">图谱管理器未初始化</div>';
+            listPanel.innerHTML = '<div style="text-align: center; color: #999; padding: 40px;">Trình quản lý sơ đồ chưa được khởi tạo</div>';
             return;
         }
 
         const allCharacters = Array.from(manager.characters.values());
         
-        // 过滤
+        // Lọc
         let filteredCharacters = allCharacters;
         if (searchQuery) {
             const query = searchQuery.toLowerCase();
@@ -232,11 +228,11 @@ class CharacterGraphUI {
             );
         }
 
-        // 排序（按最后匹配时间）
+        // Sắp xếp (theo thời gian khớp cuối cùng)
         filteredCharacters.sort((a, b) => (b.lastMatchedAt || 0) - (a.lastMatchedAt || 0));
 
         if (filteredCharacters.length === 0) {
-            listPanel.innerHTML = '<div style="text-align: center; color: #999; padding: 40px;">暂无人物</div>';
+            listPanel.innerHTML = '<div style="text-align: center; color: #999; padding: 40px;">Không tìm thấy nhân vật nào</div>';
             return;
         }
 
@@ -248,20 +244,20 @@ class CharacterGraphUI {
                         <div>
                             <div style="color: white; font-size: 16px; font-weight: bold;">${char.name}</div>
                             <div style="color: #999; font-size: 12px; margin-top: 5px;">
-                                匹配次数: ${char.matchCount || 0} | 
-                                最后匹配: ${char.lastMatchedAt ? new Date(char.lastMatchedAt).toLocaleString('zh-CN') : '从未'}
+                                Số lần khớp: ${char.matchCount || 0} | 
+                                Lần khớp cuối: ${char.lastMatchedAt ? new Date(char.lastMatchedAt).toLocaleString('vi-VN') : 'Chưa từng'}
                             </div>
                         </div>
                         <button onclick="characterGraphUI.deleteCharacter('${char.name}')" 
                             style="background: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 12px;">
-                            🗑️ 删除
+                            🗑️ Xóa
                         </button>
                     </div>
                     <div style="color: #ccc; font-size: 13px; line-height: 1.6;">
-                        ${char.personality ? `<div><strong>性格：</strong>${char.personality}</div>` : ''}
-                        ${char.appearance ? `<div><strong>外貌：</strong>${char.appearance}</div>` : ''}
-                        ${char.realm ? `<div><strong>境界：</strong>${char.realm}</div>` : ''}
-                        ${char.age ? `<div><strong>年龄：</strong>${char.age}</div>` : ''}
+                        ${char.personality ? `<div><strong>Tính cách:</strong> ${char.personality}</div>` : ''}
+                        ${char.appearance ? `<div><strong>Ngoại hình:</strong> ${char.appearance}</div>` : ''}
+                        ${char.realm ? `<div><strong>Cảnh giới:</strong> ${char.realm}</div>` : ''}
+                        ${char.age ? `<div><strong>Tuổi:</strong> ${char.age}</div>` : ''}
                     </div>
                 </div>
             `;
@@ -271,7 +267,7 @@ class CharacterGraphUI {
     }
 
     /**
-     * 更新统计信息
+     * Cập nhật thông tin thống kê
      */
     async updateStats() {
         const manager = window.characterGraphManager;
@@ -289,7 +285,7 @@ class CharacterGraphUI {
     }
 
     /**
-     * 切换图谱开关
+     * Chuyển đổi bật/tắt sơ đồ
      */
     async toggleCharacterGraph() {
         const checkbox = document.getElementById('enableCharacterGraph');
@@ -298,7 +294,7 @@ class CharacterGraphUI {
         if (checkbox.checked) {
             fieldsDiv.style.display = 'block';
             
-            // 初始化系统
+            // Khởi tạo hệ thống
             if (!window.characterGraphManager.isInitialized) {
                 await window.characterGraphManager.init();
             }
@@ -312,7 +308,7 @@ class CharacterGraphUI {
     }
 
     /**
-     * 保存配置
+     * Lưu cấu hình
      */
     async saveConfig() {
         const config = {
@@ -325,21 +321,21 @@ class CharacterGraphUI {
             enableDebug: document.getElementById('graphDebugMode').checked
         };
 
-        // 保存到集成模块
+        // Lưu vào module tích hợp
         window.characterGraphIntegration.updateConfig(config);
 
-        // 保存到图谱管理器
+        // Lưu vào trình quản lý sơ đồ
         window.characterGraphManager.updateConfig({
             matchThreshold: config.matchThreshold,
             maxResults: config.contextMaxCharacters,
             nameWeight: config.nameWeight
         });
 
-        alert('✅ 人物图谱配置已保存！');
+        alert('✅ Cấu hình Sơ đồ nhân vật đã được lưu!');
     }
 
     /**
-     * 加载配置
+     * Tải cấu hình
      */
     loadConfig() {
         const integration = window.characterGraphIntegration;
@@ -368,7 +364,7 @@ class CharacterGraphUI {
     }
 
     /**
-     * 打开管理面板
+     * Mở bảng quản lý
      */
     async openManagementPanel() {
         let modal = document.getElementById('characterGraphManagementModal');
@@ -383,7 +379,7 @@ class CharacterGraphUI {
     }
 
     /**
-     * 关闭管理面板
+     * Đóng bảng quản lý
      */
     closeManagementPanel() {
         const modal = document.getElementById('characterGraphManagementModal');
@@ -393,7 +389,7 @@ class CharacterGraphUI {
     }
 
     /**
-     * 搜索人物
+     * Tìm kiếm nhân vật
      */
     searchCharacters() {
         const input = document.getElementById('characterSearchInput');
@@ -403,10 +399,10 @@ class CharacterGraphUI {
     }
 
     /**
-     * 删除人物
+     * Xóa nhân vật
      */
     async deleteCharacter(name) {
-        if (!confirm(`确定要删除人物"${name}"吗？`)) {
+        if (!confirm(`Bạn có chắc muốn xóa nhân vật "${name}" không?`)) {
             return;
         }
 
@@ -416,35 +412,35 @@ class CharacterGraphUI {
     }
 
     /**
-     * 迁移现有人物
+     * Di chuyển nhân vật hiện có
      */
     async migrateRelationships() {
         if (!window.gameState || !window.gameState.variables) {
-            alert('❌ 游戏状态未初始化');
+            alert('❌ Trạng thái trò chơi chưa được khởi tạo');
             return;
         }
 
-        if (!confirm('确定要将当前变量表单中的relationships迁移到图谱吗？')) {
+        if (!confirm('Bạn có chắc muốn di chuyển các mối quan hệ (relationships) từ biểu mẫu biến hiện tại sang sơ đồ không?')) {
             return;
         }
 
         await window.characterGraphIntegration.migrateExistingRelationships(window.gameState);
-        alert('✅ 迁移完成！');
+        alert('✅ Di chuyển hoàn tất!');
     }
 
     /**
-     * 测试匹配
+     * Kiểm tra so khớp
      */
     async testMatch() {
-        const query = prompt('请输入要测试的查询内容（人名、性格或外貌）:');
+        const query = prompt('Nhập nội dung muốn kiểm tra (tên, tính cách hoặc ngoại hình):');
         if (!query) return;
 
         const results = await window.characterGraphManager.searchCharacters(query, '', '');
         
         if (results.length === 0) {
-            alert('未找到匹配的人物');
+            alert('Không tìm thấy nhân vật phù hợp');
         } else {
-            let message = `找到 ${results.length} 个匹配:\n\n`;
+            let message = `Tìm thấy ${results.length} kết quả phù hợp:\n\n`;
             results.forEach((char, i) => {
                 message += `${i + 1}. ${char.name} (${(char.matchScore * 100).toFixed(1)}%)\n`;
             });
@@ -453,7 +449,7 @@ class CharacterGraphUI {
     }
 
     /**
-     * 导出图谱
+     * Xuất sơ đồ
      */
     async exportGraph() {
         const data = window.characterGraphManager.exportData();
@@ -467,11 +463,11 @@ class CharacterGraphUI {
         a.click();
         
         URL.revokeObjectURL(url);
-        alert('✅ 图谱已导出！');
+        alert('✅ Sơ đồ đã được xuất!');
     }
 
     /**
-     * 导入图谱
+     * Nhập sơ đồ
      */
     async importGraph() {
         const input = document.createElement('input');
@@ -488,9 +484,9 @@ class CharacterGraphUI {
                 await window.characterGraphManager.importData(data);
                 await this.updateStats();
                 await this.renderCharacterList();
-                alert('✅ 图谱已导入！');
+                alert('✅ Sơ đồ đã được nhập!');
             } catch (error) {
-                alert('❌ 导入失败: ' + error.message);
+                alert('❌ Nhập thất bại: ' + error.message);
             }
         };
         
@@ -498,22 +494,22 @@ class CharacterGraphUI {
     }
 
     /**
-     * 清空图谱
+     * Xóa sạch sơ đồ
      */
     async clearGraph() {
-        if (!confirm('确定要清空所有人物图谱数据吗？此操作不可恢复！')) {
+        if (!confirm('Bạn có chắc muốn xóa sạch toàn bộ dữ liệu sơ đồ nhân vật không? Hành động này không thể hoàn tác!')) {
             return;
         }
         
         await window.characterGraphManager.clearAll();
         await this.updateStats();
         await this.renderCharacterList();
-        alert('✅ 图谱已清空！');
+        alert('✅ Sơ đồ đã được xóa sạch!');
     }
 }
 
-// 创建全局实例
+// Tạo thực thể toàn cục
 if (typeof window !== 'undefined') {
     window.characterGraphUI = new CharacterGraphUI();
-    console.log('[人物图谱UI] 全局实例已创建: window.characterGraphUI');
+    console.log('[UI Sơ đồ nhân vật] Thực thể toàn cục đã được tạo: window.characterGraphUI');
 }

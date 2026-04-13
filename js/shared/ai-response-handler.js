@@ -1,18 +1,17 @@
 /**
- * AI响应处理模块
- * 统一处理AI返回的JSON数据,包括变量更新、数组增量更新、向量库集成等
- * 
- * @author 重构自game.html和game-bhz.html的重复代码
+ * Module xử lý phản hồi từ AI
+ * Xử lý thống nhất dữ liệu JSON trả về từ AI, bao gồm cập nhật biến, cập nhật mảng lũy tiến, tích hợp thư viện vector, v.v.
+ * * @author Tái cấu trúc từ mã lặp lại của game.html và game-bhz.html
  * @version 1.0.0
  */
 
 class AIResponseHandler {
     /**
-     * @param {Object} gameState - 游戏状态对象
-     * @param {Object} config - 游戏配置
-     * @param {boolean} config.hasCombatSystem - 是否有战斗系统
-     * @param {boolean} config.enableStatsField - 是否启用stats字段处理
-     * @param {Function} config.combatParser - 战斗信息解析函数(可选)
+     * @param {Object} gameState - Đối tượng trạng thái trò chơi
+     * @param {Object} config - Cấu hình trò chơi
+     * @param {boolean} config.hasCombatSystem - Có hệ thống chiến đấu hay không
+     * @param {boolean} config.enableStatsField - Có bật xử lý trường stats hay không
+     * @param {Function} config.combatParser - Hàm phân tích thông tin chiến đấu (tùy chọn)
      */
     constructor(gameState, config = {}) {
         this.gameState = gameState;
@@ -22,39 +21,39 @@ class AIResponseHandler {
             combatParser: config.combatParser || null
         };
         
-        console.log('[AI响应处理器] 初始化', this.config);
+        console.log('[Bộ xử lý phản hồi AI] Khởi tạo', this.config);
     }
     
     /**
-     * 深度合并对象 - 智能保留未更新的嵌套字段
-     * @param {Object} target - 目标对象（将被修改）
-     * @param {Object} source - 源对象（提供新值）
-     * @returns {Object} 合并后的目标对象
+     * Hợp nhất sâu các đối tượng - Giữ lại các trường lồng nhau không được cập nhật một cách thông minh
+     * @param {Object} target - Đối tượng đích (sẽ bị thay đổi)
+     * @param {Object} source - Đối tượng nguồn (cung cấp giá trị mới)
+     * @returns {Object} Đối tượng đích sau khi hợp nhất
      */
     deepMerge(target, source) {
-        // 如果source不是对象，或者是null/undefined，直接返回target
+        // Nếu source không phải đối tượng, hoặc là null/undefined, trả về target trực tiếp
         if (!source || typeof source !== 'object' || Array.isArray(source)) {
             return target;
         }
         
-        // 遍历source的所有属性
+        // Duyệt qua tất cả thuộc tính của source
         for (const key in source) {
             if (!source.hasOwnProperty(key)) continue;
             
             const sourceValue = source[key];
             const targetValue = target[key];
             
-            // 如果source的值是undefined，跳过（保留target的原值）
+            // Nếu giá trị của source là undefined, bỏ qua (giữ giá trị gốc của target)
             if (sourceValue === undefined) {
                 continue;
             }
             
-            // 如果source的值是对象且target也有这个对象，递归合并
+            // Nếu giá trị của source là đối tượng và target cũng có đối tượng này, thực hiện hợp nhất đệ quy
             if (sourceValue && typeof sourceValue === 'object' && !Array.isArray(sourceValue) &&
                 targetValue && typeof targetValue === 'object' && !Array.isArray(targetValue)) {
                 this.deepMerge(targetValue, sourceValue);
             } else {
-                // 否则直接赋值（包括数组、基本类型等）
+                // Ngược lại thì gán trực tiếp (bao gồm mảng, kiểu dữ liệu cơ bản, v.v.)
                 target[key] = sourceValue;
             }
         }
@@ -63,215 +62,215 @@ class AIResponseHandler {
     }
     
     /**
-     * 处理AI响应的主函数
-     * @param {string} response - AI返回的原始响应
+     * Hàm chính xử lý phản hồi từ AI
+     * @param {string} response - Phản hồi thô từ AI
      */
     handleAIResponse(response) {
-        // 调试模式：直接显示原始响应，不做任何解析或渲染处理
+        // Chế độ debug: Hiển thị trực tiếp phản hồi thô, không thực hiện phân tích hay render
         const debugCheckbox = document.getElementById('debugMode');
         if (debugCheckbox && debugCheckbox.checked) {
             this.appendDebug('AI', response);
             return;
         }
 
-        // ✅ 使用增强版JSON处理工具（保证不会失败）
+        // ✅ Sử dụng công cụ xử lý JSON phiên bản tăng cường (đảm bảo không thất bại)
         let data;
         try {
             data = processAIResponse(response);
         } catch (error) {
-            console.error('❌ processAIResponse异常:', error);
-            // 降级方案：构造最小可用数据
+            console.error('❌ Ngoại lệ processAIResponse:', error);
+            // Phương án dự phòng: Xây dựng dữ liệu tối thiểu có thể sử dụng
             data = {
-                reasoning: { situation: '解析异常', playerChoice: '', logicChain: [], outcome: '' },
-                variableChanges: { analysis: 'Parse error', changes: {} },
-                story: '系统错误：AI响应解析失败\n\n' + response.substring(0, 500),
-                options: ['重新生成', '尝试继续', '查看日志', '返回菜单', '保存退出']
+                reasoning: { situation: 'Phân tích ngoại lệ', playerChoice: '', logicChain: [], outcome: '' },
+                variableChanges: { analysis: 'Lỗi phân tích (Parse error)', changes: {} },
+                story: 'Lỗi hệ thống: Phân tích phản hồi AI thất bại\n\n' + response.substring(0, 500),
+                options: ['Tạo lại', 'Thử tiếp tục', 'Xem log', 'Về menu', 'Lưu và thoát']
             };
         }
         
-        // 🔍 调试：打印解析后的 data 对象包含哪些字段
-        console.log('[AI响应] 📦 解析后的字段:', Object.keys(data));
-        console.log('[AI响应] 🖼️ data.img 存在?', 'img' in data, '值:', data.img ? data.img.substring(0, 80) : '无');
+        // 🔍 Debug: In các trường có trong đối tượng data sau khi phân tích
+        console.log('[Phản hồi AI] 📦 Các trường đã phân tích:', Object.keys(data));
+        console.log('[Phản hồi AI] 🖼️ data.img tồn tại?', 'img' in data, 'Giá trị:', data.img ? data.img.substring(0, 80) : 'Không có');
 
-        // 更新变量（支持三种格式）
+        // Cập nhật biến (hỗ trợ ba định dạng)
         if (data.variableUpdate) {
             try {
-                // v3.1 简化格式（推荐）
-                console.log('[ai-response-handler] 🎯 使用 v3.1 简化格式更新变量');
-                console.log('[ai-response-handler] variableUpdate 内容:', data.variableUpdate);
+                // Định dạng rút gọn v3.1 (khuyên dùng)
+                console.log('[ai-response-handler] 🎯 Sử dụng định dạng rút gọn v3.1 để cập nhật biến');
+                console.log('[ai-response-handler] Nội dung variableUpdate:', data.variableUpdate);
                 
-                // 初始化 v3.1 解析器
+                // Khởi tạo bộ phân tích v3.1
                 if (!window.v31Parser) {
-                    console.log('[ai-response-handler] 初始化解析器...');
+                    console.log('[ai-response-handler] Đang khởi tạo bộ phân tích...');
                     window.v31Parser = new VariableInstructionParserV31(this.gameState, {
                         debug: true,
                         enableRollback: false
                     });
-                    console.log('[ai-response-handler] 解析器初始化完成');
+                    console.log('[ai-response-handler] Khởi tạo bộ phân tích hoàn tất');
                 }
                 
-                // 解析并执行变量更新
+                // Phân tích và thực thi cập nhật biến
                 const result = window.v31Parser.execute(data.variableUpdate);
-                console.log('[ai-response-handler] ✅ 更新结果:', result);
+                console.log('[ai-response-handler] ✅ Kết quả cập nhật:', result);
                 
                 updateStatusPanel();
                 showAttributeChanges();
             } catch (error) {
-                console.error('[ai-response-handler] ❌ v3.1 变量更新失败:', error);
-                console.error('[ai-response-handler] 错误详情:', error.message);
-                console.error('[ai-response-handler] variableUpdate内容:', data.variableUpdate);
+                console.error('[ai-response-handler] ❌ Cập nhật biến v3.1 thất bại:', error);
+                console.error('[ai-response-handler] Chi tiết lỗi:', error.message);
+                console.error('[ai-response-handler] Nội dung variableUpdate:', data.variableUpdate);
             }
         } else if (data.variableChanges) {
             try {
-                // 旧方案：增量更新
+                // Phương án cũ: Cập nhật lũy tiến
                 this.applyVariableChanges(data.variableChanges);
                 updateStatusPanel();
                 showAttributeChanges();
             } catch (error) {
-                console.error('❌ 变量更新失败:', error);
+                console.error('❌ Cập nhật biến thất bại:', error);
             }
         } else if (data.variables) {
             try {
-                // 旧方案：完整变量表单（向后兼容）
+                // Phương án cũ: Biểu mẫu biến đầy đủ (tương thích ngược)
                 this.updateVariables(data.variables);
                 updateStatusPanel();
                 showAttributeChanges();
             } catch (error) {
-                console.error('❌ 变量更新失败（旧方案）:', error);
+                console.error('❌ Cập nhật biến thất bại (phương án cũ):', error);
             }
         }
 
-        // 处理stats字段（转换为variables中的attributes）
+        // Xử lý trường stats (chuyển đổi thành attributes trong variables)
         if (this.config.enableStatsField && data.stats) {
             try {
                 if (!this.gameState.variables.attributes) {
                     this.gameState.variables.attributes = {};
                 }
                 
-                // 使用深度合并将stats中的属性值合并到attributes中
+                // Sử dụng hợp nhất sâu để gộp các giá trị thuộc tính trong stats vào attributes
                 this.deepMerge(this.gameState.variables.attributes, data.stats);
-                console.log('[属性更新] 📊 从stats字段更新属性 (深度合并):', data.stats);
+                console.log('[Cập nhật thuộc tính] 📊 Cập nhật thuộc tính từ trường stats (hợp nhất sâu):', data.stats);
                 
-                // 更新UI
+                // Cập nhật UI
                 updateStatusPanel();
                 showAttributeChanges();
             } catch (error) {
-                console.error('❌ stats字段处理失败:', error);
+                console.error('❌ Xử lý trường stats thất bại:', error);
             }
         }
 
-        // 处理特殊状态相关字段（specialStatus, status, mood, thought等）
+        // Xử lý các trường liên quan đến trạng thái đặc biệt (specialStatus, status, mood, thought, v.v.)
         try {
             let needsUIUpdate = false;
             
-            // 1. 处理 specialStatus 字段（特殊状态对象）
+            // 1. Xử lý trường specialStatus (đối tượng trạng thái đặc biệt)
             if (data.specialStatus && typeof data.specialStatus === 'object') {
                 if (!this.gameState.variables.specialStatus) {
                     this.gameState.variables.specialStatus = {};
                 }
                 this.deepMerge(this.gameState.variables.specialStatus, data.specialStatus);
-                console.log('[特殊状态] 📊 从specialStatus字段更新:', data.specialStatus);
+                console.log('[Trạng thái đặc biệt] 📊 Cập nhật từ trường specialStatus:', data.specialStatus);
                 needsUIUpdate = true;
             }
             
-            // 2. 处理 status 字段（当前状态描述）
+            // 2. Xử lý trường status (mô tả trạng thái hiện tại)
             if (data.status !== undefined) {
                 if (!this.gameState.variables.protagonist) {
                     this.gameState.variables.protagonist = {};
                 }
                 this.gameState.variables.protagonist.status = data.status;
-                console.log('[特殊状态] 📍 主角状态更新:', data.status);
+                console.log('[Trạng thái đặc biệt] 📍 Cập nhật trạng thái nhân vật chính:', data.status);
                 needsUIUpdate = true;
             }
             
-            // 3. 处理 mood 字段（心情）
+            // 3. Xử lý trường mood (tâm trạng)
             if (data.mood !== undefined) {
                 if (!this.gameState.variables.protagonist) {
                     this.gameState.variables.protagonist = {};
                 }
                 this.gameState.variables.protagonist.mood = data.mood;
-                console.log('[特殊状态] 💭 主角心情更新:', data.mood);
+                console.log('[Trạng thái đặc biệt] 💭 Cập nhật tâm trạng nhân vật chính:', data.mood);
                 needsUIUpdate = true;
             }
             
-            // 4. 处理 thought 字段（内心想法）
+            // 4. Xử lý trường thought (suy nghĩ nội tâm)
             if (data.thought !== undefined) {
                 if (!this.gameState.variables.protagonist) {
                     this.gameState.variables.protagonist = {};
                 }
                 this.gameState.variables.protagonist.thought = data.thought;
-                console.log('[特殊状态] 💭 主角想法更新:', data.thought);
+                console.log('[Trạng thái đặc biệt] 💭 Cập nhật suy nghĩ nhân vật chính:', data.thought);
                 needsUIUpdate = true;
             }
             
-            // 如果有更新，刷新UI
+            // Nếu có cập nhật, làm mới UI
             if (needsUIUpdate) {
                 updateStatusPanel();
             }
         } catch (error) {
-            console.error('❌ 特殊状态字段处理失败:', error);
+            console.error('❌ Xử lý các trường trạng thái đặc biệt thất bại:', error);
         }
 
-        // 添加到历史记录（保存剧情 + 原始响应/JSON + imgPrompt）
+        // Thêm vào lịch sử (lưu cốt truyện + phản hồi thô/JSON + imgPrompt)
         if (data.story) {
             this.gameState.conversationHistory.push({
                 role: 'assistant',
                 content: data.story,
                 rawResponse: response,
                 parsed: data,
-                imgPrompt: data.img || null  // 🎨 保存图片提示词用于存档恢复
+                imgPrompt: data.img || null  // 🎨 Lưu gợi ý hình ảnh để phục hồi lưu trữ
             });
 
-            // 保存当前变量快照
+            // Lưu bản sao nhanh (snapshot) các biến hiện tại
             this.gameState.variableSnapshots.push(JSON.parse(JSON.stringify(this.gameState.variables)));
             
-            // 【新增】如果启用向量检索，添加到向量库
+            // 【Mới】Nếu bật truy xuất vector, thêm vào thư viện vector
             this.addToVectorDatabase();
         }
 
-        // 检测是否是战斗场景（如果启用）
+        // Kiểm tra xem có phải cảnh chiến đấu không (nếu được bật)
         if (this.config.hasCombatSystem && this.config.combatParser) {
             this.handleCombatDetection(data);
         } else {
-            // 正常显示消息（传入 img 字段用于 NovelAI 生图）
-            console.log('[AI响应] 🖼️ img 字段:', data.img ? data.img.substring(0, 50) + '...' : '无');
+            // Hiển thị tin nhắn bình thường (truyền trường img để NovelAI tạo ảnh)
+            console.log('[Phản hồi AI] 🖼️ Trường img:', data.img ? data.img.substring(0, 50) + '...' : 'Không có');
             displayAIMessage(data.story, data.options, data.reasoning, data.img);
             
-            // 保存游戏历史到 IndexedDB
-            saveGameHistory().catch(err => console.error('保存历史失败:', err));
+            // Lưu lịch sử trò chơi vào IndexedDB
+            saveGameHistory().catch(err => console.error('Lưu lịch sử thất bại:', err));
         }
 
-        // 清空本地操作记录
+        // Xóa sạch bản ghi thao tác cục bộ
         if (this.gameState && this.gameState.localOps) {
             this.gameState.localOps = { items: [], attrs: [], equip: [] };
         }
     }
     
     /**
-     * 处理战斗检测逻辑
-     * @param {Object} data - 解析后的AI数据
+     * Xử lý logic phát hiện chiến đấu
+     * @param {Object} data - Dữ liệu AI sau khi phân tích
      */
     handleCombatDetection(data) {
         const combatInfo = this.config.combatParser(data.story);
         if (combatInfo) {
-            // 存储战斗信息到全局变量，供用户选择时使用
+            // Lưu trữ thông tin chiến đấu vào biến toàn cục để sử dụng khi người dùng lựa chọn
             window.pendingCombatInfo = combatInfo;
-            console.log('⚔️ 检测到战斗信息，已存储:', combatInfo);
+            console.log('⚔️ Phát hiện thông tin chiến đấu, đã lưu trữ:', combatInfo);
         } else {
-            // 清除待处理的战斗信息
+            // Xóa thông tin chiến đấu đang chờ xử lý
             window.pendingCombatInfo = null;
         }
         
-        // 正常显示消息（包含战斗选项，传入 img 字段用于 NovelAI 生图）
-        console.log('[AI响应-战斗分支] 🖼️ img 字段:', data.img ? data.img.substring(0, 50) + '...' : '无');
+        // Hiển thị tin nhắn bình thường (bao gồm các lựa chọn chiến đấu, truyền trường img để NovelAI tạo ảnh)
+        console.log('[Phản hồi AI - Nhánh chiến đấu] 🖼️ Trường img:', data.img ? data.img.substring(0, 50) + '...' : 'Không có');
         displayAIMessage(data.story, data.options, data.reasoning, data.img);
         
-        // 保存游戏历史
-        saveGameHistory().catch(err => console.error('保存历史失败:', err));
+        // Lưu lịch sử trò chơi
+        saveGameHistory().catch(err => console.error('Lưu lịch sử thất bại:', err));
     }
     
     /**
-     * 添加对话到向量数据库
+     * Thêm hội thoại vào cơ sở dữ liệu vector
      */
     async addToVectorDatabase() {
         const enableVectorRetrieval = document.getElementById('enableVectorRetrieval')?.checked || false;
@@ -282,7 +281,7 @@ class AIResponseHandler {
             const aiResponse = this.gameState.conversationHistory[this.gameState.conversationHistory.length - 1].content;
             
             try {
-                // 异步添加到向量库（不阻塞游戏流程）
+                // Thêm vào thư viện vector bất đồng bộ (không chặn luồng trò chơi)
                 await window.contextVectorManager.addConversation(
                     userMessage,
                     aiResponse,
@@ -290,29 +289,29 @@ class AIResponseHandler {
                     this.gameState.variables
                 );
                 
-                // 🆕 提取并添加history到矩阵
+                // 🆕 Trích xuất và thêm history vào ma trận (matrix)
                 const lastMessage = this.gameState.conversationHistory[this.gameState.conversationHistory.length - 1];
                 if (lastMessage && lastMessage.parsed && lastMessage.parsed.variableUpdate) {
-                    // 从variableUpdate中提取history
+                    // Trích xuất history từ variableUpdate
                     await this.extractAndAddHistoryToMatrix(lastMessage.parsed.variableUpdate, turnIndex);
                 }
                 
-                // 保存向量库到IndexedDB
+                // Lưu thư viện vector vào IndexedDB
                 await window.contextVectorManager.saveToIndexedDB();
             } catch (err) {
-                console.error('❌ 向量库添加失败:', err);
-                console.error('错误详情:', err.stack);
+                console.error('❌ Thêm vào thư viện vector thất bại:', err);
+                console.error('Chi tiết lỗi:', err.stack);
                 
-                // 自动回退到关键词方法
+                // Tự động quay lại phương pháp từ khóa
                 this.handleVectorError(err);
             }
         }
     }
     
     /**
-     * 提取并添加history到矩阵
-     * @param {string} variableUpdate - variableUpdate字符串
-     * @param {number} turnIndex - 轮次索引
+     * Trích xuất và thêm history vào ma trận
+     * @param {string} variableUpdate - Chuỗi variableUpdate
+     * @param {number} turnIndex - Chỉ số lượt hội thoại
      */
     async extractAndAddHistoryToMatrix(variableUpdate, turnIndex) {
         if (!window.contextVectorManager || !window.matrixManager) {
@@ -320,30 +319,30 @@ class AIResponseHandler {
         }
         
         try {
-            // 从variableUpdate中提取history
+            // Trích xuất history từ variableUpdate
             const historyItems = [];
             
-            // 匹配 >>history: 文本 格式
+            // Khớp định dạng >>history: văn bản
             const singleHistoryRegex = />>history:\s*(.+)/g;
             let match;
             while ((match = singleHistoryRegex.exec(variableUpdate)) !== null) {
                 historyItems.push(match[1].trim());
             }
             
-            // 匹配 history:\n  - 文本 格式
+            // Khớp định dạng history:\n  - văn bản
             const multiHistoryRegex = /history:\s*\n\s*-\s*(.+)/g;
             while ((match = multiHistoryRegex.exec(variableUpdate)) !== null) {
                 historyItems.push(match[1].trim());
             }
             
             if (historyItems.length === 0) {
-                console.log('[History矩阵] 本轮未找到history字段');
+                console.log('[Ma trận History] Lượt này không tìm thấy trường history');
                 return;
             }
             
-            console.log(`[History矩阵] 📥 提取到 ${historyItems.length} 条history`);
+            console.log(`[Ma trận History] 📥 Trích xuất được ${historyItems.length} mục history`);
             
-            // 添加到矩阵
+            // Thêm vào ma trận
             for (const historyText of historyItems) {
                 await window.contextVectorManager.addHistoryEntry(
                     historyText,
@@ -352,103 +351,103 @@ class AIResponseHandler {
                 );
             }
             
-            console.log(`[History矩阵] ✅ 已添加 ${historyItems.length} 条history到矩阵`);
+            console.log(`[Ma trận History] ✅ Đã thêm ${historyItems.length} mục history vào ma trận`);
         } catch (error) {
-            console.error('[History矩阵] ❌ 添加失败:', error);
+            console.error('[Ma trận History] ❌ Thêm thất bại:', error);
         }
     }
     
     /**
-     * 处理向量化错误
-     * @param {Error} err - 错误对象
+     * Xử lý lỗi vector hóa
+     * @param {Error} err - Đối tượng lỗi
      */
     handleVectorError(err) {
         const currentMethod = window.contextVectorManager.embeddingMethod;
         if (currentMethod !== 'keyword') {
-            console.warn(`[向量库] ${currentMethod}方法失败，自动切换到关键词方法`);
+            console.warn(`[Thư viện Vector] Phương pháp ${currentMethod} thất bại, tự động chuyển sang phương pháp từ khóa`);
             window.contextVectorManager.setEmbeddingMethod('keyword');
             document.getElementById('vectorMethod').value = 'keyword';
             
-            // 提示用户
+            // Thông báo cho người dùng
             setTimeout(() => {
-                alert(`⚠️ 向量化失败\n\n${currentMethod}方法出现错误，已自动切换到"关键词匹配"方法\n\n错误：${err.message}\n\n游戏将正常继续，不影响使用。`);
+                alert(`⚠️ Vector hóa thất bại\n\nPhương pháp ${currentMethod} xuất hiện lỗi, đã tự động chuyển sang phương pháp "Khớp từ khóa"\n\nLỗi: ${err.message}\n\nTrò chơi sẽ tiếp tục bình thường, không ảnh hưởng đến việc sử dụng.`);
             }, 1000);
         }
     }
     
     /**
-     * 调试模式输出
-     * @param {string} role - 角色
-     * @param {string} content - 内容
+     * Xuất log chế độ debug
+     * @param {string} role - Vai trò
+     * @param {string} content - Nội dung
      */
     appendDebug(role, content) {
         if (typeof appendDebug === 'function') {
             appendDebug(role, content);
         } else {
-            console.log(`[调试模式] ${role}:`, content);
+            console.log(`[Chế độ Debug] ${role}:`, content);
         }
     }
     
     /**
-     * 应用增量变量更新
-     * @param {Object} variableChanges - 变量变化对象
+     * Áp dụng cập nhật biến lũy tiến
+     * @param {Object} variableChanges - Đối tượng thay đổi biến
      */
     applyVariableChanges(variableChanges) {
         if (!variableChanges) {
-            console.warn('[变量更新] 没有变量变化数据');
+            console.warn('[Cập nhật biến] Không có dữ liệu thay đổi biến');
             return this.gameState.variables;
         }
 
         const { analysis, changes = {}, arrayChanges, newFields = [], removedFields = [] } = variableChanges;
 
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-        console.log('[变量更新] 开始应用增量更新');
+        console.log('[Cập nhật biến] Bắt đầu áp dụng cập nhật lũy tiến');
         if (analysis) {
-            console.log('[变量更新] 分析:', analysis);
+            console.log('[Cập nhật biến] Phân tích:', analysis);
         }
         if (Object.keys(changes).length > 0) {
-            console.log('[变量更新] 变化字段:', Object.keys(changes));
+            console.log('[Cập nhật biến] Các trường thay đổi:', Object.keys(changes));
         }
         if (arrayChanges) {
-            console.log('[变量更新] 数组增量更新:', Object.keys(arrayChanges));
+            console.log('[Cập nhật biến] Cập nhật mảng lũy tiến:', Object.keys(arrayChanges));
         }
         if (newFields.length > 0) {
-            console.log('[变量更新] 新增字段:', newFields);
+            console.log('[Cập nhật biến] Các trường mới thêm:', newFields);
         }
         if (removedFields.length > 0) {
-            console.log('[变量更新] 删除字段:', removedFields);
+            console.log('[Cập nhật biến] Các trường bị xóa:', removedFields);
         }
 
-        // 保存之前的变量状态用于计算变化
+        // Lưu trạng thái biến trước đó để tính toán sự thay đổi
         this.gameState.previousVariables = JSON.parse(JSON.stringify(this.gameState.variables));
 
-        // 1. 处理普通字段变化
+        // 1. Xử lý thay đổi các trường thông thường
         for (const [key, value] of Object.entries(changes)) {
             this.applyFieldChange(key, value);
         }
 
-        // 2. 处理数组字段增量更新（新功能）
+        // 2. Xử lý cập nhật lũy tiến cho các trường mảng (tính năng mới)
         if (arrayChanges) {
             this.applyArrayChanges(arrayChanges);
         }
 
-        // 3. 删除标记为移除的字段
+        // 3. Xóa các trường được đánh dấu loại bỏ
         removedFields.forEach(field => {
             if (this.gameState.variables.hasOwnProperty(field)) {
                 delete this.gameState.variables[field];
-                console.log(`[变量更新] ❌ 删除字段: ${field}`);
+                console.log(`[Cập nhật biến] ❌ Xóa trường: ${field}`);
             }
         });
 
-        console.log('[变量更新] ✅ 增量更新完成');
+        console.log('[Cập nhật biến] ✅ Cập nhật lũy tiến hoàn tất');
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
         return this.gameState.variables;
     }
     
     /**
-     * 应用数组字段的增量更新（add/remove/update模式）
-     * @param {Object} arrayChanges - 数组增量更新对象
+     * Áp dụng cập nhật lũy tiến cho các trường mảng (chế độ add/remove/update)
+     * @param {Object} arrayChanges - Đối tượng cập nhật mảng lũy tiến
      */
     applyArrayChanges(arrayChanges) {
         for (const [arrayName, operations] of Object.entries(arrayChanges)) {
@@ -464,41 +463,41 @@ class AIResponseHandler {
                 'spells': '✨'
             }[arrayName] || '📝';
 
-            console.log(`[数组更新] ${emoji} 处理 ${arrayName}:`);
+            console.log(`[Cập nhật mảng] ${emoji} Đang xử lý ${arrayName}:`);
 
-            // 检查是否是直接数组格式（AI返回的格式）
+            // Kiểm tra xem có phải định dạng mảng trực tiếp không (định dạng AI trả về)
             if (Array.isArray(operations)) {
-                console.log(`  📋 检测到直接数组格式，处理 ${operations.length} 个项目`);
+                console.log(`  📋 Phát hiện định dạng mảng trực tiếp, xử lý ${operations.length} mục`);
                 operations.forEach(item => {
-                    // 【关键修复】检查元素是否已存在
+                    // 【Sửa lỗi quan trọng】Kiểm tra phần tử đã tồn tại chưa
                     const existingIndex = array.findIndex(el => el.name === item.name);
                     
                     if (existingIndex !== -1) {
-                        // 已存在：使用updateInArray来正确深度合并（保留未更新的嵌套字段如bodyParts.description）
-                        console.log(`  🔍 检测到 ${item.name} 已存在，使用深度合并更新`);
+                        // Đã tồn tại: Sử dụng updateInArray để hợp nhất sâu chính xác (giữ lại các trường lồng nhau không cập nhật như bodyParts.description)
+                        console.log(`  🔍 Phát hiện ${item.name} đã tồn tại, sử dụng hợp nhất sâu để cập nhật`);
                         this.updateInArray(array, item, arrayName);
                     } else {
-                        // 不存在：使用addToArray添加新元素
+                        // Không tồn tại: Sử dụng addToArray để thêm phần tử mới
                         this.addToArray(array, item, arrayName);
                     }
                 });
             } else {
-                // 标准操作格式 { add: [...], remove: [...], update: [...] }
-                // 1. 处理删除操作
+                // Định dạng thao tác tiêu chuẩn { add: [...], remove: [...], update: [...] }
+                // 1. Xử lý thao tác xóa
                 if (operations.remove && operations.remove.length > 0) {
                     operations.remove.forEach(item => {
                         this.removeFromArray(array, item, arrayName);
                     });
                 }
 
-                // 2. 处理新增操作
+                // 2. Xử lý thao tác thêm mới
                 if (operations.add && operations.add.length > 0) {
                     operations.add.forEach(item => {
                         this.addToArray(array, item, arrayName);
                     });
                 }
 
-                // 3. 处理更新操作
+                // 3. Xử lý thao tác cập nhật
                 if (operations.update && operations.update.length > 0) {
                     operations.update.forEach(item => {
                         this.updateInArray(array, item, arrayName);
@@ -509,104 +508,104 @@ class AIResponseHandler {
     }
     
     /**
-     * 从数组中删除元素或减少数量
-     * @param {Array} array - 目标数组
-     * @param {Object} item - 要删除的元素
-     * @param {string} arrayName - 数组名称
+     * Xóa phần tử khỏi mảng hoặc giảm số lượng
+     * @param {Array} array - Mảng đích
+     * @param {Object} item - Phần tử cần xóa
+     * @param {string} arrayName - Tên mảng
      */
     removeFromArray(array, item, arrayName) {
         const index = array.findIndex(el => el.name === item.name);
 
         if (index === -1) {
-            console.warn(`  ⚠️ 尝试删除不存在的${arrayName}: ${item.name}`);
+            console.warn(`  ⚠️ Thử xóa ${arrayName} không tồn tại: ${item.name}`);
             return;
         }
 
-        // 如果是items且指定了count，则减少数量
+        // Nếu là items và có chỉ định số lượng (count), thì giảm số lượng
         if (arrayName === 'items' && item.count !== undefined) {
             const oldCount = array[index].count;
             array[index].count -= item.count;
-            console.log(`  ➖ ${item.name}: 数量 -${item.count} (${oldCount} → ${array[index].count})`);
+            console.log(`  ➖ ${item.name}: Số lượng -${item.count} (${oldCount} → ${array[index].count})`);
 
-            // 如果数量<=0，则完全删除
+            // Nếu số lượng <= 0, xóa hoàn toàn
             if (array[index].count <= 0) {
                 array.splice(index, 1);
-                console.log(`  ❌ ${item.name}: 数量归零，已从物品列表删除`);
+                console.log(`  ❌ ${item.name}: Số lượng về 0, đã xóa khỏi danh sách vật phẩm`);
             }
         } else {
-            // 完全删除
+            // Xóa hoàn toàn
             array.splice(index, 1);
-            console.log(`  ❌ 删除 ${item.name}`);
+            console.log(`  ❌ Xóa ${item.name}`);
         }
     }
     
     /**
-     * 向数组中添加元素或增加数量
-     * @param {Array} array - 目标数组
-     * @param {Object} item - 要添加的元素
-     * @param {string} arrayName - 数组名称
+     * Thêm phần tử vào mảng hoặc tăng số lượng
+     * @param {Array} array - Mảng đích
+     * @param {Object} item - Phần tử cần thêm
+     * @param {string} arrayName - Tên mảng
      */
     addToArray(array, item, arrayName) {
         const existingIndex = array.findIndex(el => el.name === item.name);
 
-        // 如果是items且已存在，则增加数量
+        // Nếu là items và đã tồn tại, thì tăng số lượng
         if (arrayName === 'items' && existingIndex !== -1) {
             const oldCount = array[existingIndex].count;
             array[existingIndex].count += item.count;
-            console.log(`  ➕ ${item.name}: 数量 +${item.count} (${oldCount} → ${array[existingIndex].count})`);
+            console.log(`  ➕ ${item.name}: Số lượng +${item.count} (${oldCount} → ${array[existingIndex].count})`);
 
-            // 更新其他字段（使用深度合并保留嵌套数据）
+            // Cập nhật các trường khác (sử dụng hợp nhất sâu để giữ dữ liệu lồng nhau)
             this.deepMerge(array[existingIndex], item);
         } else if (existingIndex !== -1) {
-            // 【重要修复】对于relationships等数组，如果已存在，不应该在这里处理
-            // 应该由调用方判断后直接调用updateInArray
-            console.warn(`  ⚠️ addToArray被用于更新已存在的${arrayName}: ${item.name}，这可能导致数据丢失！`);
-            console.warn(`  ⚠️ 建议调用方先检查元素是否存在，已存在的应该调用updateInArray`);
+            // 【Sửa lỗi quan trọng】Đối với các mảng như relationships, nếu đã tồn tại thì không nên xử lý ở đây
+            // Phía gọi hàm nên phán đoán và gọi trực tiếp updateInArray
+            console.warn(`  ⚠️ addToArray được dùng để cập nhật ${arrayName} đã tồn tại: ${item.name}, điều này có thể dẫn đến mất dữ liệu!`);
+            console.warn(`  ⚠️ Khuyên phía gọi hàm nên kiểm tra xem phần tử tồn tại chưa, nếu đã có thì nên gọi updateInArray`);
             
-            // 为了兼容性，仍然执行深度合并，但会输出警告
+            // Để tương thích, vẫn thực hiện hợp nhất sâu nhưng sẽ xuất cảnh báo
             const oldItem = array[existingIndex];
             this.deepMerge(oldItem, item);
-            console.log(`  🔄 更新 ${item.name} (深度合并，但可能不完整)`);
+            console.log(`  🔄 Cập nhật ${item.name} (hợp nhất sâu, nhưng có thể không đầy đủ)`);
         } else {
-            // 不存在则新增
+            // Nếu không tồn tại thì thêm mới
             array.push(item);
-            const extra = arrayName === 'items' ? ` (数量: ${item.count})` : '';
-            console.log(`  ✅ 新增 ${item.name}${extra}`);
+            const extra = arrayName === 'items' ? ` (Số lượng: ${item.count})` : '';
+            console.log(`  ✅ Thêm mới ${item.name}${extra}`);
         }
     }
     
     /**
-     * 更新数组中已存在的元素
-     * @param {Array} array - 目标数组
-     * @param {Object} item - 要更新的元素（包含name和要更新的字段）
-     * @param {string} arrayName - 数组名称
+     * Cập nhật phần tử đã tồn tại trong mảng
+     * @param {Array} array - Mảng đích
+     * @param {Object} item - Phần tử cần cập nhật (chứa name và các trường cần cập nhật)
+     * @param {string} arrayName - Tên mảng
      */
     updateInArray(array, item, arrayName) {
         const existingIndex = array.findIndex(el => el.name === item.name);
 
         if (existingIndex === -1) {
-            console.warn(`  ⚠️ 尝试更新不存在的${arrayName}: ${item.name}`);
+            console.warn(`  ⚠️ Thử cập nhật ${arrayName} không tồn tại: ${item.name}`);
             return;
         }
 
-        // 记录旧值
+        // Ghi lại giá trị cũ
         const oldValues = {};
         const updatedFields = Object.keys(item).filter(k => k !== 'name');
         updatedFields.forEach(field => {
             oldValues[field] = array[existingIndex][field];
         });
 
-        // 特殊处理1：relationships数组的history字段需要追加而不是覆盖
+        // Xử lý đặc biệt 1: Trường history của mảng relationships cần nối thêm chứ không phải ghi đè
         if (arrayName === 'relationships' && item.history) {
             const existingHistory = array[existingIndex].history || [];
             const newHistory = item.history || [];
             
-            // 去重合并：只添加不重复的历史记录
+            // Hợp nhất loại bỏ trùng lặp: Chỉ thêm các bản ghi lịch sử không bị lặp
             const mergedHistory = [...existingHistory];
             let addedCount = 0;
             
             newHistory.forEach(newItem => {
-                // 检查是否已存在相同内容（去除首尾空格后比较）
+                // Kiểm tra xem đã tồn tại nội dung giống hệt chưa (so sánh sau khi xóa khoảng trắng đầu cuối)
                 const trimmedNew = newItem.trim();
                 const isDuplicate = mergedHistory.some(existing => existing.trim() === trimmedNew);
                 
@@ -616,26 +615,26 @@ class AIResponseHandler {
                 }
             });
             
-            // 更新history字段为合并后的数组
+            // Cập nhật trường history thành mảng đã hợp nhất
             item.history = mergedHistory;
             
             if (addedCount > 0) {
-                console.log(`    - history: 追加了 ${addedCount} 条新记录（总计：${mergedHistory.length}条）`);
+                console.log(`    - history: Đã nối thêm ${addedCount} bản ghi mới (Tổng cộng: ${mergedHistory.length} mục)`);
             }
         }
 
-        // 特殊处理2：relationships数组的bodyParts字段需要深度合并，保留description
+        // Xử lý đặc biệt 2: Trường bodyParts của mảng relationships cần hợp nhất sâu, giữ lại description
         if (arrayName === 'relationships' && item.bodyParts) {
             const existingBodyParts = array[existingIndex].bodyParts || {};
             const newBodyParts = item.bodyParts;
             
-            // 对每个身体部位进行深度合并
+            // Thực hiện hợp nhất sâu cho từng bộ phận cơ thể
             ['vagina', 'breasts', 'mouth', 'hands', 'feet'].forEach(partName => {
                 if (newBodyParts[partName]) {
                     if (existingBodyParts[partName]) {
-                        // 已存在该部位：合并更新，保留description（如果新数据没有提供）
+                        // Đã tồn tại bộ phận này: Hợp nhất cập nhật, giữ lại description (nếu dữ liệu mới không cung cấp)
                         if (!newBodyParts[partName].description && existingBodyParts[partName].description) {
-                            console.log(`    - bodyParts.${partName}: 保留原有description，更新useCount`);
+                            console.log(`    - bodyParts.${partName}: Giữ description cũ, cập nhật useCount`);
                             newBodyParts[partName].description = existingBodyParts[partName].description;
                         }
                     }
@@ -643,14 +642,14 @@ class AIResponseHandler {
             });
         }
 
-        // 使用深度合并更新字段（保留嵌套对象中未更新的字段）
+        // Sử dụng hợp nhất sâu để cập nhật các trường (giữ lại các trường chưa được cập nhật trong đối tượng lồng nhau)
         this.deepMerge(array[existingIndex], item);
 
-        // 输出详细日志
-        console.log(`  🔧 更新 ${item.name} (深度合并):`);
+        // Xuất log chi tiết
+        console.log(`  🔧 Cập nhật ${item.name} (hợp nhất sâu):`);
         updatedFields.forEach(field => {
             if (field === 'history' && arrayName === 'relationships') {
-                // history字段已经在上面特殊处理过了，跳过详细日志
+                // Trường history đã được xử lý đặc biệt ở trên, bỏ qua log chi tiết
                 return;
             }
             console.log(`    - ${field}: ${JSON.stringify(oldValues[field])} → ${JSON.stringify(item[field])}`);
@@ -658,12 +657,12 @@ class AIResponseHandler {
     }
     
     /**
-     * 应用单个字段的变化
-     * @param {string} key - 字段名
-     * @param {any} value - 新值
+     * Áp dụng thay đổi cho một trường đơn lẻ
+     * @param {string} key - Tên trường
+     * @param {any} value - Giá trị mới
      */
     applyFieldChange(key, value) {
-        // ========== 特殊处理1：history字段使用追加模式 ==========
+        // ========== Xử lý đặc biệt 1: Trường history sử dụng chế độ nối thêm (append) ==========
         if (key === 'history') {
             if (!this.gameState.variables.history) {
                 this.gameState.variables.history = [];
@@ -678,46 +677,46 @@ class AIResponseHandler {
                     if (!isDuplicate && trimmed) {
                         this.gameState.variables.history.push(newRecord);
                         addedCount++;
-                        console.log(`[变量更新] 📜 新增历史: ${newRecord.substring(0, 50)}...`);
+                        console.log(`[Cập nhật biến] 📜 Thêm lịch sử mới: ${newRecord.substring(0, 50)}...`);
                     }
                 });
-                console.log(`[变量更新] history: 追加了 ${addedCount} 条新记录`);
+                console.log(`[Cập nhật biến] history: Đã nối thêm ${addedCount} bản ghi mới`);
             }
             return;
         }
 
-        // ========== 特殊处理2：对象字段使用部分更新模式 ==========
+        // ========== Xử lý đặc biệt 2: Các trường đối tượng sử dụng chế độ cập nhật từng phần ==========
         if (key === 'attributes' || key === 'equipment') {
             if (!this.gameState.variables[key]) {
                 this.gameState.variables[key] = {};
             }
             const changedKeys = Object.keys(value);
-            // 使用深度合并，保留嵌套对象中未更新的字段
+            // Sử dụng hợp nhất sâu, giữ lại các trường lồng nhau chưa được cập nhật
             this.deepMerge(this.gameState.variables[key], value);
-            console.log(`[变量更新] 🔧 部分更新 ${key}: [${changedKeys.join(', ')}] (深度合并)`);
+            console.log(`[Cập nhật biến] 🔧 Cập nhật từng phần ${key}: [${changedKeys.join(', ')}] (hợp nhất sâu)`);
 
-            // 详细记录每个子字段的变化
+            // Ghi lại chi tiết thay đổi của từng trường con
             changedKeys.forEach(subKey => {
                 const oldValue = this.gameState.previousVariables?.[key]?.[subKey];
                 const newValue = value[subKey];
                 if (oldValue !== undefined) {
                     console.log(`  - ${subKey}: ${JSON.stringify(oldValue)} -> ${JSON.stringify(newValue)}`);
                 } else {
-                    console.log(`  - ${subKey}: (新增) ${JSON.stringify(newValue)}`);
+                    console.log(`  - ${subKey}: (Mới thêm) ${JSON.stringify(newValue)}`);
                 }
             });
             return;
         }
 
-        // ========== 特殊处理3：数组字段使用完整替换模式（带安全检查）==========
+        // ========== Xử lý đặc biệt 3: Các trường mảng sử dụng chế độ thay thế hoàn toàn (kèm kiểm tra an toàn) ==========
         if (key === 'items' || key === 'relationships' || key === 'techniques' || key === 'spells') {
             const oldCount = this.gameState.variables[key] ? this.gameState.variables[key].length : 0;
             const newCount = Array.isArray(value) ? value.length : 0;
 
-            // 安全检查：防止数据丢失
+            // Kiểm tra an toàn: Ngăn chặn mất dữ liệu
             if (oldCount > 5 && newCount < oldCount / 2 && newCount > 0) {
-                console.warn(`⚠️ ${key}数量异常减少：从${oldCount}个减少到${newCount}个，可能存在数据丢失！`);
-                console.warn(`⚠️ 建议检查AI返回的${key}数组是否完整`);
+                console.warn(`⚠️ Số lượng ${key} giảm bất thường: Từ ${oldCount} mục giảm xuống còn ${newCount} mục, có thể bị mất dữ liệu!`);
+                console.warn(`⚠️ Khuyên nên kiểm tra xem mảng ${key} mà AI trả về có đầy đủ không`);
             }
 
             this.gameState.variables[key] = value;
@@ -729,32 +728,32 @@ class AIResponseHandler {
                 'spells': '✨'
             }[key] || '📝';
 
-            console.log(`[变量更新] ${emoji} 完整替换 ${key}: ${oldCount} -> ${newCount}`);
+            console.log(`[Cập nhật biến] ${emoji} Thay thế hoàn toàn ${key}: ${oldCount} -> ${newCount}`);
             return;
         }
 
-        // ========== 默认处理：直接赋值 ==========
+        // ========== Xử lý mặc định: Gán trực tiếp ==========
         const oldValue = this.gameState.variables[key];
         this.gameState.variables[key] = value;
         
         if (oldValue !== undefined) {
-            console.log(`[变量更新] ${key}: ${JSON.stringify(oldValue)} -> ${JSON.stringify(value)}`);
+            console.log(`[Cập nhật biến] ${key}: ${JSON.stringify(oldValue)} -> ${JSON.stringify(value)}`);
         } else {
-            console.log(`[变量更新] 新增 ${key}: ${JSON.stringify(value)}`);
+            console.log(`[Cập nhật biến] Thêm mới ${key}: ${JSON.stringify(value)}`);
         }
     }
     
     /**
-     * 更新变量（旧方案，保留用于向后兼容）
-     * @param {Object} newVars - 新变量对象
+     * Cập nhật biến (phương án cũ, giữ lại để tương thích ngược)
+     * @param {Object} newVars - Đối tượng biến mới
      */
     updateVariables(newVars) {
-        // 保存之前的变量状态用于计算变化
+        // Lưu trạng thái biến trước đó để tính toán sự thay đổi
         this.gameState.previousVariables = JSON.parse(JSON.stringify(this.gameState.variables));
 
-        console.log('[变量更新] 使用旧方案（完整更新）');
+        console.log('[Cập nhật biến] Sử dụng phương án cũ (cập nhật toàn bộ)');
         
-        // 递归合并对象
+        // Hợp nhất sâu đối tượng
         function mergeDeep(target, source) {
             for (const key in source) {
                 if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
@@ -767,11 +766,11 @@ class AIResponseHandler {
         }
 
         mergeDeep(this.gameState.variables, newVars);
-        console.log('[变量更新] ✅ 旧方案更新完成');
+        console.log('[Cập nhật biến] ✅ Cập nhật theo phương án cũ hoàn tất');
     }
 }
 
-// 导出到全局
+// Xuất ra toàn cục (Global)
 window.AIResponseHandler = AIResponseHandler;
 
-console.log('📦 [模块加载] ai-response-handler.js 已加载');
+console.log('📦 [Module Load] ai-response-handler.js đã được tải');

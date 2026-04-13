@@ -1,12 +1,12 @@
 /**
- * 通用游戏框架 - Game Framework
- * 提供游戏状态管理、渲染系统、API调用等通用功能
- * 可以被不同的游戏配置文件使用
+ * Khung trò chơi chung - Game Framework
+ * Cung cấp các chức năng chung như quản lý trạng thái trò chơi, hệ thống render, gọi API, v.v.
+ * Có thể được sử dụng bởi các tệp cấu hình trò chơi khác nhau
  */
 
 class GameFramework {
     constructor(config) {
-        this.config = config; // 游戏特定配置
+        this.config = config; // Cấu hình đặc định của trò chơi
         this.gameState = {
             variables: {},
             conversationHistory: [],
@@ -24,28 +24,28 @@ class GameFramework {
     }
 
     /**
-     * 初始化游戏框架
+     * Khởi tạo khung trò chơi
      */
     init() {
-        console.log('[GameFramework] 初始化游戏框架:', this.config.gameName);
+        console.log('[GameFramework] Khởi tạo khung trò chơi:', this.config.gameName);
 
-        // 加载配置
+        // Tải cấu hình
         this.loadConfig();
 
-        // 初始化UI
+        // Khởi tạo UI
         this.initUI();
 
-        // 绑定事件
+        // Ràng buộc sự kiện
         this.bindEvents();
 
-        // 如果配置提供了初始化回调，执行它
+        // Nếu cấu hình cung cấp callback khởi tạo, hãy thực thi nó
         if (this.config.onInit) {
             this.config.onInit(this);
         }
     }
 
     /**
-     * 加载保存的配置
+     * Tải cấu hình đã lưu
      */
     loadConfig() {
         const savedConfig = localStorage.getItem('gameConfig');
@@ -57,7 +57,7 @@ class GameFramework {
     }
 
     /**
-     * 保存配置
+     * Lưu cấu hình
      */
     saveConfig() {
         const config = {
@@ -68,15 +68,15 @@ class GameFramework {
     }
 
     /**
-     * 初始化UI
+     * Khởi tạo UI
      */
     initUI() {
-        // 设置标题
+        // Thiết lập tiêu đề
         if (this.config.gameName) {
             document.title = this.config.gameName;
         }
 
-        // 初始化系统提示词
+        // Khởi tạo gợi ý hệ thống (system prompt)
         if (this.config.systemPrompt) {
             const systemPromptEl = document.getElementById('systemPrompt');
             if (systemPromptEl) {
@@ -84,7 +84,7 @@ class GameFramework {
             }
         }
 
-        // 初始化动态世界提示词
+        // Khởi tạo gợi ý thế giới động (dynamic world prompt)
         if (this.config.dynamicWorldPrompt) {
             const dynamicWorldPromptEl = document.getElementById('dynamicWorldPrompt');
             if (dynamicWorldPromptEl) {
@@ -94,16 +94,16 @@ class GameFramework {
     }
 
     /**
-     * 绑定事件
+     * Ràng buộc sự kiện
      */
     bindEvents() {
-        // 这里可以绑定通用事件
-        // 具体游戏的事件由配置文件处理
+        // Tại đây có thể ràng buộc các sự kiện chung
+        // Các sự kiện cụ thể của trò chơi do tệp cấu hình xử lý
     }
 
     /**
-     * 更新状态面板 - 通用方法
-     * 调用游戏特定的渲染函数
+     * Cập nhật bảng trạng thái - Phương pháp chung
+     * Gọi hàm render đặc định của trò chơi
      */
     updateStatusPanel() {
         if (this.config.renderStatus) {
@@ -112,35 +112,35 @@ class GameFramework {
     }
 
     /**
-     * 获取角色创建配置
+     * Lấy cấu hình tạo nhân vật
      */
     getCharacterCreationConfig() {
         return this.config.characterCreation || null;
     }
 
     /**
-     * 获取状态字段配置
+     * Lấy cấu hình các trường trạng thái
      */
     getStatusFieldsConfig() {
         return this.config.statusFields || [];
     }
 
     /**
-     * 设置游戏状态
+     * Thiết lập trạng thái trò chơi
      */
     setGameState(state) {
         this.gameState = { ...this.gameState, ...state };
     }
 
     /**
-     * 获取游戏状态
+     * Lấy trạng thái trò chơi
      */
     getGameState() {
         return this.gameState;
     }
 
     /**
-     * 更新变量
+     * Cập nhật biến
      */
     updateVariables(newVars) {
         this.gameState.lastVariables = { ...this.gameState.variables };
@@ -149,5 +149,5 @@ class GameFramework {
     }
 }
 
-// 导出框架类
+// Xuất lớp khung trò chơi (Framework class)
 window.GameFramework = GameFramework;

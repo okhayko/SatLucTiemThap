@@ -1,66 +1,66 @@
 /**
- * 📱 手机各模块提示词配置
- * 用于规范AI在不同手机应用中的回复格式
+ * 📱 Cấu hình Prompt cho từng module trên điện thoại
+ * Dùng để chuẩn hóa định dạng câu trả lời của AI trong các ứng dụng điện thoại khác nhau
  */
 
 window.MobilePrompts = {
 
     /**
-     *  获取主游戏的最近历史上下文
-     * 用于让论坛/通讯了解当前游戏剧情
+     * 🎮 Lấy ngữ cảnh lịch sử gần đây của trò chơi chính
+     * Dùng để diễn đàn/ứng dụng nhắn tin hiểu được diễn biến cốt truyện hiện tại
      */
     getGameContext: function () {
         try {
-            // 从父页面获取游戏状态
+            // Lấy trạng thái trò chơi từ trang cha
             const parentWindow = window.parent;
             if (!parentWindow || !parentWindow.gameState) {
-                console.warn('[手机提示词] 无法获取父页面gameState');
+                console.warn('[Prompt Điện thoại] Không thể lấy được gameState từ trang cha');
                 return null;
             }
 
             const gameState = parentWindow.gameState;
-            // 使用正确的字段名 conversationHistory
+            // Sử dụng tên trường chính xác conversationHistory
             const gameHistory = gameState.conversationHistory || [];
             const variables = gameState.variables || {};
 
-            // 获取配置的历史层数（默认5层）
+            // Lấy độ sâu lịch sử được cấu hình (Mặc định 5 tầng)
             let historyDepth = 5;
             try {
                 const config = JSON.parse(localStorage.getItem('gameConfig') || '{}');
                 historyDepth = parseInt(config.historyDepth) || 5;
             } catch (e) { }
 
-            // 获取最近N层历史（每层 = 1用户 + 1AI）
+            // Lấy N tầng lịch sử gần đây (Mỗi tầng = 1 tin nhắn người dùng + 1 tin nhắn AI)
             const recentMessages = gameHistory.slice(-historyDepth * 2);
 
             if (recentMessages.length === 0) {
                 return null;
             }
 
-            // 构建上下文文本
-            let contextText = '\n【当前游戏剧情上下文】\n';
-            contextText += '（以下是游戏中最近发生的事件，请根据这些剧情生成合适的内容）\n';
+            // Xây dựng văn bản ngữ cảnh
+            let contextText = '\n【Ngữ cảnh Cốt truyện Game Hiện tại】\n';
+            contextText += '（Dưới đây là các sự kiện vừa diễn ra trong game, hãy dựa vào cốt truyện này để tạo ra nội dung phù hợp）\n';
 
             recentMessages.forEach((msg, index) => {
-                const role = msg.role === 'user' ? '【玩家行动】' : '【剧情发展】';
-                // 截取内容，避免太长
+                const role = msg.role === 'user' ? '【Hành động của Người chơi】' : '【Diễn biến Cốt truyện】';
+                // Cắt ngắn nội dung để tránh quá dài
                 const content = msg.content.length > 500 ? msg.content.substring(0, 500) + '...' : msg.content;
                 contextText += `${role}: ${content}\n\n`;
             });
 
-            // 添加关键变量信息
+            // Thêm thông tin biến số quan trọng
             if (variables) {
-                contextText += '【当前状态】\n';
-                // 通用变量名（适用于现代和仙侠游戏）
+                contextText += '【Trạng thái Hiện tại】\n';
+                // Tên biến thông dụng (Phù hợp cho cả game hiện đại và tiên hiệp)
                 const keyVars = ['name', 'location', 'health', 'reputation', 'money', 'job', 'faction'];
                 const varLabels = {
-                    name: '姓名',
-                    location: '位置',
-                    health: '状态',
-                    reputation: '声望',
-                    money: '资产',
-                    job: '职业',
-                    faction: '所属'
+                    name: 'Họ tên',
+                    location: 'Vị trí',
+                    health: 'Trạng thái',
+                    reputation: 'Danh vọng',
+                    money: 'Tài sản',
+                    job: 'Nghề nghiệp',
+                    faction: 'Thế lực trực thuộc'
                 };
                 keyVars.forEach(key => {
                     if (variables[key] !== undefined) {
@@ -70,108 +70,108 @@ window.MobilePrompts = {
                 });
             }
 
-            console.log(`[手机提示词] 已获取${recentMessages.length}条游戏历史作为上下文`);
+            console.log(`[Prompt Điện thoại] Đã lấy ${recentMessages.length} bản ghi lịch sử game làm ngữ cảnh`);
             return contextText;
 
         } catch (e) {
-            console.error('[手机提示词] 获取游戏上下文失败:', e);
+            console.error('[Prompt Điện thoại] Lấy ngữ cảnh trò chơi thất bại:', e);
             return null;
         }
     },
 
     /**
-     * � 通讯APP提示词
-     * 用于规范聊天消息的发送和回复格式
+     * 💬 Prompt Ứng dụng Nhắn tin
+     * Dùng để chuẩn hóa định dạng gửi và nhận tin nhắn chat
      */
     communication: {
-        // 系统提示词（位于最顶部，高于上下文）
-        systemPrompt: `你是一个现代都市游戏中的虚拟手机通讯系统。用户通过手机APP与游戏中的NPC进行聊天。
+        // Prompt Hệ thống (Nằm trên cùng, độ ưu tiên cao hơn ngữ cảnh)
+        systemPrompt: `Bạn là một hệ thống nhắn tin ảo trên điện thoại trong một trò chơi bối cảnh đô thị hiện đại. Người dùng đang trò chuyện với các NPC trong game thông qua ứng dụng này.
 
-【重要】这是现代都市背景的游戏，NPC应该像现实生活中的人一样聊天。
+【QUAN TRỌNG】 Đây là game có bối cảnh đô thị hiện đại, các NPC nên trò chuyện giống như những người sống trong đời thực.
 
-【消息格式规范】
-用户发送的消息采用JSON格式：
+【Quy cách Định dạng Tin nhắn】
+Tin nhắn người dùng gửi sẽ sử dụng định dạng JSON:
 {
   "messages": [
     {
       "direction": "outgoing",
       "chatType": "private|group",
-      "target": { "name": "对方名字", "id": "对方ID" },
-      "group": { "name": "群名", "id": "群ID" },  // 群聊时有此字段
-      "sender": { "name": "我", "id": "self" },
+      "target": { "name": "Tên người nhận", "id": "ID người nhận" },
+      "group": { "name": "Tên nhóm", "id": "ID nhóm" },  // Có trường này khi chat nhóm
+      "sender": { "name": "Tôi", "id": "self" },
       "msgType": "text",
-      "content": "消息内容"
+      "content": "Nội dung tin nhắn"
     }
   ]
 }
 
-【回复格式要求】
-你必须严格按照以下JSON格式回复，不要有任何其他文字：
+【Yêu cầu Định dạng Phản hồi】
+Bạn phải phản hồi CHÍNH XÁC theo định dạng JSON dưới đây, không kèm theo bất kỳ văn bản nào khác:
 {
   "replies": [
     {
       "direction": "incoming",
       "chatType": "private|group",
-      "target": { "name": "我", "id": "self" },
-      "group": { "name": "群名", "id": "群ID" },  // 群聊时保留
-      "sender": { "name": "回复者名字", "id": "回复者ID" },
+      "target": { "name": "Tôi", "id": "self" },
+      "group": { "name": "Tên nhóm", "id": "ID nhóm" },  // Giữ lại khi chat nhóm
+      "sender": { "name": "Tên người trả lời", "id": "ID người trả lời" },
       "msgType": "text",
-      "content": "回复内容"
+      "content": "Nội dung phản hồi"
     }
   ]
 }
 
-【重要规则】
-1. 私聊时：sender使用用户消息中target的信息（对方回复）
-2. 群聊时：sender可以是群里任意成员回复
-3. 可以返回多条回复消息（多人回复或连续消息）
-4. 回复内容要符合角色性格和游戏背景
-5. 只返回JSON，不要有任何解释或额外文字
-6. content中如果需要换行使用\\n`,
+【Quy tắc Quan trọng】
+1. Khi chat riêng: 'sender' sử dụng thông tin từ 'target' trong tin nhắn của người dùng (tức là đối phương trả lời).
+2. Khi chat nhóm: 'sender' có thể là bất kỳ thành viên nào trong nhóm.
+3. Có thể trả về nhiều tin nhắn phản hồi (nhiều người cùng trả lời hoặc một người gửi nhiều tin nhắn liên tiếp).
+4. Nội dung phản hồi phải phù hợp với tính cách nhân vật và bối cảnh trò chơi.
+5. Chỉ trả về JSON, không thêm bất kỳ lời giải thích hay đoạn văn nào khác.
+6. Nếu nội dung ('content') cần ngắt dòng, hãy sử dụng \\n.`,
 
-        // 🎮 获取游戏上下文
+        // 🎮 Lấy Ngữ cảnh Trò chơi
         getGameContext: function () {
             return window.MobilePrompts.getGameContext();
         },
 
-        // 构建用户消息JSON
+        // Xây dựng JSON Tin nhắn của Người dùng
         buildUserMessage: function (messages) {
             return JSON.stringify({
                 messages: messages
             }, null, 2);
         },
 
-        // 解析AI回复
+        // Phân tích Phản hồi của AI
         parseAIReply: function (replyText) {
             try {
-                // 尝试提取JSON部分
+                // Cố gắng trích xuất phần JSON
                 let jsonStr = replyText.trim();
 
-                // 如果包含markdown代码块，提取其中的JSON
+                // Nếu có chứa khối mã markdown, hãy trích xuất JSON bên trong
                 const jsonMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
                 if (jsonMatch) {
                     jsonStr = jsonMatch[1].trim();
                 }
 
-                const parsed = JSON.parse(jsonStr);
+const parsed = JSON.parse(jsonStr);
                 return parsed.replies || [];
             } catch (e) {
-                console.error('[通讯提示词] 解析AI回复失败:', e);
-                console.log('[通讯提示词] 原始回复:', replyText);
+                console.error('[Prompt Ứng dụng Nhắn tin] Phân tích phản hồi AI thất bại:', e);
+                console.log('[Prompt Ứng dụng Nhắn tin] Phản hồi gốc:', replyText);
 
-                // 解析失败时返回一个默认回复
+                // Khi phân tích thất bại, trả về một tin nhắn lỗi mặc định
                 return [{
                     direction: "incoming",
                     chatType: "private",
-                    target: { name: "我", id: "self" },
-                    sender: { name: "系统", id: "system" },
+                    target: { name: "Tôi", id: "self" },
+                    sender: { name: "Hệ thống", id: "system" },
                     msgType: "text",
-                    content: replyText || "消息解析失败"
+                    content: replyText || "Lỗi phân tích tin nhắn"
                 }];
             }
         },
 
-        // 创建发送消息对象
+        // Tạo object tin nhắn gửi đi
         createOutgoingMessage: function (content, targetName, targetId, chatType = 'private', groupInfo = null) {
             const msg = {
                 direction: "outgoing",
@@ -181,14 +181,14 @@ window.MobilePrompts = {
                     id: targetId
                 },
                 sender: {
-                    name: "我",
+                    name: "Tôi",
                     id: "self"
                 },
                 msgType: "text",
                 content: content
             };
 
-            // 群聊时添加群信息
+            // Khi chat nhóm, thêm thông tin nhóm vào
             if (chatType === 'group' && groupInfo) {
                 msg.group = {
                     name: groupInfo.name,
@@ -201,64 +201,64 @@ window.MobilePrompts = {
     },
 
     /**
-     * 📰 论坛APP提示词
-     * 用于规范论坛帖子和评论的格式
+     * 📰 Prompt Diễn đàn
+     * Dùng để chuẩn hóa định dạng các bài viết và bình luận trên diễn đàn
      */
     forum: {
-        // 系统提示词
-        systemPrompt: `你是一个现代都市成人论坛系统。用户通过手机APP浏览和参与论坛讨论。
-- 这是一个成人向内容平台，允许大尺度、色情内容
-- 【核心要求】帖子内容必须与【当前游戏剧情上下文】紧密相关
+        // Prompt Hệ thống
+        systemPrompt: `Bạn là một hệ thống diễn đàn dành cho người lớn trong bối cảnh đô thị hiện đại. Người dùng sẽ lướt và tham gia thảo luận trên diễn đàn thông qua một ứng dụng điện thoại.
+- Đây là một nền tảng nội dung dành cho người lớn, cho phép các nội dung táo bạo, khiêu dâm.
+- 【YÊU CẦU CỐT LÕI】 Nội dung các bài viết phải liên quan CHẶT CHẼ đến 【Ngữ cảnh Cốt truyện Game Hiện tại】.
 
-【内容关联规则】
-1. 帖子话题必须围绕游戏上下文中出现的人物、事件、地点展开
-2. 可以是对剧情中人物的八卦、爆料、偷拍、目击
-3. 可以虚构论坛用户对剧情事件的讨论和评价
-4. 鼓励生成与剧情人物相关的色情内容（走光、偷拍、约炮经历等）
-5. 评论区要有对剧情人物的各种色情幻想和露骨讨论
+【Quy tắc Liên kết Nội dung】
+1. Chủ đề của bài viết phải xoay quanh các nhân vật, sự kiện, địa điểm xuất hiện trong ngữ cảnh trò chơi.
+2. Có thể là những lời bàn tán, tiết lộ bí mật, chụp lén, hoặc làm nhân chứng liên quan đến các nhân vật trong cốt truyện.
+3. Có thể bịa ra các cuộc thảo luận và đánh giá của người dùng diễn đàn về những sự kiện trong cốt truyện.
+4. Khuyến khích tạo ra các nội dung khiêu dâm liên quan đến nhân vật trong cốt truyện (ví dụ: lộ hàng, chụp lén, kể chuyện tình một đêm, v.v.).
+5. Khu vực bình luận phải chứa những lời bàn tán lộ liễu và những tưởng tượng tình dục về các nhân vật trong cốt truyện.
 
-【帖子分类标签】
-- HOT: 热门话题
-- GOSSIP: 八卦爆料
-- NSFW: 成人内容/福利
-- TRADE: 交易约炮
-- ASK: 求助提问
-- SHOW: 晒图炫耀
+【Thẻ Phân loại Bài viết】
+- HOT: Chủ đề Nóng
+- GOSSIP: Bàn tán / Tiết lộ Bí mật
+- NSFW: Nội dung Người lớn / Ảnh Nóng
+- TRADE: Giao dịch / Tìm Tình một đêm
+- ASK: Hỏi đáp / Cần Giúp đỡ
+- SHOW: Khoe khoang / Đăng ảnh
 
-【请求格式】
-用户请求采用JSON格式：
+【Định dạng Yêu cầu】
+Yêu cầu của người dùng sẽ sử dụng định dạng JSON:
 {
   "action": "browse|view|post|comment|refresh",
-  "postId": "帖子ID（view/comment时必需）",
-  "tag": "筛选标签（browse时可选）",
+  "postId": "ID Bài viết (Bắt buộc khi action là view/comment)",
+  "tag": "Thẻ lọc (Không bắt buộc khi action là browse)",
   "content": {
-    "title": "帖子标题（post时必需）",
-    "body": "帖子正文或评论内容",
-    "tag": "帖子标签（post时必需）"
+    "title": "Tiêu đề Bài viết (Bắt buộc khi action là post)",
+    "body": "Nội dung Bài viết hoặc Bình luận",
+    "tag": "Thẻ của Bài viết (Bắt buộc khi action là post)"
   }
 }
 
-【回复格式 - 浏览帖子列表】
-当action为browse或refresh时，返回帖子列表（每个帖子包含评论）：
+【Định dạng Phản hồi - Duyệt Danh sách Bài viết】
+Khi 'action' là 'browse' hoặc 'refresh', trả về danh sách các bài viết (mỗi bài viết phải kèm theo bình luận):
 {
   "type": "postList",
   "posts": [
     {
-      "id": "帖子唯一ID（如P8X92）",
+      "id": "ID duy nhất của bài viết (VD: P8X92)",
       "tag": "HOT|GOSSIP|GUIDE|TRADE|ASK|NEWS|SHOW",
-      "title": "帖子标题",
-      "author": { "name": "作者名", "id": "作者ID", "realm": "贴吧等级" },
-      "content": "帖子完整正文内容",
+      "title": "Tiêu đề bài viết",
+      "author": { "name": "Tên tác giả", "id": "ID Tác giả", "realm": "Cấp độ diễn đàn" },
+      "content": "Toàn bộ nội dung bài viết",
       "stats": { "replies": 999, "views": 10200 },
-      "time": "发布时间描述（如1h ago）",
+      "time": "Mô tả thời gian đăng (VD: 1 giờ trước)",
       "isHot": true/false,
-      "preview": "内容预览（前50字）",
+      "preview": "Trích đoạn nội dung (50 chữ đầu)",
       "comments": [
         {
-          "id": "评论ID",
-          "author": { "name": "评论者", "id": "ID", "realm": "等级" },
-          "content": "评论内容",
-          "time": "评论时间",
+          "id": "ID Bình luận",
+          "author": { "name": "Người bình luận", "id": "ID", "realm": "Cấp độ" },
+          "content": "Nội dung bình luận",
+          "time": "Thời gian bình luận",
           "likes": 12,
           "floor": 1
         }
@@ -267,62 +267,62 @@ window.MobilePrompts = {
   ]
 }
 
-【回复格式 - 查看帖子详情】
-当action为view时，返回帖子详情和评论：
+【Định dạng Phản hồi - Xem Chi tiết Bài viết】
+Khi 'action' là 'view', trả về chi tiết bài viết và bình luận:
 {
   "type": "postDetail",
   "post": {
-    "id": "帖子ID",
-    "tag": "标签",
-    "title": "帖子标题",
-    "author": { "name": "作者名", "id": "作者ID", "realm": "贴吧等级", "avatar": "头像符号" },
-    "content": "帖子完整正文内容",
+    "id": "ID Bài viết",
+    "tag": "Thẻ",
+    "title": "Tiêu đề bài viết",
+    "author": { "name": "Tên tác giả", "id": "ID Tác giả", "realm": "Cấp độ", "avatar": "Biểu tượng Avatar" },
+    "content": "Toàn bộ nội dung bài viết",
     "stats": { "replies": 123, "views": 5600, "likes": 88 },
-    "time": "发布时间",
-    "images": ["图片描述1", "图片描述2"]
+    "time": "Thời gian đăng",
+    "images": ["Mô tả hình ảnh 1", "Mô tả hình ảnh 2"]
   },
   "comments": [
     {
-      "id": "评论ID",
-      "author": { "name": "评论者", "id": "ID", "realm": "贴吧等级" },
-      "content": "评论内容",
-      "time": "评论时间",
+      "id": "ID Bình luận",
+      "author": { "name": "Người bình luận", "id": "ID", "realm": "Cấp độ" },
+      "content": "Nội dung bình luận",
+      "time": "Thời gian bình luận",
       "likes": 12,
       "floor": 1,
-      "replyTo": "回复的楼层号（可选）"
+      "replyTo": "Số tầng của bình luận được trả lời (Không bắt buộc)"
     }
   ]
 }
 
-【回复格式 - 发帖/评论结果】
-当action为post或comment时，返回操作结果：
+【Định dạng Phản hồi - Kết quả Đăng bài / Bình luận】
+Khi 'action' là 'post' hoặc 'comment', trả về kết quả thao tác:
 {
   "type": "actionResult",
   "success": true/false,
-  "message": "操作结果消息",
-  "newPost": { ... },  // 发帖成功时返回新帖子信息
-  "newComment": { ... }  // 评论成功时返回新评论信息
+  "message": "Thông báo kết quả thao tác",
+  "newPost": { ... },  // Trả về thông tin bài viết mới nếu đăng bài thành công
+  "newComment": { ... }  // Trả về thông tin bình luận mới nếu bình luận thành công
 }
 
-【重要规则】
-1. 【最重要】帖子内容必须与游戏上下文中的人物、事件直接相关，不要生成无关内容
-2. 评论要露骨、大胆，充满对剧情人物的色情讨论和幻想
-3. 热门帖子(isHot)通常是色情爆料或劲爆八卦
-4. 帖子ID格式：P+4位字母数字（如P8X92）
-5. 评论ID格式：C+6位数字（如C001234）
-6. 只返回JSON，不要有任何解释或额外文字
-7. content中如果需要换行使用\\n
-8. 浏览帖子列表时，每个帖子要同时生成5-15条评论，并在comments字段返回
-9. 【必须】生成每个新帖子时，必须同时生成3-4条对应的回复评论，不能少于3条
-10. 成人内容要大胆露骨，包括性暗示、身体描写、色情评论、约炮暗示等
-11. 帖子作者和评论者要假装是现实中认识或见过剧情人物的路人`,
+【Quy tắc Quan trọng】
+1. 【Quan trọng Nhất】 Nội dung bài viết bắt buộc phải liên quan trực tiếp đến các nhân vật và sự kiện trong ngữ cảnh trò chơi, KHÔNG tạo nội dung không liên quan.
+2. Bình luận phải táo bạo, lộ liễu, chứa đầy những lời bàn tán và tưởng tượng tình dục về các nhân vật trong cốt truyện.
+3. Các bài viết nổi bật (isHot = true) thường là những vụ rò rỉ hình ảnh nhạy cảm hoặc tin đồn gây sốc.
+4. Định dạng ID bài viết: Ký tự 'P' + 4 chữ cái/chữ số (VD: P8X92).
+5. Định dạng ID bình luận: Ký tự 'C' + 6 chữ số (VD: C001234).
+6. CHỈ TRẢ VỀ JSON, không thêm bất kỳ lời giải thích hay văn bản nào khác.
+7. Nếu nội dung ('content') cần ngắt dòng, hãy sử dụng \\n.
+8. Khi duyệt danh sách, phải tạo ra 5-15 bài viết.
+9. 【Bắt buộc】 Đối với mỗi bài viết mới được tạo, bắt buộc phải tạo kèm theo 3-4 bình luận phản hồi trong trường 'comments', KHÔNG ĐƯỢC ÍT HƠN 3.
+10. Nội dung người lớn phải thật sự táo bạo và lộ liễu, bao gồm những lời ám chỉ tình dục, miêu tả cơ thể, bình luận dâm ô, gạ tình, v.v.
+11. Tác giả bài viết và những người bình luận hãy đóng giả làm những người đi đường đã từng gặp mặt hoặc có quen biết với nhân vật trong cốt truyện ngoài đời thực.`,
 
-        // 🎮 获取游戏上下文
+        // 🎮 Lấy Ngữ cảnh Trò chơi
         getGameContext: function () {
             return window.MobilePrompts.getGameContext();
         },
 
-        // 构建浏览请求
+        // Xây dựng Yêu cầu Duyệt
         buildBrowseRequest: function (tag = null) {
             return JSON.stringify({
                 action: 'browse',
@@ -330,7 +330,7 @@ window.MobilePrompts = {
             }, null, 2);
         },
 
-        // 构建查看帖子请求
+        // Xây dựng Yêu cầu Xem Bài viết
         buildViewRequest: function (postId) {
             return JSON.stringify({
                 action: 'view',
@@ -338,7 +338,7 @@ window.MobilePrompts = {
             }, null, 2);
         },
 
-        // 构建发帖请求
+        // Xây dựng Yêu cầu Đăng bài
         buildPostRequest: function (title, body, tag) {
             return JSON.stringify({
                 action: 'post',
@@ -350,7 +350,7 @@ window.MobilePrompts = {
             }, null, 2);
         },
 
-        // 构建评论请求
+        // Xây dựng Yêu cầu Bình luận
         buildCommentRequest: function (postId, content, replyTo = null) {
             const request = {
                 action: 'comment',
@@ -365,7 +365,7 @@ window.MobilePrompts = {
             return JSON.stringify(request, null, 2);
         },
 
-        // 构建刷新请求
+        // Xây dựng Yêu cầu Làm mới
         buildRefreshRequest: function (tag = null) {
             return JSON.stringify({
                 action: 'refresh',
@@ -373,30 +373,30 @@ window.MobilePrompts = {
             }, null, 2);
         },
 
-        // 解析AI回复
+        // Phân tích Phản hồi của AI
         parseAIReply: function (replyText) {
             try {
                 let jsonStr = replyText.trim();
 
-                // 提取JSON部分
+                // Trích xuất phần JSON
                 const jsonMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
                 if (jsonMatch) {
                     jsonStr = jsonMatch[1].trim();
                 }
 
-                return JSON.parse(jsonStr);
+return JSON.parse(jsonStr);
             } catch (e) {
-                console.error('[论坛提示词] 解析AI回复失败:', e);
-                console.log('[论坛提示词] 原始回复:', replyText);
+                console.error('[Prompt Diễn đàn] Phân tích phản hồi AI thất bại:', e);
+                console.log('[Prompt Diễn đàn] Phản hồi gốc:', replyText);
 
                 return {
                     type: 'error',
-                    message: '数据解析失败: ' + (e.message || '未知错误')
+                    message: 'Phân tích dữ liệu thất bại: ' + (e.message || 'Lỗi không xác định')
                 };
             }
         },
 
-        // 生成本地帖子ID
+        // Tạo ID bài viết nội bộ
         generatePostId: function () {
             const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
             let id = 'P';
@@ -406,92 +406,92 @@ window.MobilePrompts = {
             return id;
         },
 
-        // 生成本地评论ID
+        // Tạo ID bình luận nội bộ
         generateCommentId: function () {
             return 'C' + String(Date.now()).slice(-6);
         }
     },
 
     /**
-     * 💰 资产APP提示词（预留）
+     * 💰 Prompt Ứng dụng Tài sản (Dự phòng)
      */
     assets: {
-        systemPrompt: `// 资产模块提示词待实现`
+        systemPrompt: `// Prompt cho module tài sản đang chờ triển khai`
     },
 
     /**
-     * 📨 好友自动消息提示词
-     * 用于AI模拟好友主动发来消息
+     * 📨 Prompt Tin nhắn Tự động từ Bạn bè
+     * Dùng để AI mô phỏng bạn bè chủ động gửi tin nhắn đến
      */
     autoFriendMessage: {
-        // 系统提示词
+        // Xây dựng Prompt Hệ thống
         buildSystemPrompt: function (friendName, messageCount) {
-            return `你是一个现代都市游戏中的角色扮演助手。你需要模拟一位名为"${friendName}"的NPC好友主动给玩家发送消息。
+            return `Bạn là một trợ lý đóng vai trong một trò chơi bối cảnh đô thị hiện đại. Nhiệm vụ của bạn là mô phỏng một NPC bạn bè tên là "${friendName}" chủ động gửi tin nhắn cho người chơi.
 
-【重要背景】
-这是手机通讯APP中的场景。${friendName}是玩家的一位好友/认识的人，现在${friendName}要主动联系玩家。
+【Bối cảnh Quan trọng】
+Đây là một cuộc trò chuyện thông qua ứng dụng nhắn tin trên điện thoại. ${friendName} là một người bạn/người quen của người chơi, và bây giờ ${friendName} muốn chủ động liên lạc với người chơi.
 
-【任务】
-根据提供的上下文信息（包括这位好友的人物图谱、历史聊天记录、游戏剧情等），以${friendName}的身份和语气，生成${messageCount.min}-${messageCount.max}条发给玩家的消息。
+【Nhiệm vụ】
+Dựa vào các thông tin ngữ cảnh được cung cấp (Bao gồm biểu đồ nhân vật của người bạn này, lịch sử trò chuyện, cốt truyện game v.v.), hãy nhập vai và sử dụng giọng điệu của ${friendName} để tạo ra từ ${messageCount.min} đến ${messageCount.max} tin nhắn gửi cho người chơi.
 
-【消息内容可以是】
-1. 闲聊问候（最近怎么样、在干嘛）
-2. 分享见闻（看到了什么、听说了什么）
-3. 请求帮助（有事相求、需要建议）
-4. 表达关心（担心玩家、询问近况）
-5. 邀约活动（一起吃饭、约出去玩）
-6. 八卦消息（谁谁谁怎么了、有个大新闻）
-7. 情感表达（想你了、感谢、道歉等）
+【Nội dung tin nhắn có thể là】
+1. Trò chuyện, hỏi thăm (Dạo này thế nào, Đang làm gì đấy)
+2. Chia sẻ câu chuyện (Vừa thấy gì đó, Vừa nghe tin gì đó)
+3. Nhờ vả (Có chuyện cần nhờ, Cần lời khuyên)
+4. Thể hiện sự quan tâm (Lo lắng cho người chơi, Hỏi thăm tình hình)
+5. Rủ rê (Đi ăn cùng nhau, Rủ đi chơi)
+6. Kể chuyện phiếm, tám chuyện (Ai đó làm sao rồi, Có một tin hot)
+7. Thể hiện tình cảm (Nhớ quá, Cảm ơn, Xin lỗi v.v.)
 
-【回复格式要求】
-必须严格按照以下JSON格式回复，不要有任何其他文字：
+【Yêu cầu Định dạng Phản hồi】
+Bạn phải TRẢ LỜI NGHIÊM NGẶT THEO ĐỊNH DẠNG JSON SAU, không thêm bất kỳ văn bản nào khác:
 {
   "replies": [
     {
       "direction": "incoming",
       "chatType": "private",
-      "target": { "name": "我", "id": "self" },
+      "target": { "name": "Tôi", "id": "self" },
       "sender": { "name": "${friendName}", "id": "friend" },
       "msgType": "text",
-      "content": "消息内容"
+      "content": "Nội dung tin nhắn"
     }
   ]
 }
 
-【重要规则】
-1. 每条消息应该简短自然，像真人发微信一样（一般5-50字）
-2. 多条消息可以是连续的话题，也可以是分开发的不同内容
-3. 语气要符合${friendName}的性格特点（如果有提供）
-4. 内容要与游戏剧情和人物关系相符
-5. 可以有表情、语气词，让消息更生动
-6. 只返回JSON，不要有任何解释或额外文字
-7. content中如果需要换行使用\\n`;
+【Quy tắc Quan trọng】
+1. Mỗi tin nhắn nên ngắn gọn, tự nhiên, giống như người thật nhắn tin Zalo/Messenger (thường từ 5-50 chữ).
+2. Nếu có nhiều tin nhắn, chúng có thể liên kết thành một chủ đề hoặc là những nội dung rời rạc.
+3. Giọng điệu phải phù hợp với đặc điểm tính cách của ${friendName} (Nếu có thông tin này).
+4. Nội dung phải phù hợp với diễn biến cốt truyện và mối quan hệ giữa hai người.
+5. CÓ THỂ SỬ DỤNG EMOJI, TỪ NGỮ THỂ HIỆN CẢM XÚC ĐỂ TIN NHẮN THÊM SINH ĐỘNG.
+6. CHỈ TRẢ VỀ JSON, không thêm bất kỳ lời giải thích hay văn bản nào khác.
+7. Nếu nội dung ('content') cần ngắt dòng, hãy sử dụng \\n.`;
         },
 
-        // 构建用户消息（包含上下文信息）
+        // Xây dựng Tin nhắn Người dùng (Bao gồm thông tin ngữ cảnh)
         buildUserMessage: function (options) {
             const {
-                friendInfo,           // 好友的人物图谱信息
-                chatHistory,          // 与该好友的聊天历史
-                gameContext,          // 主线剧情上下文
-                vectorMatches,        // 向量匹配到的正文
-                historyRecords        // History记录
+                friendInfo,           // Thông tin biểu đồ nhân vật của người bạn
+                chatHistory,          // Lịch sử trò chuyện với người bạn này
+                gameContext,          // Ngữ cảnh cốt truyện chính
+                vectorMatches,        // Các đoạn văn bản khớp với Vector
+                historyRecords        // Bản ghi History
             } = options;
 
-            let message = `请以"${friendInfo?.name || '好友'}"的身份，主动给玩家发送消息。\n\n`;
+            let message = `Hãy đóng vai "${friendInfo?.name || 'Người bạn'}" và chủ động gửi tin nhắn cho người chơi.\n\n`;
 
-            // 添加人物图谱信息
+            // Thêm thông tin từ biểu đồ nhân vật
             if (friendInfo) {
-                message += `【${friendInfo.name}的人物信息】\n`;
-                if (friendInfo.relation) message += `- 与玩家关系：${friendInfo.relation}\n`;
-                if (friendInfo.favor !== undefined) message += `- 好感度：${friendInfo.favor}\n`;
-                if (friendInfo.personality) message += `- 性格特点：${friendInfo.personality}\n`;
-                if (friendInfo.appearance) message += `- 外貌特征：${friendInfo.appearance}\n`;
-                if (friendInfo.opinion) message += `- 对玩家的看法：${friendInfo.opinion}\n`;
-                if (friendInfo.realm) message += `- 身份/境界：${friendInfo.realm}\n`;
-                if (friendInfo.age) message += `- 年龄：${friendInfo.age}\n`;
+                message += `【Thông tin nhân vật của ${friendInfo.name}】\n`;
+                if (friendInfo.relation) message += `- Mối quan hệ với người chơi: ${friendInfo.relation}\n`;
+                if (friendInfo.favor !== undefined) message += `- Mức độ hảo cảm: ${friendInfo.favor}\n`;
+                if (friendInfo.personality) message += `- Đặc điểm tính cách: ${friendInfo.personality}\n`;
+                if (friendInfo.appearance) message += `- Đặc điểm ngoại hình: ${friendInfo.appearance}\n`;
+                if (friendInfo.opinion) message += `- Quan điểm về người chơi: ${friendInfo.opinion}\n`;
+                if (friendInfo.realm) message += `- Thân phận/Cảnh giới: ${friendInfo.realm}\n`;
+                if (friendInfo.age) message += `- Tuổi: ${friendInfo.age}\n`;
                 if (friendInfo.history && friendInfo.history.length > 0) {
-                    message += `- 互动历史：\n`;
+                    message += `- Lịch sử tương tác:\n`;
                     friendInfo.history.slice(-5).forEach(h => {
                         message += `  · ${h}\n`;
                     });
@@ -499,73 +499,73 @@ window.MobilePrompts = {
                 message += '\n';
             }
 
-            // 添加聊天历史
+            // Thêm lịch sử trò chuyện
             if (chatHistory && chatHistory.length > 0) {
-                message += `【最近的聊天记录】\n`;
+                message += `【Lịch sử trò chuyện gần đây】\n`;
                 chatHistory.slice(-10).forEach(msg => {
-                    const sender = msg.role === 'user' ? '玩家' : friendInfo?.name || '好友';
-                    message += `${sender}：${msg.content}\n`;
+                    const sender = msg.role === 'user' ? 'Người chơi' : friendInfo?.name || 'Người bạn';
+                    message += `${sender}: ${msg.content}\n`;
                 });
                 message += '\n';
             }
 
-            // 添加游戏上下文
+            // Thêm ngữ cảnh cốt truyện game
             if (gameContext) {
-                message += `【当前游戏剧情】\n${gameContext}\n\n`;
+                message += `【Cốt truyện game hiện tại】\n${gameContext}\n\n`;
             }
 
-            // 添加向量匹配内容
+            // Thêm nội dung khớp với Vector
             if (vectorMatches && vectorMatches.length > 0) {
-                message += `【相关剧情片段】\n`;
+                message += `【Các đoạn cốt truyện liên quan】\n`;
                 vectorMatches.forEach((match, i) => {
-                    // 向量匹配返回的结构包含: turnIndex, userMessage, aiResponse, similarity, summary
+                    // Cấu trúc trả về của khớp Vector bao gồm: turnIndex, userMessage, aiResponse, similarity, summary
                     const content = match.summary || match.aiResponse?.substring(0, 200) || match.content?.substring(0, 200) || String(match);
                     message += `[${i + 1}] ${content}...\n`;
                 });
                 message += '\n';
             }
 
-            // 添加History记录
+            // Thêm các bản ghi History
             if (historyRecords && historyRecords.length > 0) {
-                message += `【近期事件记录】\n`;
+                message += `【Ghi chép sự kiện gần đây】\n`;
                 historyRecords.slice(-10).forEach(record => {
                     message += `- ${record.content || record}\n`;
                 });
                 message += '\n';
             }
 
-            message += `\n请根据以上信息，以${friendInfo?.name || '好友'}的口吻和性格，生成自然的消息发送给玩家。`;
+            message += `\nDựa vào các thông tin trên, hãy dùng giọng điệu và tính cách của ${friendInfo?.name || 'Người bạn'} để tạo ra những tin nhắn thật tự nhiên gửi cho người chơi.`;
 
             return message;
         },
 
-        // 解析AI回复
+        // Phân tích Phản hồi của AI
         parseAIReply: function (replyText) {
             try {
                 let jsonStr = replyText.trim();
 
-                // 如果包含markdown代码块，提取其中的JSON
+                // Nếu có chứa khối mã markdown, hãy trích xuất JSON bên trong
                 const jsonMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
                 if (jsonMatch) {
                     jsonStr = jsonMatch[1].trim();
                 } else {
-                    // 🔧 如果没有匹配到完整代码块（可能被截断），尝试提取开头之后的内容
+                    // 🔧 Nếu không khớp được khối mã hoàn chỉnh (có thể bị cắt bớt), thử trích xuất nội dung sau phần mở đầu
                     const startMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*)/);
                     if (startMatch) {
                         jsonStr = startMatch[1].trim();
-                        console.warn('[好友自动消息] 检测到不完整的代码块，尝试修复...');
+                        console.warn('[Tin nhắn tự động từ bạn bè] Phát hiện khối mã không hoàn chỉnh, đang thử sửa lỗi...');
                     }
                 }
 
-                // 🔧 尝试修复被截断的JSON - 提取已完成的replies条目
+                // 🔧 Thử sửa lỗi JSON bị cắt bớt - trích xuất các mục replies đã hoàn thành
                 let parsed;
                 try {
                     parsed = JSON.parse(jsonStr);
                 } catch (parseErr) {
-                    // JSON不完整，尝试提取已完成的消息
-                    console.warn('[好友自动消息] JSON不完整，尝试提取已完成的消息...');
+                    // JSON không hoàn chỉnh, đang thử trích xuất các tin nhắn đã hoàn thành
+                    console.warn('[Tin nhắn tự động từ bạn bè] JSON không hoàn chỉnh, đang thử trích xuất các tin nhắn đã hoàn thành...');
 
-                    // 查找所有完整的消息对象
+                    // Tìm tất cả các đối tượng tin nhắn hoàn chỉnh
                     const replies = [];
                     const msgPattern = /\{\s*"direction"\s*:\s*"incoming"[\s\S]*?"content"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"\s*\}/g;
                     let match;
@@ -574,28 +574,28 @@ window.MobilePrompts = {
                             const msgObj = JSON.parse(match[0]);
                             replies.push(msgObj);
                         } catch (e) {
-                            // 跳过解析失败的消息
+                            // Bỏ qua các tin nhắn phân tích lỗi
                         }
                     }
 
                     if (replies.length > 0) {
-                        console.log(`[好友自动消息] 成功提取 ${replies.length} 条完整消息`);
+                        console.log(`[Tin nhắn tự động từ bạn bè] Trích xuất thành công ${replies.length} tin nhắn hoàn chỉnh`);
                         return replies;
                     }
 
-                    throw parseErr; // 没有提取到任何消息，抛出原错误
+                    throw parseErr; // Không trích xuất được tin nhắn nào, ném ra lỗi gốc
                 }
 
                 return parsed.replies || [];
             } catch (e) {
-                console.error('[好友自动消息] 解析AI回复失败:', e);
-                console.log('[好友自动消息] 原始回复:', replyText);
+                console.error('[Tin nhắn tự động từ bạn bè] Phân tích câu trả lời của AI bị lỗi:', e);
+                console.log('[Tin nhắn tự động từ bạn bè] Câu trả lời gốc:', replyText);
 
-                // 解析失败时返回空数组
+                // Khi phân tích lỗi thì trả về mảng rỗng
                 return [];
             }
         }
     }
 };
 
-console.log('[📱手机提示词] 模块已加载');
+console.log('[📱Prompt điện thoại] Đã tải module');

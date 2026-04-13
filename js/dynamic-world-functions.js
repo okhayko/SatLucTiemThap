@@ -1,35 +1,35 @@
 /**
- * 动态世界功能模块
- * 包含：动态世界生成、显示、配置管理、变量合并等
- * 从 game.html 中提取的动态世界相关功能模块
+ * Module chức năng Thế giới động (Dynamic World)
+ * Bao gồm: Tạo, hiển thị, quản lý cấu hình, hợp nhất biến, v.v. cho Thế giới động
+ * Được trích xuất từ các chức năng liên quan đến Thế giới động trong game.html
  */
 
-// ==================== 动态世界相关函数 ====================
+// ==================== Các hàm liên quan đến Thế giới động ====================
 
-// 切换Tab
+// Chuyển đổi Tab
 function switchTab(tabName) {
-    // 移除所有active类
+    // Loại bỏ tất cả các class 'active'
     document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
 
-    // 添加active类到选中的tab
+    // Thêm class 'active' vào tab được chọn
     if (tabName === 'status') {
         document.querySelector('[onclick*="switchTab(\'status\')"]').classList.add('active');
         document.getElementById('statusTab').classList.add('active');
     } else if (tabName === 'baiyi') {
         document.querySelector('[onclick*="switchTab(\'baiyi\')"]').classList.add('active');
         document.getElementById('baiyiTab').classList.add('active');
-        // 更新百艺材料列表
+        // Cập nhật danh sách nguyên liệu Bách Nghệ (Baiyi)
         updateBaiyiMaterialsList();
     } else if (tabName === 'dynamicWorld') {
         document.querySelector('[onclick*="switchTab(\'dynamicWorld\')"]').classList.add('active');
         document.getElementById('dynamicWorldTab').classList.add('active');
-        // 更新动态世界显示
+        // Cập nhật hiển thị Thế giới động
         displayDynamicWorldHistory();
     }
 }
 
-// 切换动态世界配置字段
+// Bật/tắt các trường cấu hình Thế giới động
 function toggleDynamicWorldFields() {
     const enabled = document.getElementById('enableDynamicWorld').checked;
     const fieldsDiv = document.getElementById('dynamicWorldFields');
@@ -43,7 +43,7 @@ function toggleDynamicWorldFields() {
     }
 }
 
-// 保存动态世界设置
+// Lưu cài đặt Thế giới động
 function saveDynamicWorldSettings() {
     const enabled = document.getElementById('enableDynamicWorld').checked;
     const historyDepth = document.getElementById('dynamicWorldHistoryDepth').value;
@@ -53,11 +53,11 @@ function saveDynamicWorldSettings() {
     const enableKnowledge = document.getElementById('dynamicWorldEnableKnowledge').checked;
     const prompt = document.getElementById('dynamicWorldPrompt').value;
 
-    // 获取现有配置
+    // Lấy cấu hình hiện tại
     const saved = localStorage.getItem('gameConfig');
     const config = saved ? JSON.parse(saved) : {};
 
-    // 更新动态世界配置
+    // Cập nhật cấu hình Thế giới động
     config.dynamicWorld = {
         enabled: enabled,
         historyDepth: parseInt(historyDepth),
@@ -68,79 +68,79 @@ function saveDynamicWorldSettings() {
         prompt: prompt
     };
 
-    // 保存到localStorage
+    // Lưu vào localStorage
     localStorage.setItem('gameConfig', JSON.stringify(config));
 
-    // 更新gameState
+    // Cập nhật gameState
     gameState.dynamicWorld.enabled = enabled;
     gameState.dynamicWorld.messageInterval = parseInt(messageInterval);
 
-    // 立即更新显示
+    // Cập nhật hiển thị ngay lập tức
     displayDynamicWorldHistory();
 
-    alert('动态世界设置已保存！\n启用状态: ' + (enabled ? '已启用' : '未启用') + 
-          '\n历史层数: ' + historyDepth + '\n最小字数: ' + minWords + 
-          '\n生成间隔: 每 ' + messageInterval + ' 次用户消息');
+    alert('Cài đặt Thế giới động đã được lưu!\nTrạng thái: ' + (enabled ? 'Đã bật' : 'Chưa bật') + 
+          '\nSố tầng lịch sử: ' + historyDepth + '\nSố chữ tối thiểu: ' + minWords + 
+          '\nKhoảng cách tạo: Mỗi ' + messageInterval + ' tin nhắn người dùng');
 }
 
-// 🔧 兼容性检查：获取extraApiConfig（兼容全局和局部变量）
+// 🔧 Kiểm tra tính tương thích: Lấy extraApiConfig (tương thích biến toàn cục và cục bộ)
 function getExtraApiConfig() {
-    // 如果是BHZ环境，使用全局变量
+    // Nếu trong môi trường BHZ, sử dụng biến toàn cục
     if (window.extraApiConfig) {
         return window.extraApiConfig;
     }
-    // 如果是原版环境，使用局部变量（需要通过window传递）
+    // Nếu trong môi trường gốc, sử dụng biến cục bộ (cần truyền qua window)
     if (typeof extraApiConfig !== 'undefined') {
         return extraApiConfig;
     }
-    // 都不存在则返回空对象
+    // Nếu cả hai không tồn tại, trả về đối tượng trống
     return { enabled: false, key: '' };
 }
 
-// 显示动态世界历史
+// Hiển thị lịch sử Thế giới động
 function displayDynamicWorldHistory() {
     const container = document.getElementById('dynamicWorldContainer');
 
-    // 如果容器不存在（状态面板还未加载），则跳过
+    // Nếu container không tồn tại (bảng trạng thái chưa tải), bỏ qua
     if (!container) {
-        console.warn('[动态世界] dynamicWorldContainer 元素不存在，跳过显示');
+        console.warn('[Thế giới động] Phần tử dynamicWorldContainer không tồn tại, bỏ qua hiển thị');
         return;
     }
 
-    // 🔧 调试：检查extraApiConfig的实际值
+    // 🔧 Gỡ lỗi: Kiểm tra giá trị thực tế của extraApiConfig
     const extraApiConfig = getExtraApiConfig();
-    console.log('[动态世界] 🔧 调试信息:');
-    console.log('- extraApiConfig 存在:', !!extraApiConfig);
-    console.log('- extraApiConfig 值:', extraApiConfig);
-    console.log('- enabled:', extraApiConfig?.enabled);
-    console.log('- hasKey:', !!extraApiConfig?.key);
-    console.log('- key长度:', extraApiConfig?.key?.length || 0);
+    console.log('[Thế giới động] 🔧 Thông tin gỡ lỗi:');
+    console.log('- extraApiConfig tồn tại:', !!extraApiConfig);
+    console.log('- Giá trị extraApiConfig:', extraApiConfig);
+    console.log('- Đã bật:', extraApiConfig?.enabled);
+    console.log('- Có Key:', !!extraApiConfig?.key);
+    console.log('- Độ dài Key:', extraApiConfig?.key?.length || 0);
 
     if (!gameState.dynamicWorld.enabled) {
         container.innerHTML = `
             <div style="text-align: center; padding: 40px; color: #999;">
                 <div style="font-size: 48px; margin-bottom: 15px;">🌍</div>
-                <div style="font-size: 16px; margin-bottom: 10px;">动态世界未启用</div>
-                <div style="font-size: 12px; margin-bottom: 15px;">请在设置中启用动态世界功能</div>
+                <div style="font-size: 16px; margin-bottom: 10px;">Thế giới động chưa bật</div>
+                <div style="font-size: 12px; margin-bottom: 15px;">Vui lòng bật chức năng Thế giới động trong phần cài đặt</div>
                 <button onclick="openConfigModal(); setTimeout(() => { toggleSection('dynamicWorldSettings'); document.getElementById('dynamicWorldSettings').scrollIntoView(); }, 100);" 
                     style="padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">
-                    前往设置
+                    Đi tới Cài đặt
                 </button>
             </div>
         `;
         return;
     }
 
-    // 检查额外API配置
+    // Kiểm tra cấu hình API bổ sung
     if (!extraApiConfig.enabled || !extraApiConfig.key) {
         container.innerHTML = `
             <div style="text-align: center; padding: 40px; color: #999;">
                 <div style="font-size: 48px; margin-bottom: 15px;">⚠️</div>
-                <div style="font-size: 16px; margin-bottom: 10px; color: #e67e22;">额外API未配置</div>
-                <div style="font-size: 12px; margin-bottom: 15px;">动态世界需要使用第二API<br>请先配置并保存额外API</div>
+                <div style="font-size: 16px; margin-bottom: 10px; color: #e67e22;">API bổ sung chưa được cấu hình</div>
+                <div style="font-size: 12px; margin-bottom: 15px;">Thế giới động cần sử dụng API thứ hai<br>Vui lòng cấu hình và lưu API bổ sung trước</div>
                 <button onclick="openConfigModal(); setTimeout(() => { toggleSection('extraApiSection'); document.getElementById('extraApiSection').scrollIntoView(); }, 100);" 
                     style="padding: 10px 20px; background: #e67e22; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">
-                    配置额外API
+                    Cấu hình API bổ sung
                 </button>
             </div>
         `;
@@ -151,14 +151,14 @@ function displayDynamicWorldHistory() {
         container.innerHTML = `
             <div style="text-align: center; padding: 40px; color: #999;">
                 <div style="font-size: 48px; margin-bottom: 15px;">🌍</div>
-                <div style="font-size: 16px; margin-bottom: 10px;">暂无动态世界内容</div>
-                <div style="font-size: 12px;">✅ 动态世界已启用<br>✅ 额外API已配置<br><br>开始游戏后将自动生成</div>
+                <div style="font-size: 16px; margin-bottom: 10px;">Chưa có nội dung Thế giới động</div>
+                <div style="font-size: 12px;">✅ Thế giới động đã bật<br>✅ API bổ sung đã cấu hình<br><br>Nội dung sẽ tự động tạo sau khi bắt đầu game</div>
             </div>
         `;
         return;
     }
 
-    // 显示所有动态世界历史（倒序，最新的在上面）
+    // Hiển thị tất cả lịch sử Thế giới động (thứ tự ngược, mới nhất ở trên)
     let html = '';
     for (let i = gameState.dynamicWorld.history.length - 1; i >= 0; i--) {
         const entry = gameState.dynamicWorld.history[i];
@@ -167,13 +167,13 @@ function displayDynamicWorldHistory() {
         html += `
             <div class="dynamic-world-entry">
                 <div class="dynamic-world-header">
-                    <span class="dynamic-world-floor">🏛️ 第 ${floor} 层</span>
-                    <span class="dynamic-world-time">${new Date(entry.timestamp).toLocaleString('zh-CN')}</span>
+                    <span class="dynamic-world-floor">🏛️ Tầng ${floor}</span>
+                    <span class="dynamic-world-time">${new Date(entry.timestamp).toLocaleString('vi-VN')}</span>
                 </div>
                 ${entry.reasoning && entry.showReasoning ? createDynamicWorldReasoningDisplay(entry.reasoning) : ''}
                 <div class="dynamic-world-content">${entry.story}</div>
                 <div class="dynamic-world-controls">
-                    <button class="regenerate-btn" onclick="regenerateDynamicWorld(${i})">重试</button>
+                    <button class="regenerate-btn" onclick="regenerateDynamicWorld(${i})">Thử lại</button>
                 </div>
             </div>
         `;
@@ -182,13 +182,13 @@ function displayDynamicWorldHistory() {
     container.innerHTML = html;
 }
 
-// 创建动态世界思维链显示
+// Tạo hiển thị chuỗi tư duy (reasoning chain) cho Thế giới động
 function createDynamicWorldReasoningDisplay(reasoning) {
     let html = `
         <div class="reasoning-container" style="margin-bottom: 10px;">
             <div class="reasoning-header" style="cursor: pointer;" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
-                <span>🧠 动态世界思维链</span>
-                <span class="reasoning-toggle">点击展开/折叠</span>
+                <span>🧠 Chuỗi tư duy Thế giới động</span>
+                <span class="reasoning-toggle">Nhấp để mở/đóng</span>
             </div>
             <div class="reasoning-content" style="display: none;">
     `;
@@ -196,7 +196,7 @@ function createDynamicWorldReasoningDisplay(reasoning) {
     if (reasoning.worldState) {
         html += `
             <div style="margin-bottom: 8px;">
-                <div class="reasoning-header" style="font-size: 12px;">🌐 世界状态分析</div>
+                <div class="reasoning-header" style="font-size: 12px;">🌐 Phân tích trạng thái thế giới</div>
                 <div class="reasoning-text">${reasoning.worldState}</div>
             </div>
         `;
@@ -205,7 +205,7 @@ function createDynamicWorldReasoningDisplay(reasoning) {
     if (reasoning.timeframe) {
         html += `
             <div style="margin-bottom: 8px;">
-                <div class="reasoning-header" style="font-size: 12px;">⏰ 时间范围</div>
+                <div class="reasoning-header" style="font-size: 12px;">⏰ Phạm vi thời gian</div>
                 <div class="reasoning-text">${reasoning.timeframe}</div>
             </div>
         `;
@@ -214,7 +214,7 @@ function createDynamicWorldReasoningDisplay(reasoning) {
     if (reasoning.keyEvents && Array.isArray(reasoning.keyEvents)) {
         html += `
             <div style="margin-bottom: 8px;">
-                <div class="reasoning-header" style="font-size: 12px;">📌 关键事件</div>
+                <div class="reasoning-header" style="font-size: 12px;">📌 Sự kiện chính</div>
                 <ul class="reasoning-chain">
                     ${reasoning.keyEvents.map(event => `<li>${event}</li>`).join('')}
                 </ul>
@@ -225,7 +225,7 @@ function createDynamicWorldReasoningDisplay(reasoning) {
     if (reasoning.npcActions) {
         html += `
             <div style="margin-bottom: 8px;">
-                <div class="reasoning-header" style="font-size: 12px;">👥 NPC行动</div>
+                <div class="reasoning-header" style="font-size: 12px;">👥 Hành động NPC</div>
                 <div class="reasoning-text">${reasoning.npcActions}</div>
             </div>
         `;
@@ -234,7 +234,7 @@ function createDynamicWorldReasoningDisplay(reasoning) {
     if (reasoning.impact) {
         html += `
             <div style="margin-bottom: 8px;">
-                <div class="reasoning-header" style="font-size: 12px;">💫 潜在影响</div>
+                <div class="reasoning-header" style="font-size: 12px;">💫 Ảnh hưởng tiềm tàng</div>
                 <div class="reasoning-text">${reasoning.impact}</div>
             </div>
         `;
@@ -248,73 +248,73 @@ function createDynamicWorldReasoningDisplay(reasoning) {
     return html;
 }
 
-// 生成动态世界内容
+// Tạo nội dung Thế giới động
 async function generateDynamicWorld() {
-    console.log('[动态世界] 触发生成函数');
-    console.log('[动态世界] 启用状态:', gameState.dynamicWorld.enabled);
+    console.log('[Thế giới động] Kích hoạt hàm tạo');
+    console.log('[Thế giới động] Trạng thái bật:', gameState.dynamicWorld.enabled);
     
     const extraApiConfig = getExtraApiConfig();
-    console.log('[动态世界] 额外API配置:', {
+    console.log('[Thế giới động] Cấu hình API bổ sung:', {
         enabled: extraApiConfig.enabled,
         hasKey: !!extraApiConfig.key,
         hasEndpoint: !!extraApiConfig.endpoint,
         hasModel: !!extraApiConfig.model
     });
 
-    // 检查是否启用动态世界
+    // Kiểm tra xem Thế giới động có được bật không
     if (!gameState.dynamicWorld.enabled) {
-        console.log('[动态世界] 未启用，跳过生成');
+        console.log('[Thế giới động] Chưa bật, bỏ qua bước tạo');
         return;
     }
 
-    // 🆕 增加消息计数器并检查是否达到生成间隔
+    // 🆕 Tăng bộ đếm tin nhắn và kiểm tra xem đã đạt khoảng cách tạo chưa
     gameState.dynamicWorld.messageCounter = (gameState.dynamicWorld.messageCounter || 0) + 1;
     const interval = gameState.dynamicWorld.messageInterval || 5;
     
     if (gameState.dynamicWorld.messageCounter < interval) {
-        console.log(`[动态世界] 未达到生成间隔（${gameState.dynamicWorld.messageCounter}/${interval}），跳过本次生成`);
+        console.log(`[Thế giới động] Chưa đạt khoảng cách tạo (${gameState.dynamicWorld.messageCounter}/${interval}), bỏ qua lần này`);
         return;
     }
     
-    // 达到间隔，重置计数器
-    console.log('[动态世界] 达到生成间隔，重置计数器并开始生成');
+    // Đạt khoảng cách, đặt lại bộ đếm
+    console.log('[Thế giới động] Đã đạt khoảng cách tạo, đặt lại bộ đếm và bắt đầu tạo');
     gameState.dynamicWorld.messageCounter = 0;
 
-    // 检查额外API是否配置
+    // Kiểm tra API bổ sung đã cấu hình chưa
     if (!extraApiConfig.enabled || !extraApiConfig.key) {
-        console.warn('[动态世界] 额外API未配置！');
-        console.warn('[动态世界] 请在【设置 → 额外API设置】中配置并保存第二API');
+        console.warn('[Thế giới động] API bổ sung chưa được cấu hình!');
+        console.warn('[Thế giới động] Vui lòng cấu hình và lưu API thứ hai trong 【Cài đặt → Cài đặt API bổ sung】');
         return;
     }
 
-    // 避免重复请求
+    // Tránh yêu cầu trùng lặp
     if (gameState.dynamicWorld.isProcessing) {
-        console.warn('[动态世界] 正在处理中，跳过本次生成');
-        console.warn('[动态世界] 如果卡住了，请在控制台执行: gameState.dynamicWorld.isProcessing = false');
+        console.warn('[Thế giới động] Đang xử lý, bỏ qua lượt tạo này');
+        console.warn('[Thế giới động] Nếu bị kẹt, hãy thực thi trong console: gameState.dynamicWorld.isProcessing = false');
         return;
     }
 
-    console.log('[动态世界] 开始生成...');
+    console.log('[Thế giới động] Bắt đầu tạo...');
     gameState.dynamicWorld.isProcessing = true;
 
-    // 显示加载提示
+    // Hiển thị thông báo đang tải
     const historyDiv = document.getElementById('gameHistory');
     const loadingDiv = document.createElement('div');
     loadingDiv.className = 'message ai-message';
     loadingDiv.id = 'dynamic-world-loading';
     loadingDiv.innerHTML = `
         <div class="message-header">
-            <span>🌍 动态世界</span>
+            <span>🌍 Thế giới động</span>
         </div>
         <div class="message-content">
-            <span class="loading"></span> AI正在生成动态世界内容...
+            <span class="loading"></span> AI đang tạo nội dung Thế giới động...
         </div>
     `;
     historyDiv.appendChild(loadingDiv);
     historyDiv.scrollTop = historyDiv.scrollHeight;
 
     try {
-        // 获取动态世界配置
+        // Lấy cấu hình Thế giới động
         const saved = localStorage.getItem('gameConfig');
         const config = saved ? JSON.parse(saved) : {};
         const dwConfig = config.dynamicWorld || {};
@@ -322,72 +322,68 @@ async function generateDynamicWorld() {
         const historyDepth = dwConfig.historyDepth || 5;
         const minWords = dwConfig.minWords || 300;
         const showReasoning = dwConfig.showReasoning !== undefined ? dwConfig.showReasoning : true;
-        // 🔧 强制使用白虎宗的动态世界提示词（优先级调整）
+
+        // 🔧 Ưu tiên xử lý Prompt của Thế giới động (điều chỉnh mức độ ưu tiên)
         let systemPrompt;
-        console.log('[动态世界-调试] 🔍 检查提示词来源...');
-        console.log('[动态世界-调试] 🔍 window对象:', window);
-        console.log('[动态世界-调试] 🔍 window.BaihuSectGameConfig:', window.BaihuSectGameConfig);
-        console.log('[动态世界-调试] 🔍 window.XiuxianGameConfig:', window.XiuxianGameConfig);
-        console.log('[动态世界-调试] 🔍 dwConfig.prompt存在?', !!(dwConfig && dwConfig.prompt && dwConfig.prompt.trim()));
-        console.log('[动态世界-调试] 🔍 window.BaihuSectGameConfig存在?', !!(typeof window.BaihuSectGameConfig !== 'undefined'));
-        if (window.BaihuSectGameConfig) {
-            console.log('[动态世界-调试] 🔍 BaihuSectGameConfig.defaultDynamicWorldPrompt长度:', window.BaihuSectGameConfig.defaultDynamicWorldPrompt?.length);
-            console.log('[动态世界-调试] 🔍 BaihuSectGameConfig.defaultDynamicWorldPrompt开头:', window.BaihuSectGameConfig.defaultDynamicWorldPrompt?.substring(0, 200));
-        }
-        console.log('[动态世界-调试] 🔍 HTML动态世界提示词存在?', !!(document.getElementById('dynamicWorldPrompt') && document.getElementById('dynamicWorldPrompt').value.trim()));
+        console.log('[Thế giới động-Gỡ lỗi] 🔍 Kiểm tra nguồn Prompt...');
+        console.log('[Thế giới động-Gỡ lỗi] 🔍 Đối tượng window:', window);
+        console.log('[Thế giới động-Gỡ lỗi] 🔍 window.BaihuSectGameConfig:', window.BaihuSectGameConfig);
+        console.log('[Thế giới động-Gỡ lỗi] 🔍 window.XiuxianGameConfig:', window.XiuxianGameConfig);
+        console.log('[Thế giới động-Gỡ lỗi] 🔍 dwConfig.prompt tồn tại?', !!(dwConfig && dwConfig.prompt && dwConfig.prompt.trim()));
+        console.log('[Thế giới động-Gỡ lỗi] 🔍 window.BaihuSectGameConfig tồn tại?', !!(typeof window.BaihuSectGameConfig !== 'undefined'));
         
-        // 🔧 临时禁用用户自定义提示词，强制使用白虎宗配置
+        if (window.BaihuSectGameConfig) {
+            console.log('[Thế giới động-Gỡ lỗi] 🔍 Độ dài BaihuSectGameConfig.defaultDynamicWorldPrompt:', window.BaihuSectGameConfig.defaultDynamicWorldPrompt?.length);
+        }
+        
+        // 🔧 Tạm thời vô hiệu hóa prompt tùy chỉnh của người dùng, ép buộc sử dụng cấu hình Bạch Hổ Tông
         if (false && dwConfig.prompt && dwConfig.prompt.trim()) {
             systemPrompt = dwConfig.prompt;
-            console.log('[动态世界] 📝 使用用户自定义动态世界提示词');
-            console.log('[动态世界-调试] 🔍 用户自定义提示词长度:', dwConfig.prompt.length);
-            console.log('[动态世界-调试] 🔍 用户自定义提示词开头:', dwConfig.prompt.substring(0, 200));
-            console.log('[动态世界-调试] 🔍 用户自定义提示词是否包含白虎宗:', dwConfig.prompt.includes('白虎宗'));
-            console.log('[动态世界-调试] 🔍 用户自定义提示词是否包含R18:', dwConfig.prompt.includes('R18') || dwConfig.prompt.includes('师姐妹'));
+            console.log('[Thế giới động] 📝 Sử dụng Prompt thế giới động tùy chỉnh của người dùng');
         } else if (typeof window.BaihuSectGameConfig !== 'undefined' && window.BaihuSectGameConfig.defaultDynamicWorldPrompt) {
-            // 🐅 白虎宗配置优先级提高到第二位
+            // 🐅 Nâng mức ưu tiên cấu hình Bạch Hổ Tông lên vị trí thứ hai
             systemPrompt = window.BaihuSectGameConfig.defaultDynamicWorldPrompt;
-            console.log('[动态世界] 🐅 使用白虎宗默认动态世界提示词');
+            console.log('[Thế giới động] 🐅 Sử dụng Prompt thế giới động mặc định của Bạch Hổ Tông');
         } else if (document.getElementById('dynamicWorldPrompt') && document.getElementById('dynamicWorldPrompt').value.trim()) {
             systemPrompt = document.getElementById('dynamicWorldPrompt').value;
-            console.log('[动态世界] 📝 使用HTML中的动态世界提示词');
+            console.log('[Thế giới động] 📝 Sử dụng Prompt thế giới động từ HTML');
         } else {
-            systemPrompt = '你是一个白虎宗修仙世界的动态世界生成器。根据当前主角状态和位置，生成远方事件、势力动态、环境变化等背景信息。生成的世界事件应该符合白虎宗的世界观设定，体现修仙世界的特色和白虎宗的独特文化，包含适当的修仙元素：境界突破、法宝争夺、宗门争斗等。以第三人称叙述，语言风格古典雅致，每段50-100字，生成3-5个不同的背景事件。';
-            console.log('[动态世界] 🐅 使用硬编码白虎宗动态世界提示词');
+            systemPrompt = 'Bạn là bộ tạo thế giới động cho thế giới Tu tiên Bạch Hổ Tông. Dựa trên trạng thái và vị trí hiện tại của nhân vật chính, hãy tạo các thông tin bối cảnh như sự kiện phương xa, biến động thế lực, thay đổi môi trường. Các sự kiện thế giới được tạo ra phải phù hợp với thiết lập thế giới quan của Bạch Hổ Tông, thể hiện đặc sắc của thế giới tu tiên và văn hóa độc đáo của Bạch Hổ Tông, bao gồm các yếu tố tu tiên thích hợp: đột phá cảnh giới, tranh đoạt pháp bảo, tông môn tranh đấu, v.v. Kể chuyện theo ngôi thứ ba, phong cách ngôn ngữ cổ điển nhã nhặn, mỗi đoạn khoảng 50-100 chữ, tạo ra 3-5 sự kiện bối cảnh khác nhau.';
+            console.log('[Thế giới động] 🐅 Sử dụng Prompt thế giới động Bạch Hổ Tông được viết cứng (hardcoded)');
         }
 
-        // 🆕 先获取当前变量状态
-        const currentLocation = gameState.variables.location || '未知';
-        const currentNPCs = gameState.variables.relationships.map(r => r.name).join('、') || '无';
-        const currentTime = gameState.variables.currentDateTime || '未知';
+        // 🆕 Lấy trạng thái biến hiện tại trước
+        const currentLocation = gameState.variables.location || 'Không rõ';
+        const currentNPCs = gameState.variables.relationships.map(r => r.name).join('、') || 'Không có';
+        const currentTime = gameState.variables.currentDateTime || 'Không rõ';
 
-        // 构建消息
+        // Xây dựng tin nhắn
         let messages = [];
 
-        // 🆕 集成知识库检索功能
+        // 🆕 Tích hợp chức năng truy xuất kho kiến thức
         let knowledgeContext = '';
         const enableKnowledge = dwConfig.enableKnowledge !== undefined ? dwConfig.enableKnowledge : true;
         if (window.contextVectorManager && 
             document.getElementById('enableVectorRetrieval')?.checked && 
             enableKnowledge) {
             try {
-                console.log('[动态世界] 开始知识库检索...');
+                console.log('[Thế giới động] Bắt đầu truy xuất kho kiến thức...');
                 
-                // 构建检索查询（基于当前游戏状态）
-                const queryText = `动态世界生成 ${currentLocation} ${currentTime} 远方事件 势力动态`;
+                // Xây dựng truy vấn (dựa trên trạng thái game hiện tại)
+                const queryText = `tạo thế giới động ${currentLocation} ${currentTime} sự kiện phương xa biến động thế lực`;
                 
-                // 🔧 修改：使用通用提示词进行知识库检索，避免覆盖白虎宗提示词
-                const genericPrompt = '你是一个修仙世界的动态世界生成器。根据当前主角状态和位置，生成远方事件、势力动态、环境变化等背景信息。';
+                // 🔧 Sửa đổi: Sử dụng prompt chung để truy xuất kiến thức, tránh ghi đè prompt Bạch Hổ Tông
+                const genericPrompt = 'Bạn là bộ tạo thế giới động cho thế giới tu tiên. Dựa trên trạng thái và vị trí hiện tại của nhân vật chính, hãy tạo thông tin bối cảnh như sự kiện phương xa, biến động thế lực, thay đổi môi trường.';
                 const optimizedMessages = await window.contextVectorManager.buildOptimizedMessages(
-                    genericPrompt, // 使用通用提示词进行检索
+                    genericPrompt, // Dùng prompt chung để truy xuất
                     gameState.variables,
                     queryText,
-                    0, // 不需要对话历史
-                    [], // 空的完整对话历史
-                    queryText // 传入检索查询
+                    0, // Không cần lịch sử đối thoại
+                    [], // Lịch sử đối thoại trống
+                    queryText // Truyền vào truy vấn tìm kiếm
                 );
                 
-                // 提取知识库相关的系统消息（排除第一个系统消息，因为它是通用提示词）
+                // Trích xuất các tin nhắn hệ thống liên quan đến kho kiến thức
                 const knowledgeMessages = optimizedMessages.filter(msg => 
                     msg.role === 'system' && (
                         msg.content.includes('【相关历史回忆】') ||
@@ -399,69 +395,55 @@ async function generateDynamicWorld() {
                 );
                 
                 if (knowledgeMessages.length > 0) {
-                    // 🆕 优化知识库内容格式，添加删除标记
-                    knowledgeContext = '\n\n【🌍 动态世界知识库参考 - 可通过设置关闭】\n' + 
+                    // 🆕 Tối ưu định dạng nội dung kho kiến thức, thêm nhãn đánh dấu
+                    knowledgeContext = '\n\n【🌍 Tham khảo Kho kiến thức Thế giới động - Có thể tắt trong cài đặt】\n' + 
                         knowledgeMessages.map((msg, index) => {
                             let content = msg.content;
-                            // 为每个知识库块添加标记，便于识别和管理
-                            if (content.includes('【相关历史回忆】')) {
-                                content = '📜 [历史记忆] ' + content;
-                            } else if (content.includes('【相关知识库】')) {
-                                content = '📚 [相关知识] ' + content;
-                            } else if (content.includes('【⭐ 重点常驻知识】')) {
-                                content = '⭐ [重点知识] ' + content;
-                            } else if (content.includes('【📌 次重点常驻知识】')) {
-                                content = '📌 [次重点知识] ' + content;
-                            } else if (content.includes('【常驻知识库】')) {
-                                content = '📖 [常驻知识] ' + content;
-                            }
+                            if (content.includes('【相关历史回忆】')) content = '📜 [Ký ức lịch sử] ' + content;
+                            else if (content.includes('【相关知识库】')) content = '📚 [Kiến thức liên quan] ' + content;
+                            else if (content.includes('【⭐ 重点常驻知识】')) content = '⭐ [Kiến thức trọng điểm] ' + content;
+                            else if (content.includes('【📌 次重点常驻知识】')) content = '📌 [Kiến thức phụ] ' + content;
+                            else if (content.includes('【常驻知识库】')) content = '📖 [Kiến thức thường trực] ' + content;
                             return content;
                         }).join('\n\n');
-                    console.log(`[动态世界] 已集成 ${knowledgeMessages.length} 条知识库内容`);
+                    console.log(`[Thế giới động] Đã tích hợp ${knowledgeMessages.length} mục nội dung kho kiến thức`);
                 }
                 
             } catch (error) {
-                console.warn('[动态世界] 知识库检索失败:', error);
+                console.warn('[Thế giới động] Truy xuất kho kiến thức thất bại:', error);
             }
         } else if (!enableKnowledge) {
-            console.log('[动态世界] 知识库检索已通过设置关闭');
+            console.log('[Thế giới động] Truy xuất kho kiến thức đã bị tắt trong cài đặt');
         }
 
-        // 添加系统提示词（包含知识库内容）
+        // Thêm Prompt hệ thống (bao gồm nội dung kho kiến thức)
         const finalSystemPrompt = systemPrompt + knowledgeContext;
         
-        // 🔍 调试日志：显示实际使用的提示词
-        console.log('[动态世界-调试] 📝 原始systemPrompt长度:', systemPrompt.length);
-        console.log('[动态世界-调试] 📝 原始systemPrompt开头:', systemPrompt.substring(0, 200));
-        console.log('[动态世界-调试] 📝 知识库内容长度:', knowledgeContext.length);
-        console.log('[动态世界-调试] 📝 知识库内容开头:', knowledgeContext.substring(0, 200));
-        console.log('[动态世界-调试] 📝 最终提示词长度:', finalSystemPrompt.length);
-        console.log('[动态世界-调试] 📝 最终提示词开头:', finalSystemPrompt.substring(0, 300));
-        console.log('[动态世界-调试] 📝 是否包含白虎宗关键词:', finalSystemPrompt.includes('白虎宗'));
-        console.log('[动态世界-调试] 📝 是否包含R18关键词:', finalSystemPrompt.includes('R18') || finalSystemPrompt.includes('师姐妹'));
-        console.log('[动态世界-调试] 📝 知识库是否包含"修仙世界的动态世界生成器":', knowledgeContext.includes('修仙世界的动态世界生成器'));
+        // 🔍 Log gỡ lỗi: Hiển thị prompt thực tế được sử dụng
+        console.log('[Thế giới động-Gỡ lỗi] 📝 Độ dài finalSystemPrompt:', finalSystemPrompt.length);
+        console.log('[Thế giới động-Gỡ lỗi] 📝 Có chứa từ khóa Bạch Hổ Tông không:', finalSystemPrompt.includes('白虎宗'));
         
         messages.push({
             role: 'system',
             content: finalSystemPrompt
         });
 
-        // 添加当前变量状态和限制信息
+        // Thêm trạng thái biến hiện tại và thông tin hạn chế
         const variableContext = `
-【当前主角状态】（仅供参考，禁止修改）
-- 当前时间：${currentTime}
-- 当前位置：${currentLocation}
-- 身边的NPC：${currentNPCs}
+【Trạng thái nhân vật chính hiện tại】（Chỉ dùng tham khảo, cấm sửa đổi）
+- Thời gian hiện tại: ${currentTime}
+- Vị trí hiện tại: ${currentLocation}
+- NPC bên cạnh: ${currentNPCs}
 
-【严格要求】
--  禁止推进时间！描述的是"此时此刻"（${currentTime}）其他地方发生的事
--  禁止涉及主角当前位置"${currentLocation}"的任何事件！
--  禁止涉及以下NPC：${currentNPCs}（他们可能在主角身边）
--  禁止描述主角在做什么！
--  正确做法：描述完全不同地点的远方传闻、势力动态
--  可以添加新的远方NPC到variables.relationships（但必须是不在主角身边的npc）
-- 字数要求：至少${minWords}字
-- 叙事风格：使用"据说"、"传言"、"有修士目击"等远观视角
+【Yêu cầu nghiêm ngặt】
+- Cấm thúc đẩy thời gian! Chỉ mô tả những gì đang xảy ra ở nơi khác tại "thời điểm này" (${currentTime})
+- Cấm liên quan đến bất kỳ sự kiện nào tại vị trí hiện tại "${currentLocation}" của nhân vật chính!
+- Cấm liên quan đến các NPC sau: ${currentNPCs} (họ đang ở cạnh nhân vật chính)
+- Cấm mô tả nhân vật chính đang làm gì!
+- Cách làm đúng: Mô tả tin đồn phương xa, động thái của các thế lực tại những địa điểm hoàn toàn khác biệt
+- Có thể thêm các NPC phương xa mới vào variables.relationships (nhưng phải là NPC không ở cạnh nhân vật chính)
+- Yêu cầu số chữ: Ít nhất ${minWords} chữ
+- Phong cách tự sự: Sử dung các góc nhìn xa xăm như "nghe nói", "có tin đồn", "có tu sĩ chứng kiến", v.v.
         `.trim();
 
         messages.push({
@@ -469,7 +451,7 @@ async function generateDynamicWorld() {
             content: variableContext
         });
 
-        // 添加动态世界历史
+        // Thêm lịch sử Thế giới động
         if (historyDepth > 0 && gameState.dynamicWorld.history.length > 0) {
             const recentHistory = gameState.dynamicWorld.history.slice(-historyDepth);
             for (const entry of recentHistory) {
@@ -480,153 +462,151 @@ async function generateDynamicWorld() {
             }
         }
 
-        // 添加生成请求
+        // Thêm yêu cầu tạo
         messages.push({
             role: 'user',
-            content: '请生成新的动态世界内容。\n\n【极其重要】必须输出完整的JSON结构，所有字段都必须完整，不能在中途截断！确保所有花括号、方括号、引号都正确闭合！'
+            content: 'Hãy tạo nội dung thế giới động mới.\n\n【Cực kỳ quan trọng】Phải xuất ra cấu trúc JSON hoàn chỉnh, tất cả các trường phải đầy đủ, không được cắt ngang giữa chừng! Đảm bảo tất cả các dấu ngoặc nhọn, ngoặc vuông, dấu ngoặc kép đều được đóng đúng cách!'
         });
 
-        // 调用API
+        // Gọi API
         const response = await callExtraAPI(messages);
 
-        // 🔍 调试输出（帮助诊断第三方 API 截断问题）
-        console.log('[动态世界-生成] API 原始响应长度:', response.length, '字符');
-        console.log('[动态世界-生成] API 响应开头:', response.substring(0, 200));
-        console.log('[动态世界-生成] API 响应结尾:', response.substring(Math.max(0, response.length - 200)));
+        // 🔍 Log gỡ lỗi (giúp chẩn đoán vấn đề API bên thứ ba bị cắt ngắn nội dung)
+        console.log('[Thế giới động-Tạo] Độ dài phản hồi gốc của API:', response.length, 'ký tự');
         if (response.length < 500) {
-            console.warn('[动态世界-生成] ⚠️ 响应过短，可能被截断！完整内容:', response);
+            console.warn('[Thế giới động-Tạo] ⚠️ Phản hồi quá ngắn, có thể đã bị cắt bớt! Nội dung đầy đủ:', response);
         }
 
-        // 解析响应
+        // Phân tích phản hồi
         const data = parseAIResponse(response);
 
-        // 🔍 调试输出：显示动态世界完整数据
+        // 🔍 Log gỡ lỗi: Hiển thị dữ liệu đầy đủ của Thế giới động
         if (debugMode || document.getElementById('debugMode')?.checked) {
-            console.log('[动态世界-调试] 📦 完整AI响应数据:');
-            console.log('[动态世界-调试] - 原始响应长度:', response.length);
-            console.log('[动态世界-调试] - 解析后的story:', data.story?.substring(0, 200));
-            console.log('[动态世界-调试] - variables字段:', data.variables);
-            console.log('[动态世界-调试] - variableUpdate字段:', data.variableUpdate);
-            console.log('[动态世界-调试] - relationships:', data.variables?.relationships);
+            console.log('[Thế giới động-Gỡ lỗi] 📦 Dữ liệu phản hồi AI đầy đủ:');
+            console.log('[Thế giới động-Gỡ lỗi] - Độ dài phản hồi gốc:', response.length);
+            console.log('[Thế giới động-Gỡ lỗi] - story sau khi phân tích:', data.story?.substring(0, 200));
+            console.log('[Thế giới động-Gỡ lỗi] - Trường variables:', data.variables);
+            console.log('[Thế giới động-Gỡ lỗi] - Trường variableUpdate:', data.variableUpdate);
+            console.log('[Thế giới động-Gỡ lỗi] - relationships:', data.variables?.relationships);
             
-            // 在调试面板显示完整内容
+// Hiển thị nội dung đầy đủ trên bảng gỡ lỗi (debug panel)
             const debugContent = `
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🌍 动态世界生成 - 完整输出
+🌍 Thế giới động - Đầu ra đầy đủ
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-【原始AI响应】(${response.length}字符)
+【Phản hồi AI gốc】(${response.length} ký tự)
 ${response}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-【解析后的数据】
+【Dữ liệu sau khi phân tích】
 ${JSON.stringify(data, null, 2)}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-【变量表单 (variables)】
-${data.variables ? JSON.stringify(data.variables, null, 2) : '无'}
+【Biểu mẫu biến (variables)】
+${data.variables ? JSON.stringify(data.variables, null, 2) : 'Không có'}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-【变量更新指令 (variableUpdate)】
-${data.variableUpdate || '无'}
+【Chỉ thị cập nhật biến (variableUpdate)】
+${data.variableUpdate || 'Không có'}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-【人际关系 (从variables提取)】
-${data.variables?.relationships ? JSON.stringify(data.variables.relationships, null, 2) : '无'}
+【Quan hệ nhân tế (Trích xuất từ variables)】
+${data.variables?.relationships ? JSON.stringify(data.variables.relationships, null, 2) : 'Không có'}
 `;
             showDebugOutput(debugContent);
         }
 
-        // 保存到动态世界历史
+        // Lưu vào lịch sử Thế giới động
         const entry = {
             floor: gameState.dynamicWorld.floor + 1,
             timestamp: Date.now(),
             story: data.story,
             reasoning: data.reasoning,
             variables: data.variables || {},
-            variableUpdate: data.variableUpdate || null, // 🆕 保存v3.1格式的指令
+            variableUpdate: data.variableUpdate || null, // 🆕 Lưu chỉ thị định dạng v3.1
             showReasoning: showReasoning
         };
 
         gameState.dynamicWorld.history.push(entry);
         gameState.dynamicWorld.floor++;
 
-        // 合并变量（支持两种格式）
-        console.log('[动态世界] 准备合并变量...');
-        console.log('[动态世界] - data.variables:', data.variables);
-        console.log('[动态世界] - data.variableUpdate:', data.variableUpdate);
+        // Hợp nhất biến (hỗ trợ cả hai định dạng)
+        console.log('[Thế giới động] Chuẩn bị hợp nhất biến...');
+        console.log('[Thế giới động] - data.variables:', data.variables);
+        console.log('[Thế giới động] - data.variableUpdate:', data.variableUpdate);
         
         if (data.variableUpdate) {
-            // v3.1 指令格式
-            console.log('[动态世界] 🎯 检测到 variableUpdate 格式（v3.1指令）');
+            // Định dạng chỉ thị v3.1
+            console.log('[Thế giới động] 🎯 Phát hiện định dạng variableUpdate (chỉ thị v3.1)');
             try {
-                // 初始化 v3.1 解析器
+                // Khởi tạo bộ phân tích v3.1
                 if (!window.v31Parser) {
-                    console.log('[动态世界] 初始化 v3.1 解析器...');
+                    console.log('[Thế giới động] Khởi tạo bộ phân tích v3.1...');
                     window.v31Parser = new VariableInstructionParserV31(gameState, {
                         debug: true,
                         enableRollback: false
                     });
                 }
                 
-                // 解析并执行变量更新
+                // Phân tích và thực thi cập nhật biến
                 const result = window.v31Parser.execute(data.variableUpdate);
-                console.log('[动态世界] ✅ v3.1 变量更新结果:', result);
-                console.log('[动态世界] 更新后的主变量表单 relationships 数量:', gameState.variables.relationships?.length);
+                console.log('[Thế giới động] ✅ Kết quả cập nhật biến v3.1:', result);
+                console.log('[Thế giới động] Số lượng relationships sau khi cập nhật:', gameState.variables.relationships?.length);
                 
-                // 更新UI
+                // Cập nhật UI
                 updateStatusPanel();
             } catch (error) {
-                console.error('[动态世界] ❌ v3.1 变量更新失败:', error);
-                console.error('[动态世界] 错误详情:', error.message);
+                console.error('[Thế giới động] ❌ Cập nhật biến v3.1 thất bại:', error);
+                console.error('[Thế giới động] Chi tiết lỗi:', error.message);
             }
         } else if (data.variables) {
-            // 完整变量表单格式
-            console.log('[动态世界] 📋 检测到 variables 格式（完整表单）');
-            console.log('[动态世界] 开始合并变量到主变量表单...');
+            // Định dạng biểu mẫu biến đầy đủ
+            console.log('[Thế giới động] 📋 Phát hiện định dạng variables (biểu mẫu đầy đủ)');
+            console.log('[Thế giới động] Bắt đầu hợp nhất biến vào biểu mẫu chính...');
             mergeDynamicWorldVariables(data.variables);
-            console.log('[动态世界] ✅ 变量合并完成');
-            console.log('[动态世界] 合并后的主变量表单 relationships 数量:', gameState.variables.relationships?.length);
+            console.log('[Thế giới động] ✅ Hợp nhất biến hoàn tất');
+            console.log('[Thế giới động] Số lượng relationships sau khi hợp nhất:', gameState.variables.relationships?.length);
         } else {
-            console.warn('[动态世界] ⚠️ AI响应中既没有variables字段，也没有variableUpdate字段！');
-            console.warn('[动态世界] 完整的data对象:', data);
+            console.warn('[Thế giới động] ⚠️ Phản hồi AI không có trường variables lẫn variableUpdate!');
+            console.warn('[Thế giới động] Đối tượng data đầy đủ:', data);
         }
 
-        // 添加到向量库（用于后续检索）
+        // Thêm vào kho lưu trữ vector (dùng để truy xuất sau này)
         if (window.contextVectorManager && document.getElementById('enableVectorRetrieval')?.checked) {
-            // 使用负数作为动态世界的turnIndex，避免与主对话冲突
-            // 主对话使用正数（1, 2, 3...），动态世界使用负数（-1, -2, -3...）
+            // Sử dụng số âm làm turnIndex cho Thế giới động để tránh xung đột với hội thoại chính
+            // Hội thoại chính dùng số dương (1, 2, 3...), Thế giới động dùng số âm (-1, -2, -3...)
             const dynamicWorldTurnIndex = -gameState.dynamicWorld.floor;
             
             await window.contextVectorManager.addConversation(
-                '[动态世界] ' + data.story.substring(0, 100),
+                '[Thế giới động] ' + data.story.substring(0, 100),
                 data.story,
                 dynamicWorldTurnIndex,
                 data.story
             );
-            // 保存向量库到IndexedDB
+            // Lưu kho vector vào IndexedDB
             await window.contextVectorManager.saveToIndexedDB();
-            console.log(`[动态世界] 向量库已保存到IndexedDB（turnIndex: ${dynamicWorldTurnIndex}）`);
+            console.log(`[Thế giới động] Đã lưu kho vector vào IndexedDB (turnIndex: ${dynamicWorldTurnIndex})`);
         }
 
-        // 移除加载提示
+        // Loại bỏ thông báo đang tải
         const loading = document.getElementById('dynamic-world-loading');
         if (loading) loading.remove();
 
-        // 更新显示
+        // Cập nhật hiển thị
         displayDynamicWorldHistory();
 
-        console.log('[动态世界] 生成成功，楼层：' + entry.floor);
+        console.log('[Thế giới động] Tạo thành công, tầng: ' + entry.floor);
 
-        // 🆕 自动保存游戏（包含动态世界数据）
+        // 🆕 Tự động lưu game (bao gồm dữ liệu Thế giới động)
         await saveGameHistory();
-        console.log('[动态世界] 已自动保存到存档');
-        console.log('[动态世界] 当前历史记录数:', gameState.dynamicWorld.history.length);
+        console.log('[Thế giới động] Đã tự động lưu bản ghi');
+        console.log('[Thế giới động] Số lượng bản ghi lịch sử hiện tại:', gameState.dynamicWorld.history.length);
 
     } catch (error) {
-        console.error('[动态世界] 生成失败:', error);
+        console.error('[Thế giới động] Tạo thất bại:', error);
         
-        // 移除加载提示
+        // Loại bỏ thông báo đang tải
         const loading = document.getElementById('dynamic-world-loading');
         if (loading) loading.remove();
     } finally {
@@ -634,65 +614,65 @@ ${data.variables?.relationships ? JSON.stringify(data.variables.relationships, n
     }
 }
 
-// 合并动态世界生成的变量到主变量
+// Hợp nhất các biến được tạo từ Thế giới động vào biến chính
 function mergeDynamicWorldVariables(dynamicVariables) {
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('[动态世界-变量合并] 开始处理');
-    console.log('[动态世界-变量合并] 动态变量内容:', dynamicVariables);
+    console.log('[Thế giới động-Hợp nhất biến] Bắt đầu xử lý');
+    console.log('[Thế giới động-Hợp nhất biến] Nội dung biến động:', dynamicVariables);
     
     if (!dynamicVariables) {
-        console.warn('[动态世界-变量合并] ⚠️ dynamicVariables为空，跳过合并');
+        console.warn('[Thế giới động-Hợp nhất biến] ⚠️ dynamicVariables trống, bỏ qua hợp nhất');
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         return;
     }
 
     let hasChanges = false;
     
-    // 📊 显示合并前的状态
-    console.log('[动态世界-变量合并] 📊 合并前主变量表单 relationships 数量:', gameState.variables.relationships?.length);
+    // 📊 Hiển thị trạng thái trước khi hợp nhất
+    console.log('[Thế giới động-Hợp nhất biến] 📊 Số lượng relationships trước khi hợp nhất:', gameState.variables.relationships?.length);
 
-    // 合并relationships
+    // Hợp nhất relationships
     if (dynamicVariables.relationships && Array.isArray(dynamicVariables.relationships)) {
-        console.log(`[动态世界-变量合并] 👥 处理 ${dynamicVariables.relationships.length} 个人际关系`);
+        console.log(`[Thế giới động-Hợp nhất biến] 👥 Đang xử lý ${dynamicVariables.relationships.length} quan hệ nhân tế`);
         
         for (const newRel of dynamicVariables.relationships) {
-            console.log(`[动态世界-变量合并] 🔍 处理角色: ${newRel.name}`);
+            console.log(`[Thế giới động-Hợp nhất biến] 🔍 Đang xử lý nhân vật: ${newRel.name}`);
             
-            // 查找是否已存在
+            // Tìm xem đã tồn tại chưa
             const existingIndex = gameState.variables.relationships.findIndex(
                 r => r.name === newRel.name
             );
 
             if (existingIndex >= 0) {
-                console.log(`[动态世界-变量合并]   - 已存在，索引: ${existingIndex}`);
+                console.log(`[Thế giới động-Hợp nhất biến]   - Đã tồn tại, chỉ số: ${existingIndex}`);
                 
-                // 更新现有关系（合并history，但要去重）
+                // Cập nhật quan hệ hiện có (hợp nhất history, loại bỏ trùng lặp)
                 const existing = gameState.variables.relationships[existingIndex];
                 const existingHistory = existing.history || [];
                 const newHistory = newRel.history || [];
                 
-                console.log(`[动态世界-变量合并]   - 现有历史记录: ${existingHistory.length} 条`);
-                console.log(`[动态世界-变量合并]   - 新增历史记录: ${newHistory.length} 条`);
+                console.log(`[Thế giới động-Hợp nhất biến]   - Lịch sử hiện có: ${existingHistory.length} mục`);
+                console.log(`[Thế giới động-Hợp nhất biến]   - Lịch sử mới thêm: ${newHistory.length} mục`);
                 
-                // 去重合并：只添加不重复的历史记录
+                // Hợp nhất khử trùng: Chỉ thêm các mục lịch sử không lặp lại
                 const mergedHistory = [...existingHistory];
                 let addedCount = 0;
                 
                 newHistory.forEach(newItem => {
-                    // 检查是否已存在相同内容（去除首尾空格后比较）
+                    // Kiểm tra xem đã tồn tại nội dung tương tự chưa (so sánh sau khi xóa khoảng trắng)
                     const trimmedNew = newItem.trim();
                     const isDuplicate = mergedHistory.some(existing => existing.trim() === trimmedNew);
                     
                     if (!isDuplicate && trimmedNew) {
                         mergedHistory.push(newItem);
                         addedCount++;
-                        console.log(`[动态世界-变量合并]   - ✅ 添加历史: ${newItem.substring(0, 50)}...`);
+                        console.log(`[Thế giới động-Hợp nhất biến]   - ✅ Thêm lịch sử: ${newItem.substring(0, 50)}...`);
                     } else if (isDuplicate) {
-                        console.log(`[动态世界-变量合并]   - ⏭️ 跳过重复: ${newItem.substring(0, 50)}...`);
+                        console.log(`[Thế giới động-Hợp nhất biến]   - ⏭️ Bỏ qua trùng lặp: ${newItem.substring(0, 50)}...`);
                     }
                 });
                 
-                // 只有在有实际更新时才合并
+                // Chỉ hợp nhất khi có cập nhật thực tế
                 if (addedCount > 0 || existing.favor !== newRel.favor || existing.opinion !== newRel.opinion) {
                     gameState.variables.relationships[existingIndex] = {
                         ...existing,
@@ -703,59 +683,59 @@ function mergeDynamicWorldVariables(dynamicVariables) {
                     };
                     
                     hasChanges = true;
-                    console.log(`[动态世界-变量合并]   - ✅ 更新完成：${newRel.name}，历史记录：${existingHistory.length} → ${mergedHistory.length}（新增${addedCount}条）`);
-                    console.log(`[动态世界-变量合并]   - favor: ${existing.favor} → ${newRel.favor}`);
-                    console.log(`[动态世界-变量合并]   - opinion: ${existing.opinion} → ${newRel.opinion}`);
+                    console.log(`[Thế giới động-Hợp nhất biến]   - ✅ Cập nhật hoàn tất: ${newRel.name}, lịch sử: ${existingHistory.length} → ${mergedHistory.length} (thêm ${addedCount} mục)`);
+                    console.log(`[Thế giới động-Hợp nhất biến]   - favor: ${existing.favor} → ${newRel.favor}`);
+                    console.log(`[Thế giới động-Hợp nhất biến]   - opinion: ${existing.opinion} → ${newRel.opinion}`);
                 } else {
-                    console.log(`[动态世界-变量合并]   - ⏭️ 跳过（无新内容）`);
+                    console.log(`[Thế giới động-Hợp nhất biến]   - ⏭️ Bỏ qua (không có nội dung mới)`);
                 }
             } else {
-                console.log(`[动态世界-变量合并]   - 🆕 新角色，添加到列表`);
+                console.log(`[Thế giới động-Hợp nhất biến]   - 🆕 Nhân vật mới, thêm vào danh sách`);
                 
-                // 添加新关系
+                // Thêm quan hệ mới
                 gameState.variables.relationships.push(newRel);
                 hasChanges = true;
-                console.log(`[动态世界-变量合并]   - ✅ 新增关系：${newRel.name}`);
-                console.log(`[动态世界-变量合并]   - favor: ${newRel.favor}`);
-                console.log(`[动态世界-变量合并]   - opinion: ${newRel.opinion}`);
-                console.log(`[动态世界-变量合并]   - 历史记录: ${newRel.history?.length || 0} 条`);
+                console.log(`[Thế giới động-Hợp nhất biến]   - ✅ Đã thêm quan hệ: ${newRel.name}`);
+                console.log(`[Thế giới động-Hợp nhất biến]   - favor: ${newRel.favor}`);
+                console.log(`[Thế giới động-Hợp nhất biến]   - opinion: ${newRel.opinion}`);
+                console.log(`[Thế giới động-Hợp nhất biến]   - Số mục lịch sử: ${newRel.history?.length || 0}`);
             }
         }
 
-        // 📊 显示合并后的状态
-        console.log('[动态世界-变量合并] 📊 合并后主变量表单 relationships 数量:', gameState.variables.relationships?.length);
-        console.log('[动态世界-变量合并] 📊 合并后完整的 relationships 列表:', 
-            gameState.variables.relationships.map(r => `${r.name}(${r.history?.length || 0}条历史)`).join(', '));
+        // 📊 Hiển thị trạng thái sau khi hợp nhất
+        console.log('[Thế giới động-Hợp nhất biến] 📊 Số lượng relationships sau khi hợp nhất:', gameState.variables.relationships?.length);
+        console.log('[Thế giới động-Hợp nhất biến] 📊 Danh sách relationships đầy đủ:', 
+            gameState.variables.relationships.map(r => `${r.name}(${r.history?.length || 0} mục lịch sử)`).join(', '));
 
-        // 只有在有实际变化时才更新显示
+        // Chỉ cập nhật hiển thị khi có thay đổi thực tế
         if (hasChanges) {
             updateStatusPanel();
-            console.log('[动态世界-变量合并] ✅ 变量已合并并更新UI（有更新）');
+            console.log('[Thế giới động-Hợp nhất biến] ✅ Đã hợp nhất biến và cập nhật UI (có cập nhật)');
         } else {
-            console.log('[动态世界-变量合并] ⏭️ 变量已检查（无更新，未刷新UI）');
+            console.log('[Thế giới động-Hợp nhất biến] ⏭️ Đã kiểm tra biến (không có cập nhật, không làm mới UI)');
         }
     } else {
-        console.warn('[动态世界-变量合并] ⚠️ dynamicVariables.relationships 不存在或不是数组');
-        console.log('[动态世界-变量合并] dynamicVariables.relationships:', dynamicVariables.relationships);
+        console.warn('[Thế giới động-Hợp nhất biến] ⚠️ dynamicVariables.relationships không tồn tại hoặc không phải là mảng');
+        console.log('[Thế giới động-Hợp nhất biến] dynamicVariables.relationships:', dynamicVariables.relationships);
     }
     
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 }
 
-// 重新生成动态世界内容
+// Tạo lại nội dung Thế giới động
 async function regenerateDynamicWorld(index) {
     if (gameState.dynamicWorld.isProcessing) {
-        alert('正在处理中，请稍候...');
+        alert('Đang xử lý, vui lòng đợi...');
         return;
     }
 
-    if (!confirm('确定要重新生成这条动态世界内容吗？')) {
+    if (!confirm('Bạn có chắc chắn muốn tạo lại nội dung Thế giới động này không?')) {
         return;
     }
 
     gameState.dynamicWorld.isProcessing = true;
 
-    // 在动态世界容器内显示加载提示
+    // Hiển thị thông báo đang tải bên trong container Thế giới động
     const dynamicWorldContainer = document.getElementById('dynamicWorldContainer');
     const loadingDiv = document.createElement('div');
     loadingDiv.id = 'dynamic-world-regenerate-loading';
@@ -763,67 +743,68 @@ async function regenerateDynamicWorld(index) {
     loadingDiv.innerHTML = `
         <div style="font-size: 48px; margin-bottom: 15px;">🌍</div>
         <div style="font-size: 16px; color: #667eea; margin-bottom: 10px;">
-            <span class="loading"></span> AI正在重新生成动态世界内容...
+            <span class="loading"></span> AI đang tạo lại nội dung Thế giới động...
         </div>
-        <div style="font-size: 12px; color: #999;">请稍候...</div>
+        <div style="font-size: 12px; color: #999;">Vui lòng đợi trong giây lát...</div>
     `;
     dynamicWorldContainer.insertBefore(loadingDiv, dynamicWorldContainer.firstChild);
 
     try {
-        // 获取配置
+        // Lấy cấu hình
         const saved = localStorage.getItem('gameConfig');
         const config = saved ? JSON.parse(saved) : {};
         const dwConfig = config.dynamicWorld || {};
 
         const minWords = dwConfig.minWords || 300;
         const showReasoning = dwConfig.showReasoning !== undefined ? dwConfig.showReasoning : true;
-        // 🔧 强制使用白虎宗的动态世界提示词
+        
+        // 🔧 Ép buộc sử dụng Prompt Thế giới động của Bạch Hổ Tông
         let systemPrompt;
         if (dwConfig.prompt && dwConfig.prompt.trim()) {
             systemPrompt = dwConfig.prompt;
-            console.log('[动态世界-重生成] 📝 使用用户自定义动态世界提示词');
+            console.log('[Thế giới động-Tạo lại] 📝 Sử dụng Prompt tùy chỉnh của người dùng');
         } else if (document.getElementById('dynamicWorldPrompt') && document.getElementById('dynamicWorldPrompt').value.trim()) {
             systemPrompt = document.getElementById('dynamicWorldPrompt').value;
-            console.log('[动态世界-重生成] 📝 使用HTML中的动态世界提示词');
+            console.log('[Thế giới động-Tạo lại] 📝 Sử dụng Prompt từ HTML');
         } else if (typeof window.BaihuSectGameConfig !== 'undefined' && window.BaihuSectGameConfig.defaultDynamicWorldPrompt) {
             systemPrompt = window.BaihuSectGameConfig.defaultDynamicWorldPrompt;
-            console.log('[动态世界-重生成] 🐅 使用白虎宗默认动态世界提示词');
+            console.log('[Thế giới động-Tạo lại] 🐅 Sử dụng Prompt mặc định của Bạch Hổ Tông');
         } else {
-            systemPrompt = '你是一个白虎宗修仙世界的动态世界生成器。根据当前主角状态和位置，生成远方事件、势力动态、环境变化等背景信息。生成的世界事件应该符合白虎宗的世界观设定，体现修仙世界的特色和白虎宗的独特文化，包含适当的修仙元素：境界突破、法宝争夺、宗门争斗等。以第三人称叙述，语言风格古典雅致，每段50-100字，生成3-5个不同的背景事件。';
-            console.log('[动态世界-重生成] 🐅 使用硬编码白虎宗动态世界提示词');
+            systemPrompt = 'Bạn là bộ tạo thế giới động cho thế giới Tu tiên Bạch Hổ Tông. Dựa trên trạng thái và vị trí hiện tại của nhân vật chính, hãy tạo các thông tin bối cảnh như sự kiện phương xa, biến động thế lực, thay đổi môi trường. Các sự kiện thế giới được tạo ra phải phù hợp với thiết lập thế giới quan của Bạch Hổ Tông, thể hiện đặc sắc của thế giới tu tiên và văn hóa độc đáo của Bạch Hổ Tông, bao gồm các yếu tố tu tiên thích hợp: đột phá cảnh giới, tranh đoạt pháp bảo, tông môn tranh đấu, v.v. Kể chuyện theo ngôi thứ ba, phong cách ngôn ngữ cổ điển nhã nhặn, mỗi đoạn khoảng 50-100 chữ, tạo ra 3-5 sự kiện bối cảnh khác nhau.';
+            console.log('[Thế giới động-Tạo lại] 🐅 Sử dụng Prompt Bạch Hổ Tông được viết cứng');
         }
 
-        // 🆕 先获取当前变量状态
-        const currentLocation = gameState.variables.location || '未知';
-        const currentNPCs = gameState.variables.relationships.map(r => r.name).join('、') || '无';
-        const currentTime = gameState.variables.currentDateTime || '未知';
+        // 🆕 Lấy trạng thái biến hiện tại
+        const currentLocation = gameState.variables.location || 'Không rõ';
+        const currentNPCs = gameState.variables.relationships.map(r => r.name).join('、') || 'Không có';
+        const currentTime = gameState.variables.currentDateTime || 'Không rõ';
 
-        // 构建消息（只用当前变量，不用历史）
+        // Xây dựng tin nhắn (chỉ dùng biến hiện tại, không dùng lịch sử)
         let messages = [];
 
-        // 🆕 集成知识库检索功能
+        // 🆕 Tích hợp chức năng truy xuất kho kiến thức
         let knowledgeContext = '';
         const enableKnowledge = dwConfig.enableKnowledge !== undefined ? dwConfig.enableKnowledge : true;
         if (window.contextVectorManager && 
             document.getElementById('enableVectorRetrieval')?.checked && 
             enableKnowledge) {
             try {
-                console.log('[动态世界-重生成] 开始知识库检索...');
+                console.log('[Thế giới động-Tạo lại] Bắt đầu truy xuất kho kiến thức...');
                 
-                // 构建检索查询（基于当前游戏状态）
-                const queryText = `动态世界重新生成 ${currentLocation} ${currentTime} 远方事件 势力动态`;
+                // Xây dựng truy vấn
+                const queryText = `tạo lại thế giới động ${currentLocation} ${currentTime} sự kiện phương xa biến động thế lực`;
                 
-                // 使用buildOptimizedMessages获取知识库内容
+                // Sử dụng buildOptimizedMessages để lấy nội dung kho kiến thức
                 const optimizedMessages = await window.contextVectorManager.buildOptimizedMessages(
                     systemPrompt,
                     gameState.variables,
                     queryText,
-                    0, // 不需要对话历史
-                    [], // 空的完整对话历史
-                    queryText // 传入检索查询
+                    0, // Không cần lịch sử đối thoại
+                    [], // Lịch sử trống
+                    queryText // Truyền vào truy vấn
                 );
                 
-                // 提取知识库相关的系统消息
+                // Trích xuất các tin nhắn hệ thống liên quan đến kho kiến thức
                 const knowledgeMessages = optimizedMessages.filter(msg => 
                     msg.role === 'system' && (
                         msg.content.includes('【相关历史回忆】') ||
@@ -835,35 +816,25 @@ async function regenerateDynamicWorld(index) {
                 );
                 
                 if (knowledgeMessages.length > 0) {
-                    // 🆕 优化知识库内容格式，添加删除标记
-                    knowledgeContext = '\n\n【🌍 动态世界知识库参考 - 可通过设置关闭】\n' + 
+                    knowledgeContext = '\n\n【🌍 Tham khảo Kho kiến thức Thế giới động - Có thể tắt trong cài đặt】\n' + 
                         knowledgeMessages.map((msg, index) => {
                             let content = msg.content;
-                            // 为每个知识库块添加标记，便于识别和管理
-                            if (content.includes('【相关历史回忆】')) {
-                                content = '📜 [历史记忆] ' + content;
-                            } else if (content.includes('【相关知识库】')) {
-                                content = '📚 [相关知识] ' + content;
-                            } else if (content.includes('【⭐ 重点常驻知识】')) {
-                                content = '⭐ [重点知识] ' + content;
-                            } else if (content.includes('【📌 次重点常驻知识】')) {
-                                content = '📌 [次重点知识] ' + content;
-                            } else if (content.includes('【常驻知识库】')) {
-                                content = '📖 [常驻知识] ' + content;
-                            }
+                            if (content.includes('【相关历史回忆】')) content = '📜 [Ký ức lịch sử] ' + content;
+                            else if (content.includes('【相关知识库】')) content = '📚 [Kiến thức liên quan] ' + content;
+                            else if (content.includes('【⭐ 重点常驻知识】')) content = '⭐ [Kiến thức trọng điểm] ' + content;
+                            else if (content.includes('【📌 次重点常驻知识】')) content = '📌 [Kiến thức phụ] ' + content;
+                            else if (content.includes('【常驻知识库】')) content = '📖 [Kiến thức thường trực] ' + content;
                             return content;
                         }).join('\n\n');
-                    console.log(`[动态世界-重生成] 已集成 ${knowledgeMessages.length} 条知识库内容`);
+                    console.log(`[Thế giới động-Tạo lại] Đã tích hợp ${knowledgeMessages.length} mục nội dung kho kiến thức`);
                 }
                 
             } catch (error) {
-                console.warn('[动态世界-重生成] 知识库检索失败:', error);
+                console.warn('[Thế giới động-Tạo lại] Truy xuất kho kiến thức thất bại:', error);
             }
-        } else if (!enableKnowledge) {
-            console.log('[动态世界-重生成] 知识库检索已通过设置关闭');
         }
 
-        // 添加系统提示词（包含知识库内容）
+        // Thêm Prompt hệ thống (bao gồm nội dung kho kiến thức)
         const finalSystemPrompt = systemPrompt + knowledgeContext;
         messages.push({
             role: 'system',
@@ -871,22 +842,22 @@ async function regenerateDynamicWorld(index) {
         });
         
         const variableContext = `
-【当前主角状态】（仅供参考，禁止修改）
-- 当前时间：${currentTime}
-- 当前位置：${currentLocation}
-- 身边的NPC：${currentNPCs}
+【Trạng thái nhân vật chính hiện tại】（Chỉ dùng tham khảo, cấm sửa đổi）
+- Thời gian hiện tại: ${currentTime}
+- Vị trí hiện tại: ${currentLocation}
+- NPC bên cạnh: ${currentNPCs}
 
-【严格要求】
-- 重新生成远离主角的世界事件（其他地方、其他人物）
--  禁止推进时间！描述的是"此时此刻"（${currentTime}）其他地方发生的事
--  禁止涉及主角当前位置"${currentLocation}"的任何事件！
--  禁止涉及以下NPC：${currentNPCs}（他们可能在主角身边）
--  禁止描述主角在做什么！
--  正确做法：描述完全不同地点的远方传闻、势力动态
--  可以添加新的远方NPC到variables.relationships（但必须是主角不认识的、远方传闻中的人物）
--  不要修改已存在的NPC数据（系统会自动去重合并history）
-- 字数要求：至少${minWords}字
-- 提供不同的视角和事件（远方传闻）
+【Yêu cầu nghiêm ngặt】
+- Tạo lại các sự kiện thế giới cách xa nhân vật chính (địa điểm khác, nhân vật khác)
+- Cấm thúc đẩy thời gian! Mô tả những gì đang diễn ra "ngay tại thời điểm này" (${currentTime}) ở những nơi khác
+- Cấm liên quan đến bất kỳ sự kiện nào tại vị trí hiện tại "${currentLocation}"!
+- Cấm liên quan đến các NPC sau: ${currentNPCs} (họ đang ở cạnh nhân vật chính)
+- Cấm mô tả nhân vật chính đang làm gì!
+- Cách làm đúng: Mô tả tin đồn phương xa, động thái của các thế lực tại những địa điểm hoàn toàn khác biệt
+- Có thể thêm các NPC phương xa mới vào variables.relationships (nhưng phải là những người nhân vật chính chưa biết, xuất hiện trong lời đồn phương xa)
+- Đừng sửa đổi dữ liệu NPC đã tồn tại (hệ thống sẽ tự động khử trùng và hợp nhất history)
+- Yêu cầu số chữ: Ít nhất ${minWords} chữ
+- Cung cấp các góc nhìn và sự kiện khác nhau (lời đồn phương xa)
         `.trim();
 
         messages.push({
@@ -896,158 +867,128 @@ async function regenerateDynamicWorld(index) {
 
         messages.push({
             role: 'user',
-            content: '请生成新的动态世界内容。\n\n【极其重要】必须输出完整的JSON结构，所有字段都必须完整，不能在中途截断！确保所有花括号、方括号、引号都正确闭合！'
+            content: 'Hãy tạo nội dung Thế giới động mới.\n\n【Cực kỳ quan trọng】Phải xuất ra cấu trúc JSON hoàn chỉnh, tất cả các trường phải đầy đủ, không được cắt ngang giữa chừng! Đảm bảo tất cả các dấu ngoặc nhọn, ngoặc vuông, dấu ngoặc kép đều được đóng đúng cách!'
         });
 
-        // 调用API
+        // Gọi API
         const response = await callExtraAPI(messages);
 
-        // 🔍 调试输出
-        console.log('[动态世界-重生成] API 原始响应长度:', response.length, '字符');
-        console.log('[动态世界-重生成] API 响应结尾:', response.substring(Math.max(0, response.length - 200)));
+        // 🔍 Gỡ lỗi
+        console.log('[Thế giới động-Tạo lại] Độ dài phản hồi gốc của API:', response.length, 'ký tự');
 
-        // 解析响应
+        // Phân tích phản hồi
         const data = parseAIResponse(response);
 
-        // 🔍 调试输出：显示动态世界完整数据
+        // 🔍 Log gỡ lỗi: Hiển thị dữ liệu đầy đủ
         if (debugMode || document.getElementById('debugMode')?.checked) {
-            console.log('[动态世界-重生成-调试] 📦 完整AI响应数据:');
-            console.log('[动态世界-重生成-调试] - 原始响应长度:', response.length);
-            console.log('[动态世界-重生成-调试] - 解析后的story:', data.story?.substring(0, 200));
-            console.log('[动态世界-重生成-调试] - variables字段:', data.variables);
-            console.log('[动态世界-重生成-调试] - variableUpdate字段:', data.variableUpdate);
-            console.log('[动态世界-重生成-调试] - relationships:', data.variables?.relationships);
+            console.log('[Thế giới động-Tạo lại-Gỡ lỗi] 📦 Dữ liệu phản hồi AI đầy đủ:');
+            console.log('[Thế giới động-Tạo lại-Gỡ lỗi] - story sau khi phân tích:', data.story?.substring(0, 200));
             
-            // 在调试面板显示完整内容
             const debugContent = `
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🌍 动态世界重新生成 - 完整输出
+🌍 Thế giới động Tạo lại - Đầu ra đầy đủ
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-【原始AI响应】(${response.length}字符)
+【Phản hồi AI gốc】(${response.length} ký tự)
 ${response}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-【解析后的数据】
+【Dữ liệu sau khi phân tích】
 ${JSON.stringify(data, null, 2)}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-【变量表单 (variables)】
-${data.variables ? JSON.stringify(data.variables, null, 2) : '无'}
+【Biểu mẫu biến (variables)】
+${data.variables ? JSON.stringify(data.variables, null, 2) : 'Không có'}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-【变量更新指令 (variableUpdate)】
-${data.variableUpdate || '无'}
+【Chỉ thị cập nhật biến (variableUpdate)】
+${data.variableUpdate || 'Không có'}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-【人际关系 (从variables提取)】
-${data.variables?.relationships ? JSON.stringify(data.variables.relationships, null, 2) : '无'}
+【Quan hệ nhân tế (Trích xuất từ variables)】
+${data.variables?.relationships ? JSON.stringify(data.variables.relationships, null, 2) : 'Không có'}
 `;
             showDebugOutput(debugContent);
         }
 
-        // 🔧 安全检查：确保data.story存在
+        // 🔧 Kiểm tra an toàn: Đảm bảo data.story tồn tại
         if (!data || !data.story) {
-            console.error('[动态世界] 解析失败：data.story不存在');
-            throw new Error('AI响应解析失败，未能提取到故事内容。请检查API响应格式。');
+            console.error('[Thế giới động] Phân tích thất bại: data.story không tồn tại');
+            throw new Error('Phân tích phản hồi AI thất bại, không lấy được nội dung câu chuyện. Vui lòng kiểm tra định dạng phản hồi của API.');
         }
 
-        // 更新历史记录
+        // Cập nhật bản ghi lịch sử
         gameState.dynamicWorld.history[index] = {
             ...gameState.dynamicWorld.history[index],
             story: data.story,
             reasoning: data.reasoning,
             variables: data.variables || {},
-            variableUpdate: data.variableUpdate || null, // 🆕 保存v3.1格式的指令
+            variableUpdate: data.variableUpdate || null,
             timestamp: Date.now()
         };
 
-        // 合并变量（支持两种格式）
-        console.log('[动态世界-重生成] 准备合并变量...');
-        console.log('[动态世界-重生成] - data.variables:', data.variables);
-        console.log('[动态世界-重生成] - data.variableUpdate:', data.variableUpdate);
+        // Hợp nhất biến
+        console.log('[Thế giới động-Tạo lại] Chuẩn bị hợp nhất biến...');
         
         if (data.variableUpdate) {
-            // v3.1 指令格式
-            console.log('[动态世界-重生成] 🎯 检测到 variableUpdate 格式（v3.1指令）');
+            console.log('[Thế giới động-Tạo lại] 🎯 Phát hiện định dạng variableUpdate (chỉ thị v3.1)');
             try {
-                // 初始化 v3.1 解析器
                 if (!window.v31Parser) {
-                    console.log('[动态世界-重生成] 初始化 v3.1 解析器...');
+                    console.log('[Thế giới động-Tạo lại] Khởi tạo bộ phân tích v3.1...');
                     window.v31Parser = new VariableInstructionParserV31(gameState, {
                         debug: true,
                         enableRollback: false
                     });
                 }
-                
-                // 解析并执行变量更新
                 const result = window.v31Parser.execute(data.variableUpdate);
-                console.log('[动态世界-重生成] ✅ v3.1 变量更新结果:', result);
-                console.log('[动态世界-重生成] 更新后的主变量表单 relationships 数量:', gameState.variables.relationships?.length);
-                
-                // 更新UI
+                console.log('[Thế giới động-Tạo lại] ✅ Kết quả cập nhật biến v3.1:', result);
                 updateStatusPanel();
             } catch (error) {
-                console.error('[动态世界-重生成] ❌ v3.1 变量更新失败:', error);
-                console.error('[动态世界-重生成] 错误详情:', error.message);
+                console.error('[Thế giới động-Tạo lại] ❌ Cập nhật biến v3.1 thất bại:', error);
             }
         } else if (data.variables) {
-            // 完整变量表单格式
-            console.log('[动态世界-重生成] 📋 检测到 variables 格式（完整表单）');
-            console.log('[动态世界-重生成] 开始合并变量到主变量表单...');
+            console.log('[Thế giới động-Tạo lại] 📋 Phát hiện định dạng variables (biểu mẫu đầy đủ)');
             mergeDynamicWorldVariables(data.variables);
-            console.log('[动态世界-重生成] ✅ 变量合并完成');
-            console.log('[动态世界-重生成] 合并后的主变量表单 relationships 数量:', gameState.variables.relationships?.length);
-        } else {
-            console.warn('[动态世界-重生成] ⚠️ AI响应中既没有variables字段，也没有variableUpdate字段！');
-            console.warn('[动态世界-重生成] 完整的data对象:', data);
         }
 
-        // 🆕 添加到向量库（用于后续检索）
+        // 🆕 Thêm vào kho vector
         if (window.contextVectorManager && document.getElementById('enableVectorRetrieval')?.checked) {
             const floor = gameState.dynamicWorld.history[index].floor;
-            // 使用负数作为动态世界的turnIndex，避免与主对话冲突
             const dynamicWorldTurnIndex = -floor;
-            
-            // 🔧 安全地截取story（防止故事太短）
             const storyPreview = data.story.length > 100 ? data.story.substring(0, 100) : data.story;
             
             await window.contextVectorManager.addConversation(
-                '[动态世界-重生成] ' + storyPreview,
+                '[Thế giới động-Tạo lại] ' + storyPreview,
                 data.story,
                 dynamicWorldTurnIndex,
                 data.story
             );
-            // 保存向量库到IndexedDB
             await window.contextVectorManager.saveToIndexedDB();
-            console.log(`[动态世界] 已向量化重新生成的内容（楼层${floor}，turnIndex: ${dynamicWorldTurnIndex}）并保存到IndexedDB`);
+            console.log(`[Thế giới động] Đã vector hóa nội dung tạo lại (Tầng ${floor}, turnIndex: ${dynamicWorldTurnIndex})`);
         }
 
-        // 移除加载提示
+        // Loại bỏ thông báo đang tải
         const loading = document.getElementById('dynamic-world-regenerate-loading');
         if (loading) loading.remove();
 
-        // 更新动态世界标签页显示
+        // Cập nhật hiển thị Tab Thế giới động
         displayDynamicWorldHistory();
 
-        console.log('[动态世界] 重新生成成功');
+        console.log('[Thế giới động] Tạo lại thành công');
 
-        // 自动保存游戏（包含动态世界数据）
+        // Tự động lưu game
         await saveGameHistory();
-        console.log('[动态世界] 已自动保存到存档');
-        console.log('[动态世界] 当前历史记录数:', gameState.dynamicWorld.history.length);
 
     } catch (error) {
-        console.error('[动态世界] 重新生成失败:', error);
+        console.error('[Thế giới động] Tạo lại thất bại:', error);
         
-        // 🔧 提供更详细的错误信息和解决建议
-        let errorMsg = '重新生成失败：' + error.message;
+        let errorMsg = 'Tạo lại thất bại: ' + error.message;
         if (error.message.includes('AI响应解析失败')) {
-            errorMsg += '\n\n可能的解决方案：\n';
-            errorMsg += '1. 检查API配置，确保模型支持JSON格式输出\n';
-            errorMsg += '2. 降低"动态世界最小字数"设置（建议150-200字）\n';
-            errorMsg += '3. 增加API的max_tokens限制\n';
-            errorMsg += '4. 尝试使用不同的AI模型';
+            errorMsg += '\n\nGiải pháp khả thi:\n';
+            errorMsg += '1. Kiểm tra cấu hình API, đảm bảo mô hình hỗ trợ xuất định dạng JSON\n';
+            errorMsg += '2. Giảm thiết lập "Số chữ tối thiểu Thế giới động" (khuyên dùng 150-200 chữ)\n';
+            errorMsg += '3. Tăng giới hạn max_tokens của API\n';
+            errorMsg += '4. Thử sử dụng mô hình AI khác';
         }
         
         alert(errorMsg);
@@ -1056,7 +997,7 @@ ${data.variables?.relationships ? JSON.stringify(data.variables.relationships, n
     }
 }
 
-// 在游戏历史中显示动态世界消息
+// Hiển thị tin nhắn Thế giới động trong lịch sử game
 function displayDynamicWorldMessage(story, reasoning = null, showReasoning = true, isRegenerate = false) {
     const historyDiv = document.getElementById('gameHistory');
 
@@ -1067,7 +1008,6 @@ function displayDynamicWorldMessage(story, reasoning = null, showReasoning = tru
     const headerDiv = document.createElement('div');
     headerDiv.className = 'message-header';
 
-    // 添加复选框（仅在删除模式下显示）
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
     checkbox.className = 'message-checkbox';
@@ -1078,16 +1018,14 @@ function displayDynamicWorldMessage(story, reasoning = null, showReasoning = tru
     };
 
     headerDiv.innerHTML = `
-        <span>🌍 动态世界${isRegenerate ? '（重新生成）' : ''}</span>
+        <span>🌍 Thế giới động${isRegenerate ? '（Tạo lại）' : ''}</span>
     `;
     headerDiv.insertBefore(checkbox, headerDiv.firstChild);
 
     messageDiv.appendChild(headerDiv);
 
-    // 添加思维链显示（如果有且启用了显示）
     if (reasoning && showReasoning) {
         const reasoningHtml = createDynamicWorldReasoningDisplay(reasoning);
-        // 将HTML字符串转换为DOM元素
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = reasoningHtml;
         const reasoningDiv = tempDiv.firstElementChild;
@@ -1106,25 +1044,25 @@ function displayDynamicWorldMessage(story, reasoning = null, showReasoning = tru
     historyDiv.scrollTop = historyDiv.scrollHeight;
 }
 
-// 📨 触发好友自动消息（在动态世界生成后或独立触发）
+// 📨 Kích hoạt tin nhắn tự động từ bạn bè
 function triggerAutoFriendMessage() {
     if (typeof window.generateAutoFriendMessage === 'function') {
         window.generateAutoFriendMessage().catch(err => {
-            console.error('[📨好友自动消息] 生成异常:', err);
+            console.error('[📨Tin nhắn bạn bè] Lỗi khi tạo:', err);
         });
     }
 }
 
-// 在动态世界生成完成后的钩子中添加好友消息触发
-// 由于动态世界和好友消息都需要在主对话后触发，我们统一处理
+// Thêm kích hoạt tin nhắn bạn bè vào hook sau khi tạo Thế giới động hoàn tất
 window.triggerPostMessageHooks = function() {
-    // 触发动态世界
+    // Kích hoạt Thế giới động
     if (typeof generateDynamicWorld === 'function') {
-        generateDynamicWorld().catch(err => console.error('[动态世界] 生成异常:', err));
+        generateDynamicWorld().catch(err => console.error('[Thế giới động] Lỗi khi tạo:', err));
     }
     
-    // 触发好友自动消息
+    // Kích hoạt tin nhắn tự động từ bạn bè
     triggerAutoFriendMessage();
 };
 
-console.log('[动态世界函数] 模块已加载（含好友自动消息触发钩子）');
+console.log('[Hàm Thế giới động] Module đã tải (bao gồm hook kích hoạt tin nhắn bạn bè)');
+

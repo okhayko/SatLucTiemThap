@@ -1,141 +1,138 @@
 /**
- * GraphRAG提取器 - 使用Flash API提取语义信息
- * 与记忆调度器并发调用
+ * Bộ trích xuất GraphRAG - Sử dụng Flash API để trích xuất thông tin ngữ nghĩa
+ * Được gọi đồng thời với bộ điều phối bộ nhớ (memory dispatcher)
  */
 
 /**
- * 获取GraphRAG提取提示词
+ * Lấy câu lệnh gợi ý (prompt) cho GraphRAG
  */
 function getGraphRAGPrompt() {
-    return `你是【语义网络分析师】，负责从剧情中动态识别和提取实体、关系及其语义维度。
+    return `Bạn là 【Chuyên gia phân tích mạng lưới ngữ nghĩa】, chịu trách nhiệm nhận diện và trích xuất thực thể, quan hệ cùng các chiều hướng ngữ nghĩa từ cốt truyện một cách năng động.
 
-【核心任务】
-从当前剧情内容中识别：
-1. **实体（Entity）**：人物、地点、物品、事件、势力、概念等
-2. **关系（Relation）**：实体之间的关联
-3. **维度（Dimension）**：实体共享的语义特征（由你自主分析生成）
+【Nhiệm vụ cốt lõi】
+Nhận diện từ nội dung cốt truyện hiện tại:
+1. **Thực thể (Entity)**: Nhân vật, địa điểm, vật phẩm, sự kiện, thế lực, khái niệm, v.v.
+2. **Quan hệ (Relation)**: Mối liên kết giữa các thực thể.
+3. **Chiều hướng (Dimension)**: Các đặc điểm ngữ nghĩa chung mà thực thể chia sẻ (do bạn tự chủ phân tích và tạo ra).
 
-【什么是维度？】
-维度是你从实体中提炼出的**抽象语义标签**，用于发现隐含关联。
-- 地理相关：如"上海"、"江南"、"深海"
-- 势力相关：如"正道"、"魔教"、"拉莱耶信仰"
-- 概念相关：如"禁忌"、"传承"、"温暖"
-- 情感相关：如"执念"、"羁绊"、"恐惧"
+【Chiều hướng là gì?】
+Chiều hướng là các **nhãn ngữ nghĩa trừu tượng** mà bạn rút ra từ thực thể để phát hiện các liên kết ngầm.
+- Liên quan địa lý: như "Thượng Hải", "Giang Nam", "Biển sâu".
+- Liên quan thế lực: như "Chính đạo", "Ma giáo", "Tín ngưỡng R'lyeh".
+- Liên quan khái niệm: như "Cấm kỵ", "Truyền thừa", "Ấm áp".
+- Liên quan cảm xúc: như "Chấp niệm", "Ràng buộc", "Sợ hãi".
 
-【维度的作用】
-如果"张三"和"生煎"都有维度"上海"：
-- 提到张三时，系统联想到上海的其他事物
-- 提到生煎时，系统联想到来自上海的人物
+【Tác dụng của chiều hướng】
+Nếu "Trương Tam" và "Bánh bao áp chảo" đều có chiều hướng "Thượng Hải":
+- Khi nhắc đến Trương Tam, hệ thống sẽ liên tưởng đến các sự vật khác ở Thượng Hải.
+- Khi nhắc đến Bánh bao áp chảo, hệ thống sẽ liên tưởng đến các nhân vật đến từ Thượng Hải.
 
-【输出格式（JSON）】
+【Định dạng đầu ra (JSON)】
 {
   "semanticUpsert": {
-    "analysisReason": "简述为什么提取这些实体和维度（1句话）",
+    "analysisReason": "Mô tả ngắn gọn lý do trích xuất các thực thể và chiều hướng này (1 câu)",
     "newEntities": [
       {
-        "name": "实体名称",
+        "name": "Tên thực thể",
         "type": "person|place|item|event|faction|concept",
-        "dimensions": ["维度1", "维度2"],
+        "dimensions": ["Chiều hướng 1", "Chiều hướng 2"],
         "attributes": { "key": "value" },
-        "description": "可选的简短描述"
+        "description": "Mô tả ngắn gọn (tùy chọn)"
       }
     ],
     "newRelations": [
       {
-        "subject": "主语实体名",
-        "predicate": "关系类型",
-        "object": "宾语实体名",
+        "subject": "Tên thực thể chủ ngữ",
+        "predicate": "Loại quan hệ",
+        "object": "Tên thực thể tân ngữ",
         "certainty": 0.0-1.0,
-        "context": "可选，关系的上下文说明"
+        "context": "Giải thích ngữ cảnh của quan hệ (tùy chọn)"
       }
     ],
     "dimensionLinks": [
       {
-        "dimension": "维度名称",
-        "entities": ["共享此维度的实体名"],
-        "semanticMeaning": "这个维度代表的含义"
+        "dimension": "Tên chiều hướng",
+        "entities": ["Tên các thực thể chia sẻ chiều hướng này"],
+        "semanticMeaning": "Ý nghĩa mà chiều hướng này đại diện"
       }
     ]
   }
 }
 
-【实体类型】
-- person: 人物
-- place: 地点
-- item: 物品
-- event: 事件
-- faction: 势力
-- concept: 抽象概念
+【Loại thực thể】
+- person: Nhân vật
+- place: Địa điểm
+- item: Vật phẩm
+- event: Sự kiện
+- faction: Thế lực
+- concept: Khái niệm trừu tượng
 
-【关系类型参考（不限于此）】
-- 归属类：hometown、origin、belongs_to、member_of
-- 社会类：friend、enemy、master、disciple
-- 情感类：loves、fears、hates、respects
-- 功能类：owns、uses、creates
-- 空间类：located_in、near
-- 因果类：caused_by、leads_to、related_to
+【Tham khảo loại quan hệ (không giới hạn ở đây)】
+- Thuộc về: hometown (quê quán), origin (nguồn gốc), belongs_to (thuộc về), member_of (thành viên của)
+- Xã hội: friend (bạn bè), enemy (kẻ thù), master (sư phụ), disciple (đệ tử)
+- Cảm xúc: loves (yêu), fears (sợ), hates (ghét), respects (tôn trọng)
+- Chức năng: owns (sở hữu), uses (sử dụng), creates (tạo ra)
+- Không gian: located_in (nằm ở), near (gần)
+- Nhân quả: caused_by (gây ra bởi), leads_to (dẫn đến), related_to (liên quan đến)
 
-【certainty可信度】
-- 1.0：明确陈述
-- 0.7-0.9：强烈暗示
-- 0.5-0.7：合理推测
+【Certainty - Độ tin cậy】
+- 1.0: Tuyên bố rõ ràng
+- 0.7-0.9: Ám chỉ mạnh mẽ
+- 0.5-0.7: Suy đoán hợp lý
 
-【特别注意】
-1. 只提取**新出现或有新信息**的实体和关系
-2. 维度是关键：设计有意义的维度，这是语义涌现的核心
-3. 如果没有值得提取的新信息，返回空数组
-4. 对于主角（玩家）的互动事件，一定要提取对方人物和相关地点`;
+【Lưu ý đặc biệt】
+1. Chỉ trích xuất các thực thể và quan hệ **mới xuất hiện hoặc có thông tin mới**.
+2. Chiều hướng là then chốt: Thiết kế các chiều hướng có ý nghĩa, đây là cốt lõi của sự trỗi dậy ngữ nghĩa.
+3. Nếu không có thông tin mới đáng trích xuất, trả về mảng rỗng.
+4. Đối với các sự kiện tương tác của nhân vật chính (người chơi), nhất định phải trích xuất nhân vật đối phương và địa điểm liên quan.`;
 }
 
 /**
- * 构建语义提取的上下文
+ * Xây dựng ngữ cảnh để trích xuất ngữ nghĩa
  */
 function buildExtractionContext(userInput, lastAIReply, existingEntities = []) {
-    let context = `【用户当前输入】
+    let context = `【Nhập liệu hiện tại của người dùng】
 "${userInput}"
 
-【最近剧情发展】
-${lastAIReply || '（首次对话，无历史）'}`;
+【Diễn biến cốt truyện gần đây】
+${lastAIReply || '（Cuộc hội thoại đầu tiên, chưa có lịch sử）'}`;
 
-    // 添加已有实体列表（避免重复）
+    // Thêm danh sách thực thể đã có (để tránh lặp lại)
     if (existingEntities.length > 0) {
-        context += `\n\n【已有实体（避免重复）】\n${existingEntities.slice(0, 30).join('、')}`;
+        context += `\n\n【Thực thể đã có (tránh lặp lại)】\n${existingEntities.slice(0, 30).join('、')}`;
     }
 
-    context += `\n\n请从上述内容中提取新出现的实体、关系和维度。如果没有值得提取的新信息，返回空的semanticUpsert对象。`;
+    context += `\n\nVui lòng trích xuất các thực thể, quan hệ và chiều hướng mới xuất hiện từ nội dung trên. Nếu không có thông tin mới đáng trích xuất, trả về đối tượng semanticUpsert rỗng.`;
 
     return context;
 }
 
 /**
- * 独立的GraphRAG提取函数（与记忆调度器并发调用）
+ * Hàm trích xuất GraphRAG độc lập (được gọi đồng thời với bộ điều phối bộ nhớ)
  */
 async function extractGraphRAG(userInput, gameContext) {
-    // 检查是否启用
+    // Kiểm tra xem đã bật chưa
     if (!window.graphRAGLite?.config?.enabled) {
-        console.log('[GraphRAG-Extractor] 未启用，跳过提取');
+        console.log('[GraphRAG-Extractor] Chưa bật, bỏ qua trích xuất');
         return null;
     }
 
-    // 检查是否在记忆调度器模式
+    // Kiểm tra xem có đang ở chế độ điều phối bộ nhớ không
     const isMemoryDispatcherMode = window.userProfileConfig?.memoryDispatcherEnabled ||
         window.memoryDispatcherEnabled;
     if (!isMemoryDispatcherMode) {
-        console.log('[GraphRAG-Extractor] 非记忆调度器模式，跳过提取');
+        console.log('[GraphRAG-Extractor] Không phải chế độ điều phối bộ nhớ, bỏ qua trích xuất');
         return null;
     }
 
-    // 不再重复检查额外API配置，callExtraAI函数会自己处理
-    // （额外API配置是HTML中的全局变量extraApiConfig，不一定挂载到window上）
-
-    console.log('[GraphRAG-Extractor] 开始提取...');
-    console.time('[GraphRAG-Extractor] 提取耗时');
+    console.log('[GraphRAG-Extractor] Bắt đầu trích xuất...');
+    console.time('[GraphRAG-Extractor] Thời gian trích xuất');
 
     try {
-        // 获取提示词
+        // Lấy prompt hệ thống
         const systemPrompt = getGraphRAGPrompt();
 
-        // 获取最近AI回复
+        // Lấy phản hồi gần nhất của AI
         let lastAIReply = '';
         if (window.gameState?.conversationHistory) {
             const history = window.gameState.conversationHistory;
@@ -143,42 +140,42 @@ async function extractGraphRAG(userInput, gameContext) {
             lastAIReply = lastAI?.content?.substring(0, 2000) || '';
         }
 
-        // 获取现有实体列表
+        // Lấy danh sách thực thể hiện có
         const existingEntities = window.graphRAGLite?.getAllEntities()?.map(e => e.name) || [];
 
-        // 构建上下文
+        // Xây dựng ngữ cảnh
         const context = buildExtractionContext(userInput, lastAIReply, existingEntities);
 
-        // 构建消息
+        // Xây dựng tin nhắn
         const messages = [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: context }
         ];
 
-        // 调用额外API
+        // Gọi API bổ sung
         const response = await callExtraAI(messages);
 
-        console.timeEnd('[GraphRAG-Extractor] 提取耗时');
+        console.timeEnd('[GraphRAG-Extractor] Thời gian trích xuất');
 
-        // 解析响应
+        // Phân giải phản hồi
         const result = parseGraphRAGResponse(response);
 
         if (result?.semanticUpsert) {
-            console.log('[GraphRAG-Extractor] 提取结果:',
-                '实体:', result.semanticUpsert.newEntities?.length || 0,
-                '关系:', result.semanticUpsert.newRelations?.length || 0);
+            console.log('[GraphRAG-Extractor] Kết quả trích xuất:',
+                'Thực thể:', result.semanticUpsert.newEntities?.length || 0,
+                'Quan hệ:', result.semanticUpsert.newRelations?.length || 0);
         }
 
         return result;
     } catch (error) {
-        console.error('[GraphRAG-Extractor] 提取失败:', error);
-        console.timeEnd('[GraphRAG-Extractor] 提取耗时');
+        console.error('[GraphRAG-Extractor] Trích xuất thất bại:', error);
+        console.timeEnd('[GraphRAG-Extractor] Thời gian trích xuất');
         return null;
     }
 }
 
 /**
- * 解析GraphRAG响应
+ * Phân giải phản hồi GraphRAG
  */
 function parseGraphRAGResponse(response) {
     if (!response) return null;
@@ -186,13 +183,13 @@ function parseGraphRAGResponse(response) {
     try {
         let jsonStr = response;
 
-        // 移除markdown代码块
+        // Loại bỏ khối mã markdown
         const jsonMatch = response.match(/```(?:json)?\s*([\s\S]*?)```/);
         if (jsonMatch) {
             jsonStr = jsonMatch[1].trim();
         }
 
-        // 提取JSON对象
+        // Trích xuất đối tượng JSON
         const startIndex = jsonStr.indexOf('{');
         const endIndex = jsonStr.lastIndexOf('}');
         if (startIndex !== -1 && endIndex !== -1) {
@@ -202,14 +199,14 @@ function parseGraphRAGResponse(response) {
         const result = JSON.parse(jsonStr);
         return result;
     } catch (e) {
-        console.warn('[GraphRAG-Extractor] 解析响应失败:', e);
-        console.log('[GraphRAG-Extractor] 原始响应:', response?.substring(0, 500));
+        console.warn('[GraphRAG-Extractor] Phân giải phản hồi thất bại:', e);
+        console.log('[GraphRAG-Extractor] Phản hồi gốc:', response?.substring(0, 500));
         return null;
     }
 }
 
 /**
- * 并发处理用户输入（同时调用记忆调度器和GraphRAG提取）
+ * Xử lý đồng thời nhập liệu của người dùng (gọi cả bộ điều phối bộ nhớ và trích xuất GraphRAG)
  */
 async function processUserInputWithGraphRAG(userInput, gameContext) {
     const graphRAGEnabled = window.graphRAGLite?.config?.enabled;
@@ -217,39 +214,39 @@ async function processUserInputWithGraphRAG(userInput, gameContext) {
         window.memoryDispatcherEnabled;
 
     if (!memoryDispatcherMode) {
-        // 非记忆调度器模式，不执行
+        // Không phải chế độ điều phối bộ nhớ, không thực hiện
         return null;
     }
 
-    console.log('[GraphRAG-Extractor] 开始并发处理...');
-    console.time('[GraphRAG-Extractor] 总耗时');
+    console.log('[GraphRAG-Extractor] Bắt đầu xử lý đồng thời...');
+    console.time('[GraphRAG-Extractor] Tổng thời gian');
 
     let memoryResult = null;
     let graphResult = null;
 
     if (graphRAGEnabled) {
-        // 并发执行
+        // Thực thi đồng thời
         [memoryResult, graphResult] = await Promise.all([
-            // 任务1：记忆调度器（现有）
+            // Nhiệm vụ 1: Bộ điều phối bộ nhớ (đã có)
             window.analyzeUserInput ? window.analyzeUserInput(userInput, gameContext) : null,
 
-            // 任务2：GraphRAG提取（新增）
+            // Nhiệm vụ 2: Trích xuất GraphRAG (mới thêm)
             extractGraphRAG(userInput, gameContext)
         ]);
     } else {
-        // 仅执行记忆调度器
+        // Chỉ thực thi bộ điều phối bộ nhớ
         memoryResult = window.analyzeUserInput ?
             await window.analyzeUserInput(userInput, gameContext) : null;
     }
 
-    console.timeEnd('[GraphRAG-Extractor] 总耗时');
+    console.timeEnd('[GraphRAG-Extractor] Tổng thời gian');
 
-    // 处理GraphRAG结果
+    // Xử lý kết quả GraphRAG
     if (graphResult?.semanticUpsert) {
         await window.graphRAGLite?.processUpdate(graphResult.semanticUpsert);
     }
 
-    // 合并结果
+    // Gộp kết quả
     return {
         ...memoryResult,
         graphUpdate: graphResult?.semanticUpsert
@@ -257,14 +254,14 @@ async function processUserInputWithGraphRAG(userInput, gameContext) {
 }
 
 /**
- * 获取GraphRAG上下文（供记忆调度器使用）
+ * Lấy ngữ cảnh GraphRAG (dành cho bộ điều phối bộ nhớ sử dụng)
  */
 async function getGraphRAGContext(userInput) {
     if (!window.graphRAGLite?.config?.enabled) {
         return '';
     }
 
-    // 获取最近AI回复
+    // Lấy phản hồi AI gần nhất
     let lastAIReply = '';
     if (window.gameState?.conversationHistory) {
         const history = window.gameState.conversationHistory;
@@ -276,7 +273,7 @@ async function getGraphRAGContext(userInput) {
     return context || '';
 }
 
-// 导出到全局
+// Xuất ra biến toàn cục (Global)
 if (typeof window !== 'undefined') {
     window.getGraphRAGPrompt = getGraphRAGPrompt;
     window.extractGraphRAG = extractGraphRAG;
@@ -284,5 +281,5 @@ if (typeof window !== 'undefined') {
     window.processUserInputWithGraphRAG = processUserInputWithGraphRAG;
     window.getGraphRAGContext = getGraphRAGContext;
 
-    console.log('[GraphRAG-Extractor] 提取器模块已加载');
+    console.log('[GraphRAG-Extractor] Module trích xuất đã được tải');
 }

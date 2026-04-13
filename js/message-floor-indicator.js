@@ -1,32 +1,32 @@
 /**
- * 消息楼层指示器模块
- * 用于在消息header中显示消息的楼层编号
- * 作者：系统生成
- * 版本：1.0.0
+ * Mô-đun chỉ báo tầng tin nhắn
+ * Dùng để hiển thị số tầng của tin nhắn trong header tin nhắn
+ * Tác giả: Hệ thống tạo
+ * Phiên bản: 1.0.0
  */
 
 (function() {
     'use strict';
     
     /**
-     * 为消息header添加楼层指示器
-     * @param {HTMLElement} headerDiv - 消息的header DOM元素
-     * @param {number} floorNumber - 楼层编号（对应data-message-index值）
-     * @param {string} position - 显示位置 'left'(左侧) 或 'right'(右侧)，默认'left'
+     * Thêm chỉ báo tầng cho header tin nhắn
+     * @param {HTMLElement} headerDiv - Phần tử DOM header của tin nhắn
+     * @param {number} floorNumber - Số tầng (tương ứng với giá trị data-message-index)
+     * @param {string} position - Vị trí hiển thị 'left'(bên trái) hoặc 'right'(bên phải), mặc định là 'left'
      */
     function addFloorIndicator(headerDiv, floorNumber, position = 'left') {
         if (!headerDiv || typeof floorNumber !== 'number') {
-            console.warn('[楼层指示器] 参数无效:', { headerDiv, floorNumber });
+            console.warn('[Chỉ báo tầng] Tham số không hợp lệ:', { headerDiv, floorNumber });
             return;
         }
         
-        // 创建楼层指示器元素
+        // Tạo phần tử chỉ báo tầng
         const floorIndicator = document.createElement('span');
         floorIndicator.className = 'message-floor-indicator';
         floorIndicator.textContent = `#${floorNumber}`;
-        floorIndicator.title = `第${floorNumber}层`;
+        floorIndicator.title = `Tầng thứ ${floorNumber}`;
         
-        // 设置样式
+        // Thiết lập kiểu dáng
         floorIndicator.style.cssText = `
             font-size: 12px;
             color: #6c757d;
@@ -38,73 +38,73 @@
             margin: 0 8px;
         `;
         
-        // 根据位置插入
+        // Chèn dựa trên vị trí
         if (position === 'right') {
             headerDiv.appendChild(floorIndicator);
         } else {
-            // 查找标题span并插入到其内部
+            // Tìm span tiêu đề và chèn vào bên trong nó
             const titleSpan = headerDiv.querySelector('span:not(.message-floor-indicator)');
             if (titleSpan) {
-                // 在标题span内部添加楼层指示器（避免使用innerHTML）
+                // Thêm chỉ báo tầng vào bên trong span tiêu đề (tránh sử dụng innerHTML)
                 const spaceNode = document.createTextNode(' ');
                 titleSpan.appendChild(spaceNode);
                 titleSpan.appendChild(floorIndicator);
             } else {
-                // 如果找不到标题span，则添加到header末尾
+                // Nếu không tìm thấy span tiêu đề, thì thêm vào cuối header
                 headerDiv.appendChild(floorIndicator);
             }
         }
     }
     
     /**
-     * 批量更新所有消息的楼层指示器
-     * 用于页面加载或消息删除后重新编号
+     * Cập nhật hàng loạt chỉ báo tầng cho tất cả tin nhắn
+     * Dùng để đánh số lại sau khi tải trang hoặc xóa tin nhắn
      */
     function updateAllFloorIndicators() {
         const historyDiv = document.getElementById('gameHistory');
         if (!historyDiv) {
-            console.warn('[楼层指示器] 未找到gameHistory元素');
+            console.warn('[Chỉ báo tầng] Không tìm thấy phần tử gameHistory');
             return;
         }
         
         const messages = historyDiv.querySelectorAll('.message');
         messages.forEach((messageDiv, index) => {
-            // 更新data-message-index属性
+            // Cập nhật thuộc tính data-message-index
             messageDiv.setAttribute('data-message-index', index);
             
-            // 查找或创建楼层指示器
+            // Tìm hoặc tạo chỉ báo tầng
             const headerDiv = messageDiv.querySelector('.message-header');
             if (!headerDiv) return;
             
-            // 移除旧的楼层指示器（如果存在）
+            // Gỡ bỏ chỉ báo tầng cũ (nếu tồn tại)
             const oldIndicator = headerDiv.querySelector('.message-floor-indicator');
             if (oldIndicator) {
                 oldIndicator.remove();
             }
             
-            // 添加新的楼层指示器
+            // Thêm chỉ báo tầng mới
             addFloorIndicator(headerDiv, index);
         });
         
-        console.log(`[楼层指示器] 已更新 ${messages.length} 条消息的楼层编号`);
+        console.log(`[Chỉ báo tầng] Đã cập nhật số tầng của ${messages.length} tin nhắn`);
     }
     
     /**
-     * 监听DOM变化，自动为新消息添加楼层指示器
+     * Lắng nghe thay đổi DOM, tự động thêm chỉ báo tầng cho tin nhắn mới
      */
     function observeMessageChanges() {
         const historyDiv = document.getElementById('gameHistory');
         if (!historyDiv) {
-            console.warn('[楼层指示器] 未找到gameHistory元素，延迟初始化');
+            console.warn('[Chỉ báo tầng] Không tìm thấy phần tử gameHistory, trì hoãn khởi tạo');
             setTimeout(observeMessageChanges, 1000);
             return;
         }
         
-        // 使用MutationObserver监听消息变化
+        // Sử dụng MutationObserver để lắng nghe thay đổi tin nhắn
         const observer = new MutationObserver((mutations) => {
             mutations.forEach((mutation) => {
                 mutation.addedNodes.forEach((node) => {
-                    // 只处理新增的消息元素，且不在删除模式时
+                    // Chỉ xử lý các phần tử tin nhắn mới thêm vào, và khi không ở chế độ xóa
                     if (node.nodeType === Node.ELEMENT_NODE && 
                         node.classList.contains('message') &&
                         !historyDiv.classList.contains('delete-mode-active')) {
@@ -113,7 +113,7 @@
                         const messageIndex = parseInt(node.getAttribute('data-message-index'));
                         
                         if (headerDiv && !isNaN(messageIndex)) {
-                            // 检查是否已有楼层指示器
+                            // Kiểm tra xem đã có chỉ báo tầng chưa
                             if (!headerDiv.querySelector('.message-floor-indicator')) {
                                 addFloorIndicator(headerDiv, messageIndex);
                             }
@@ -123,23 +123,23 @@
             });
         });
         
-        // 开始观察
+        // Bắt đầu quan sát
         observer.observe(historyDiv, {
             childList: true,
             subtree: false
         });
         
-        console.log('[楼层指示器] 已启动消息变化监听');
+        console.log('[Chỉ báo tầng] Đã khởi động lắng nghe thay đổi tin nhắn');
         
-        // 初始化现有消息
+        // Khởi tạo các tin nhắn hiện có
         updateAllFloorIndicators();
     }
     
     /**
-     * 初始化楼层指示器系统
+     * Khởi tạo hệ thống chỉ báo tầng
      */
     function initFloorIndicator() {
-        // 等待DOM加载完成
+        // Chờ tải xong DOM
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', observeMessageChanges);
         } else {
@@ -147,15 +147,15 @@
         }
     }
     
-    // 导出到全局对象
+    // Xuất ra đối tượng toàn cục
     window.MessageFloorIndicator = {
         addFloorIndicator,
         updateAllFloorIndicators,
         init: initFloorIndicator
     };
     
-    // 自动初始化
+    // Tự động khởi tạo
     initFloorIndicator();
     
-    console.log('[楼层指示器] 模块加载完成');
+    console.log('[Chỉ báo tầng] Tải mô-đun hoàn tất');
 })();

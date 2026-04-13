@@ -1,21 +1,23 @@
 /**
- * API调用函数模块
- * 包含：AI调用、额外API调用、OpenAI格式调用、Gemini格式调用等
- * 从 game.html 中提取的API调用功能模块
+ * Module hàm gọi API
+ * Bao gồm: Gọi AI, gọi API phụ, gọi theo định dạng OpenAI, gọi theo định dạng Gemini, v.v.
+ * Các module chức năng gọi API được trích xuất từ game.html
  */
 
-// ==================== API调用函数 ====================
+// ==================== Các hàm gọi API ====================
 
-// 调用额外API
+// Lấy số lượng token tối đa đã cấu hình
 function getConfiguredMaxTokens() {
     const savedConfig = localStorage.getItem('gameConfig');
     return savedConfig ? (JSON.parse(savedConfig).maxTokens || 8192) : 8192;
 }
 
+// Lấy nội dung stream từ sự kiện OpenAI
 function getStreamContentFromOpenAIEvent(payload) {
     return extractTextFromOpenAICompatiblePayload(payload, true);
 }
 
+// Lấy nội dung stream từ sự kiện Gemini
 function getStreamContentFromGeminiEvent(payload) {
     const candidates = Array.isArray(payload?.candidates) ? payload.candidates : [];
     let text = '';
@@ -36,6 +38,7 @@ function getStreamContentFromGeminiEvent(payload) {
     return text;
 }
 
+// Trích xuất văn bản từ các thành phần (parts)
 function extractTextFromParts(parts) {
     if (!Array.isArray(parts)) {
         return '';
@@ -52,6 +55,7 @@ function extractTextFromParts(parts) {
     return text;
 }
 
+// Trích xuất văn bản từ Payload tương thích OpenAI
 function extractTextFromOpenAICompatiblePayload(payload, isStream = false) {
     const choices = Array.isArray(payload?.choices) ? payload.choices : [];
     let text = '';
@@ -137,6 +141,7 @@ function extractTextFromOpenAICompatiblePayload(payload, isStream = false) {
     return '';
 }
 
+// Chuẩn hóa tin nhắn cho Moonshot (Kimi)
 function normalizeMessagesForMoonshot(messages) {
     if (!Array.isArray(messages) || messages.length === 0) {
         return messages;
@@ -156,10 +161,10 @@ function normalizeMessagesForMoonshot(messages) {
         mergedSections.push(mergedSystemText);
     }
 
-    mergedSections.push('【Moonshot兼容处理】以下内容原本以多条assistant上下文传入。请将它们视为背景设定、记忆包和写作约束，不要把它们当成你已经输出给用户的正式回复。');
+    mergedSections.push('【Xử lý tương thích Moonshot】Nội dung dưới đây vốn được truyền vào dưới dạng nhiều ngữ cảnh assistant. Vui lòng xem chúng như thiết lập bối cảnh, gói ký ức và ràng buộc viết lách, đừng coi chúng là câu trả lời chính thức mà bạn đã xuất cho người dùng.');
     mergedSections.push(
         assistantMessages
-            .map((message, index) => `【assistant上下文${index + 1}】\n${message.content.trim()}`)
+            .map((message, index) => `【Ngữ cảnh assistant ${index + 1}】\n${message.content.trim()}`)
             .join('\n\n')
     );
 
@@ -168,7 +173,7 @@ function normalizeMessagesForMoonshot(messages) {
         ...otherMessages
     ];
 
-    console.log('[Moonshot] Merged assistant messages into system message:', {
+    console.log('[Moonshot] Đã hợp nhất tin nhắn assistant vào tin nhắn hệ thống:', {
         originalCount: messages.length,
         assistantCount: assistantMessages.length,
         normalizedCount: normalizedMessages.length
@@ -177,7 +182,8 @@ function normalizeMessagesForMoonshot(messages) {
     return normalizedMessages;
 }
 
-function updateStreamPreview(text, label = 'AI streaming...') {
+// Cập nhật bản xem trước stream
+function updateStreamPreview(text, label = 'AI đang phản hồi...') {
     const loadingEl = document.getElementById('loading-message');
     if (!loadingEl) {
         return;
@@ -205,9 +211,10 @@ function updateStreamPreview(text, label = 'AI streaming...') {
     contentEl.appendChild(previewSpan);
 }
 
+// Đọc phản hồi văn bản SSE (Server-Sent Events)
 async function readSSETextResponse(response, extractText, doneMarker = '[DONE]', onProgress = null) {
     if (!response.body) {
-        throw new Error('Stream response body is not available.');
+        throw new Error('Không có thân phản hồi Stream (Stream response body).');
     }
 
     const reader = response.body.getReader();
@@ -243,7 +250,7 @@ async function readSSETextResponse(response, extractText, doneMarker = '[DONE]',
                         onProgress(fullText);
                     }
                 } catch (error) {
-                    console.warn('[stream] Failed to parse SSE chunk:', line, error);
+                    console.warn('[stream] Phân tích SSE chunk thất bại:', line, error);
                 }
             }
         }
@@ -266,13 +273,14 @@ async function readSSETextResponse(response, extractText, doneMarker = '[DONE]',
                 onProgress(fullText);
             }
         } catch (error) {
-            console.warn('[stream] Failed to parse SSE tail chunk:', line, error);
+            console.warn('[stream] Phân tích SSE tail chunk thất bại:', line, error);
         }
     }
 
     return fullText;
 }
 
+// Yêu cầu hoàn thiện tin nhắn tương thích OpenAI
 async function requestOpenAICompatibleCompletion(config, messages, options = {}) {
     const fullEndpoint = getFullEndpoint(config.endpoint, config.type);
     const temperature = config.type === 'moonshot' ? 1 : (options.temperature ?? 0.8);
@@ -284,7 +292,7 @@ async function requestOpenAICompatibleCompletion(config, messages, options = {})
         : messages;
 
     if (!config.stream && maxTokens > autoStreamThreshold) {
-        console.warn('[requestOpenAICompatibleCompletion] Auto-enabled stream because max_tokens exceeds limit:', maxTokens);
+        console.warn('[requestOpenAICompatibleCompletion] Tự động bật stream vì max_tokens vượt giới hạn:', maxTokens);
     }
 
     const headers = {
@@ -316,7 +324,7 @@ async function requestOpenAICompatibleCompletion(config, messages, options = {})
 
     if (!response.ok) {
         const error = await response.text();
-        throw new Error(`${options.errorPrefix || 'API error'}: ${response.status} - ${error}`);
+        throw new Error(`${options.errorPrefix || 'Lỗi API'}: ${response.status} - ${error}`);
     }
 
     if (shouldStream) {
@@ -326,7 +334,7 @@ async function requestOpenAICompatibleCompletion(config, messages, options = {})
             '[DONE]',
             options.onProgress || null
         );
-        return streamedText || (options.emptyMessage || 'API response format is invalid.');
+        return streamedText || (options.emptyMessage || 'Định dạng phản hồi API không hợp lệ.');
     }
 
     const data = await response.json();
@@ -339,10 +347,11 @@ async function requestOpenAICompatibleCompletion(config, messages, options = {})
         return extractedText;
     }
 
-    console.warn(options.warnPrefix || '[requestOpenAICompatibleCompletion] Missing choices:', data);
-    return `${options.emptyMessage || 'API response format is invalid.'}\n\nRaw response:\n${JSON.stringify(data).slice(0, 1200)}`;
+    console.warn(options.warnPrefix || '[requestOpenAICompatibleCompletion] Thiếu lựa chọn (choices):', data);
+    return `${options.emptyMessage || 'Định dạng phản hồi API không hợp lệ.'}\n\nPhản hồi thô:\n${JSON.stringify(data).slice(0, 1200)}`;
 }
 
+// Yêu cầu hoàn thiện tin nhắn Gemini
 async function requestGeminiCompletion(config, messages, options = {}) {
     const systemInstruction = messages.filter(m => m.role === 'system').map(m => m.content).join('\n');
     const historyMessages = messages.filter(m => m.role !== 'system');
@@ -382,9 +391,9 @@ async function requestGeminiCompletion(config, messages, options = {}) {
         try {
             const errorJson = JSON.parse(errorBody);
             const detailedMessage = errorJson.error?.message || errorBody;
-            throw new Error(`${options.errorPrefix || 'Gemini API error'}: ${response.status} - ${detailedMessage}`);
+            throw new Error(`${options.errorPrefix || 'Lỗi Gemini API'}: ${response.status} - ${detailedMessage}`);
         } catch (e) {
-            throw new Error(`${options.errorPrefix || 'Gemini API error'}: ${response.status} - ${errorBody}`);
+            throw new Error(`${options.errorPrefix || 'Lỗi Gemini API'}: ${response.status} - ${errorBody}`);
         }
     }
 
@@ -395,17 +404,18 @@ async function requestGeminiCompletion(config, messages, options = {}) {
             '[DONE]',
             options.onProgress || null
         );
-        return streamedText || (options.blockedMessage || 'Gemini returned no content.');
+        return streamedText || (options.blockedMessage || 'Gemini không trả về nội dung.');
     }
 
     const data = await response.json();
     if (!data.candidates || data.candidates.length === 0) {
-        return options.blockedMessage || 'Gemini returned no candidates.';
+        return options.blockedMessage || 'Gemini không trả về kết quả (candidates).';
     }
 
     return data.candidates[0].content.parts[0].text;
 }
 
+// Gọi API phụ
 async function callExtraAPI(messages) {
     const endpoint = extraApiConfig.type === 'gemini'
         ? `${extraApiConfig.endpoint}/models/${extraApiConfig.model}:generateContent?key=${extraApiConfig.key}`
@@ -415,7 +425,7 @@ async function callExtraAPI(messages) {
     let headers = { 'Content-Type': 'application/json' };
 
     if (extraApiConfig.type === 'gemini') {
-        // Gemini格式
+        // Định dạng Gemini
         const contents = messages
             .filter(m => m.role !== 'system')
             .map(m => ({
@@ -442,10 +452,10 @@ async function callExtraAPI(messages) {
             }
         };
     } else {
-        // OpenAI格式（包括 Claude API 和第三方 API）
+        // Định dạng OpenAI (bao gồm Claude API và API bên thứ ba)
         headers['Authorization'] = `Bearer ${extraApiConfig.key}`;
 
-        // 🔧 获取用户配置的 max_tokens（优先）或使用默认值
+        // 🔧 Lấy max_tokens do người dùng cấu hình (ưu tiên) hoặc dùng giá trị mặc định
         const savedConfig = localStorage.getItem('gameConfig');
         const userMaxTokens = savedConfig ? (JSON.parse(savedConfig).maxTokens || 8192) : 8192;
 
@@ -453,7 +463,7 @@ async function callExtraAPI(messages) {
             model: extraApiConfig.model,
             messages: messages,
             temperature: 0.9,
-            max_tokens: userMaxTokens  // 使用用户配置的值
+            max_tokens: userMaxTokens  // Sử dụng giá trị người dùng cấu hình
         };
     }
 
@@ -464,42 +474,42 @@ async function callExtraAPI(messages) {
     });
 
     if (!response.ok) {
-        throw new Error(`API请求失败: ${response.status} ${response.statusText}`);
+        throw new Error(`Yêu cầu API thất bại: ${response.status} ${response.statusText}`);
     }
 
     const data = await response.json();
 
-    // 提取内容
+    // Trích xuất nội dung
     if (extraApiConfig.type === 'gemini') {
         if (!data.candidates || data.candidates.length === 0) {
-            console.warn('[callExtraAPI] Gemini响应缺少candidates:', data);
-            return "请求被模型阻止或响应格式异常，请重试。";
+            console.warn('[callExtraAPI] Phản hồi Gemini thiếu candidates:', data);
+            return "Yêu cầu bị mô hình chặn hoặc định dạng phản hồi bất thường, vui lòng thử lại.";
         }
         return data.candidates[0].content.parts[0].text;
     } else {
         if (!data.choices || data.choices.length === 0) {
-            console.warn('[callExtraAPI] OpenAI响应缺少choices:', data);
-            return "API响应格式异常，请重试。";
+            console.warn('[callExtraAPI] Phản hồi OpenAI thiếu choices:', data);
+            return "Định dạng phản hồi API bất thường, vui lòng thử lại.";
         }
         return data.choices[0].message.content;
     }
 }
 
-// 调用AI
+// Gọi AI
 async function callAI(userMessage, isTest = false, originalUserInput = null) {
-    // 确保配置已加载
+    // Đảm bảo cấu hình đã được tải
     if (!apiConfig.endpoint || !apiConfig.key || !apiConfig.model) {
-        throw new Error('请先配置并保存API连接');
+        throw new Error('Vui lòng cấu hình và lưu kết nối API trước');
     }
 
     let messages = [];
 
     if (!isTest) {
-        // 🔧 传入原始用户输入（用于向量检索）
+        // 🔧 Truyền vào nội dung người dùng nhập gốc (dùng cho truy xuất vector)
         messages = await buildAIMessages(userMessage, originalUserInput);
     } else {
         messages = [
-            { role: 'user', content: '你好' }
+            { role: 'user', content: 'Chào bạn' }
         ];
     }
 
@@ -510,23 +520,23 @@ async function callAI(userMessage, isTest = false, originalUserInput = null) {
             return await callOpenAI(messages);
         }
     } catch (error) {
-        console.error('AI调用错误:', error);
+        console.error('Lỗi gọi AI:', error);
         throw error;
     }
 }
 
-// 调用额外API（供其他用途使用）
+// Gọi API phụ (dùng cho các mục đích khác)
 async function callExtraAI(messages, systemPrompt = null) {
-    // 确保额外API已启用并配置
+    // Đảm bảo API phụ đã được bật và cấu hình
     if (!extraApiConfig.enabled) {
-        throw new Error('额外API未启用');
+        throw new Error('API phụ chưa được bật');
     }
 
     if (!extraApiConfig.endpoint || !extraApiConfig.key || !extraApiConfig.model) {
-        throw new Error('请先配置并保存额外API连接');
+        throw new Error('Vui lòng cấu hình và lưu kết nối API phụ trước');
     }
 
-    // 如果提供了系统提示词，添加到消息开头
+    // Nếu có cung cấp gợi ý hệ thống (system prompt), thêm vào đầu tin nhắn
     if (systemPrompt) {
         messages = [
             { role: 'system', content: systemPrompt },
@@ -541,23 +551,23 @@ async function callExtraAI(messages, systemPrompt = null) {
             return await callExtraOpenAI(messages);
         }
     } catch (error) {
-        console.error('额外API调用错误:', error);
+        console.error('Lỗi gọi API phụ:', error);
         throw error;
     }
 }
 
-// 使用额外API的OpenAI格式调用
+// Gọi theo định dạng OpenAI bằng API phụ
 async function callExtraOpenAI(messages) {
     const fullEndpoint = getFullEndpoint(extraApiConfig.endpoint, extraApiConfig.type);
 
-    // 🔧 获取用户配置的 max_tokens
+    // 🔧 Lấy max_tokens do người dùng cấu hình
     const savedConfig = localStorage.getItem('gameConfig');
     const userMaxTokens = savedConfig ? (JSON.parse(savedConfig).maxTokens || 8192) : 8192;
 
-    // 🌙 根据API类型设置温度：moonshot使用1，其他使用0.8
+    // 🌙 Thiết lập nhiệt độ (temperature) theo loại API: moonshot dùng 1, loại khác dùng 0.8
     const temperature = extraApiConfig.type === 'moonshot' ? 1 : 0.8;
 
-    // 🌙 构建请求头，moonshot需要特殊的User-Agent和Host
+    // 🌙 Xây dựng Header, moonshot cần User-Agent và Host đặc biệt
     const headers = {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${extraApiConfig.key}`
@@ -574,41 +584,41 @@ async function callExtraOpenAI(messages) {
             model: extraApiConfig.model,
             messages: messages,
             temperature: temperature,
-            max_tokens: userMaxTokens  // 使用用户配置的值
+            max_tokens: userMaxTokens  // Sử dụng giá trị người dùng cấu hình
         })
     });
 
     if (!response.ok) {
         const error = await response.text();
-        throw new Error(`额外API错误: ${response.status} - ${error}`);
+        throw new Error(`Lỗi API phụ: ${response.status} - ${error}`);
     }
 
     const data = await response.json();
 
     if (!data.choices || data.choices.length === 0) {
-        console.warn('[callExtraOpenAI] 响应缺少choices:', data);
-        return "额外API响应格式异常，请重试。";
+        console.warn('[callExtraOpenAI] Phản hồi thiếu choices:', data);
+        return "Định dạng phản hồi API phụ bất thường, vui lòng thử lại.";
     }
     return data.choices[0].message.content;
 }
 
-// 使用额外API的Gemini格式调用
+// Gọi theo định dạng Gemini bằng API phụ
 async function callExtraGemini(messages) {
-    // 1. 分离系统提示和对话历史
+    // 1. Tách gợi ý hệ thống và lịch sử hội thoại
     const systemInstruction = messages.filter(m => m.role === 'system').map(m => m.content).join('\n');
     const historyMessages = messages.filter(m => m.role !== 'system');
 
-    // 2. 转换对话历史为Gemini格式
+    // 2. Chuyển đổi lịch sử hội thoại sang định dạng Gemini
     const contents = historyMessages.map(m => ({
         role: m.role === 'assistant' ? 'model' : 'user',
         parts: [{ text: m.content }]
     }));
 
-    // 3. 构建 Gemini 端点
+    // 3. Xây dựng Endpoint Gemini
     let baseEndpoint = extraApiConfig.endpoint.trim().replace(/\/+$/, '');
     const endpoint = baseEndpoint + '/models/' + extraApiConfig.model + ':generateContent?key=' + extraApiConfig.key;
 
-    // 4. 构建请求体
+    // 4. Xây dựng thân yêu cầu (request body)
     const requestBody = {
         contents: contents,
         ...(systemInstruction && { systemInstruction: { parts: [{ text: systemInstruction }] } }),
@@ -637,34 +647,34 @@ async function callExtraGemini(messages) {
         try {
             const errorJson = JSON.parse(errorBody);
             const detailedMessage = errorJson.error?.message || errorBody;
-            throw new Error(`额外Gemini API错误: ${response.status} - ${detailedMessage}`);
+            throw new Error(`Lỗi Gemini API phụ: ${response.status} - ${detailedMessage}`);
         } catch (e) {
-            throw new Error(`额外Gemini API错误: ${response.status} - ${errorBody}`);
+            throw new Error(`Lỗi Gemini API phụ: ${response.status} - ${errorBody}`);
         }
     }
 
     const data = await response.json();
 
     if (!data.candidates || data.candidates.length === 0) {
-        return "(额外API)请求被模型阻止，可能触发了安全设置。";
+        return "(API phụ) Yêu cầu bị mô hình chặn, có thể đã kích hoạt thiết lập an toàn.";
     }
 
     return data.candidates[0].content.parts[0].text;
 }
 
-// OpenAI格式调用
+// Gọi định dạng OpenAI
 async function callOpenAI(messages) {
-    // 获取完整的聊天端点
+    // Lấy endpoint chat đầy đủ
     const fullEndpoint = getFullEndpoint(apiConfig.endpoint, apiConfig.type);
 
-    // 🔧 获取用户配置的 max_tokens
+    // 🔧 Lấy max_tokens cấu hình bởi người dùng
     const savedConfig = localStorage.getItem('gameConfig');
     const userMaxTokens = savedConfig ? (JSON.parse(savedConfig).maxTokens || 8192) : 8192;
 
-    // 🌙 根据API类型设置温度：moonshot使用1，其他使用0.8
+    // 🌙 Thiết lập nhiệt độ theo loại API: moonshot dùng 1, loại khác dùng 0.8
     const temperature = apiConfig.type === 'moonshot' ? 1 : 0.8;
 
-    // 🌙 构建请求头，moonshot需要特殊的User-Agent和Host
+    // 🌙 Xây dựng Header, moonshot cần User-Agent và Host đặc biệt
     const headers = {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiConfig.key}`
@@ -681,45 +691,45 @@ async function callOpenAI(messages) {
             model: apiConfig.model,
             messages: messages,
             temperature: temperature,
-            max_tokens: userMaxTokens  // 使用用户配置的值
+            max_tokens: userMaxTokens  // Sử dụng giá trị người dùng cấu hình
         })
     });
 
     if (!response.ok) {
         const error = await response.text();
-        throw new Error(`API错误: ${response.status} - ${error}`);
+        throw new Error(`Lỗi API: ${response.status} - ${error}`);
     }
 
     const data = await response.json();
-    console.log('API原始响应:', data);
+    console.log('Phản hồi thô API:', data);
 
     if (!data.choices || data.choices.length === 0) {
-        console.warn('[callOpenAI] 响应缺少choices:', data);
-        return "API响应格式异常，请重试。";
+        console.warn('[callOpenAI] Phản hồi thiếu choices:', data);
+        return "Định dạng phản hồi API bất thường, vui lòng thử lại.";
     }
     return data.choices[0].message.content;
 }
 
-// Gemini格式调用
+// Gọi định dạng Gemini
 async function callGemini(messages) {
-    // 1. 分离系统提示和对话历史
+    // 1. Tách gợi ý hệ thống và lịch sử hội thoại
     const systemInstruction = messages.filter(m => m.role === 'system').map(m => m.content).join('\n');
     const historyMessages = messages.filter(m => m.role !== 'system');
 
-    // 2. 转换对话历史为Gemini格式
+    // 2. Chuyển đổi lịch sử sang định dạng Gemini
     const contents = historyMessages.map(m => ({
         role: m.role === 'assistant' ? 'model' : 'user',
         parts: [{ text: m.content }]
     }));
 
-    // 3. 构建 Gemini 端点
+    // 3. Xây dựng Endpoint Gemini
     let baseEndpoint = apiConfig.endpoint.trim().replace(/\/+$/, '');
     const endpoint = baseEndpoint + '/models/' + apiConfig.model + ':generateContent?key=' + apiConfig.key;
 
-    // 4. 构建请求体
+    // 4. Xây dựng thân yêu cầu
     const requestBody = {
         contents: contents,
-        // 仅在有系统提示时才添加
+        // Chỉ thêm khi có gợi ý hệ thống
         ...(systemInstruction && { systemInstruction: { parts: [{ text: systemInstruction }] } }),
         safetySettings: [
             { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
@@ -729,7 +739,7 @@ async function callGemini(messages) {
         ],
         generationConfig: {
             temperature: 0.8,
-            maxOutputTokens: 8192 // 根据需要调整
+            maxOutputTokens: 8192 // Điều chỉnh theo nhu cầu
         }
     };
 
@@ -744,42 +754,42 @@ async function callGemini(messages) {
     if (!response.ok) {
         const errorBody = await response.text();
         try {
-            // 尝试解析为JSON以获取更详细的错误信息
+            // Thử phân tích JSON để lấy thông tin lỗi chi tiết hơn
             const errorJson = JSON.parse(errorBody);
             const detailedMessage = errorJson.error?.message || errorBody;
-            throw new Error(`Gemini API错误: ${response.status} - ${detailedMessage}`);
+            throw new Error(`Lỗi Gemini API: ${response.status} - ${detailedMessage}`);
         } catch (e) {
-            // 如果解析失败，则返回原始文本
-            throw new Error(`Gemini API错误: ${response.status} - ${errorBody}`);
+            // Nếu phân tích thất bại, trả về văn bản gốc
+            throw new Error(`Lỗi Gemini API: ${response.status} - ${errorBody}`);
         }
     }
 
     const data = await response.json();
 
-    // 检查是否有候选内容返回
+    // Kiểm tra xem có nội dung ứng viên nào được trả về không
     if (!data.candidates || data.candidates.length === 0) {
-        // 如果因为安全设置等原因被阻止，通常 candidates 数组为空
-        return "请求被模型阻止，可能触发了安全设置。请尝试修改输入内容。";
+        // Nếu bị chặn do thiết lập an toàn, thường mảng candidates sẽ trống
+        return "Yêu cầu bị mô hình chặn, có thể đã kích hoạt thiết lập an toàn. Vui lòng thử sửa lại nội dung nhập.";
     }
 
     return data.candidates[0].content.parts[0].text;
 }
 
-// ==================== 📱 手机API调用函数 ====================
+// ==================== 📱 Hàm gọi API Điện thoại ====================
 
 /**
- * 调用手机API（第三个API）
- * @param {Array} messages - 消息数组
- * @returns {Promise<string>} - AI回复内容
+ * Gọi API Điện thoại (API thứ ba)
+ * @param {Array} messages - Mảng tin nhắn
+ * @returns {Promise<string>} - Nội dung AI phản hồi
  */
 async function callMobileAPI(messages) {
-    // 确保手机API已配置
+    // Đảm bảo API điện thoại đã được cấu hình
     if (!window.mobileApiConfig || !window.mobileApiConfig.enabled) {
-        throw new Error('手机API未启用');
+        throw new Error('API điện thoại chưa được bật');
     }
 
     if (!window.mobileApiConfig.endpoint || !window.mobileApiConfig.key || !window.mobileApiConfig.model) {
-        throw new Error('请先配置并保存手机API连接');
+        throw new Error('Vui lòng cấu hình và lưu kết nối API điện thoại trước');
     }
 
     try {
@@ -789,25 +799,25 @@ async function callMobileAPI(messages) {
             return await callMobileOpenAI(messages);
         }
     } catch (error) {
-        console.error('[手机API] 调用错误:', error);
+        console.error('[API Điện thoại] Lỗi gọi API:', error);
         throw error;
     }
 }
 
 /**
- * 使用手机API的OpenAI格式调用
+ * Gọi theo định dạng OpenAI bằng API điện thoại
  */
 async function callMobileOpenAI(messages) {
     const fullEndpoint = getFullEndpoint(window.mobileApiConfig.endpoint, window.mobileApiConfig.type);
 
-    // 获取用户配置的 max_tokens
+    // Lấy max_tokens do người dùng cấu hình
     const savedConfig = localStorage.getItem('gameConfig');
     const userMaxTokens = savedConfig ? (JSON.parse(savedConfig).maxTokens || 8192) : 8192;
 
-    // 🌙 根据API类型设置温度：moonshot使用1，其他使用0.8
+    // 🌙 Thiết lập nhiệt độ theo loại API: moonshot dùng 1, loại khác dùng 0.8
     const temperature = window.mobileApiConfig.type === 'moonshot' ? 1 : 0.8;
 
-    // 🌙 构建请求头，moonshot需要特殊的User-Agent和Host
+    // 🌙 Xây dựng Header, moonshot cần User-Agent và Host đặc biệt
     const headers = {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${window.mobileApiConfig.key}`
@@ -830,37 +840,37 @@ async function callMobileOpenAI(messages) {
 
     if (!response.ok) {
         const error = await response.text();
-        throw new Error(`手机API错误: ${response.status} - ${error}`);
+        throw new Error(`Lỗi API điện thoại: ${response.status} - ${error}`);
     }
 
     const data = await response.json();
 
     if (!data.choices || data.choices.length === 0) {
-        console.warn('[callMobileOpenAI] 响应缺少choices:', data);
-        return "手机API响应格式异常，请重试。";
+        console.warn('[callMobileOpenAI] Phản hồi thiếu choices:', data);
+        return "Định dạng phản hồi API điện thoại bất thường, vui lòng thử lại.";
     }
     return data.choices[0].message.content;
 }
 
 /**
- * 使用手机API的Gemini格式调用
+ * Gọi theo định dạng Gemini bằng API điện thoại
  */
 async function callMobileGemini(messages) {
-    // 分离系统提示和对话历史
+    // Tách gợi ý hệ thống và lịch sử hội thoại
     const systemInstruction = messages.filter(m => m.role === 'system').map(m => m.content).join('\n');
     const historyMessages = messages.filter(m => m.role !== 'system');
 
-    // 转换对话历史为Gemini格式
+    // Chuyển đổi lịch sử sang định dạng Gemini
     const contents = historyMessages.map(m => ({
         role: m.role === 'assistant' ? 'model' : 'user',
         parts: [{ text: m.content }]
     }));
 
-    // 构建 Gemini 端点
+    // Xây dựng Endpoint Gemini
     let baseEndpoint = window.mobileApiConfig.endpoint.trim().replace(/\/+$/, '');
     const endpoint = baseEndpoint + '/models/' + window.mobileApiConfig.model + ':generateContent?key=' + window.mobileApiConfig.key;
 
-    // 构建请求体
+    // Xây dựng thân yêu cầu
     const requestBody = {
         contents: contents,
         ...(systemInstruction && { systemInstruction: { parts: [{ text: systemInstruction }] } }),
@@ -889,140 +899,140 @@ async function callMobileGemini(messages) {
         try {
             const errorJson = JSON.parse(errorBody);
             const detailedMessage = errorJson.error?.message || errorBody;
-            throw new Error(`手机Gemini API错误: ${response.status} - ${detailedMessage}`);
+            throw new Error(`Lỗi Gemini API điện thoại: ${response.status} - ${detailedMessage}`);
         } catch (e) {
-            throw new Error(`手机Gemini API错误: ${response.status} - ${errorBody}`);
+            throw new Error(`Lỗi Gemini API điện thoại: ${response.status} - ${errorBody}`);
         }
     }
 
     const data = await response.json();
 
     if (!data.candidates || data.candidates.length === 0) {
-        return "(手机API)请求被模型阻止，可能触发了安全设置。";
+        return "(API điện thoại) Yêu cầu bị mô hình chặn, có thể đã kích hoạt thiết lập an toàn.";
     }
 
     return data.candidates[0].content.parts[0].text;
 }
 
 /**
- * 为手机构建完整的AI消息上下文
- * 支持知识库、向量检索、人物图谱、History矩阵等功能
- * 🆕 支持酒馆预设模式（useTavernPresetMode）
- * @param {string} userMessage - 用户消息
- * @param {string} chatContext - 聊天对象上下文（如聊天对象名称）
- * @param {string} mobileSystemPrompt - 可选，手机模块专用系统提示词（用于酒馆预设模式）
- * @param {Object} options - 可选配置（enableNSFW等）
- * @returns {Promise<Array>} - 构建好的messages数组
+ * Xây dựng ngữ cảnh tin nhắn AI đầy đủ cho điện thoại
+ * Hỗ trợ kho kiến thức, truy xuất vector, sơ đồ nhân vật, ma trận lịch sử, v.v.
+ * 🆕 Hỗ trợ chế độ Tavern Preset (useTavernPresetMode)
+ * @param {string} userMessage - Tin nhắn người dùng
+ * @param {string} chatContext - Ngữ cảnh đối tượng chat (như tên người đang chat)
+ * @param {string} mobileSystemPrompt - Tùy chọn, gợi ý hệ thống riêng cho module điện thoại (dùng cho Tavern Preset)
+ * @param {Object} options - Cấu hình tùy chọn (enableNSFW, v.v.)
+ * @returns {Promise<Array>} - Mảng messages đã xây dựng xong
  */
 async function buildMobileAIMessages(userMessage, chatContext = '', mobileSystemPrompt = '', options = {}) {
     const settings = window.mobilePhoneSettings || {};
     const showDetails = settings.showBuildDetails !== false;
 
-    // 🆕 检查是否启用酒馆预设模式（默认开启）
-    // 注意：全局变量名是 contextVectorManager，不是 contextManager
+    // 🆕 Kiểm tra xem có bật chế độ Tavern Preset không (mặc định bật)
+    // Lưu ý: Tên biến toàn cục là contextVectorManager, không phải contextManager
     if (settings.useTavernPresetMode !== false && window.contextVectorManager && window.contextVectorManager.buildMobileOptimizedMessages) {
         if (showDetails) {
-            console.log('[📱手机上下文构建] 🎭 使用酒馆预设模式');
+            console.log('[📱Xây dựng ngữ cảnh điện thoại] 🎭 Sử dụng chế độ Tavern Preset');
         }
         try {
             return await window.contextVectorManager.buildMobileOptimizedMessages(userMessage, chatContext, mobileSystemPrompt, options);
         } catch (e) {
-            console.error('[📱手机上下文构建] 酒馆预设模式构建失败，回退到传统模式:', e);
-            // 失败时回退到传统模式
+            console.error('[📱Xây dựng ngữ cảnh điện thoại] Xây dựng chế độ Tavern Preset thất bại, quay lại chế độ truyền thống:', e);
+            // Quay lại chế độ truyền thống khi thất bại
         }
     }
 
-    // ==================== 传统模式 ====================
+    // ==================== Chế độ truyền thống ====================
     if (showDetails) {
-        console.log('[📱手机上下文构建] ==== 开始构建（传统模式） ====');
-        console.log('[📱手机上下文构建] 用户消息:', userMessage);
-        console.log('[📱手机上下文构建] 聊天上下文:', chatContext);
+        console.log('[📱Xây dựng ngữ cảnh điện thoại] ==== Bắt đầu xây dựng (Chế độ truyền thống) ====');
+        console.log('[📱Xây dựng ngữ cảnh điện thoại] Tin nhắn người dùng:', userMessage);
+        console.log('[📱Xây dựng ngữ cảnh điện thoại] Ngữ cảnh chat:', chatContext);
     }
 
     let contextParts = [];
 
-    // 1. 知识库检索
+    // 1. Truy xuất kho kiến thức (Knowledge Base)
     if (settings.useKnowledgeBase && window.contextVectorManager && window.contextVectorManager.staticKnowledgeBase) {
         try {
             const kbResults = await window.contextVectorManager.retrieveFromStaticKB(userMessage);
             if (kbResults && kbResults.length > 0) {
                 const kbContent = kbResults.map(r => `【${r.title}】\n${r.content}`).join('\n\n');
-                contextParts.push(`【知识库参考】\n${kbContent}`);
+                contextParts.push(`【Tham khảo kho kiến thức】\n${kbContent}`);
                 if (showDetails) {
-                    console.log('[📱手机上下文构建] 知识库检索结果:', kbResults.length, '条');
+                    console.log('[📱Xây dựng ngữ cảnh điện thoại] Kết quả truy xuất kho kiến thức:', kbResults.length, 'mục');
                 }
             }
         } catch (e) {
-            console.warn('[📱手机上下文构建] 知识库检索失败:', e);
+            console.warn('[📱Xây dựng ngữ cảnh điện thoại] Truy xuất kho kiến thức thất bại:', e);
         }
     }
 
-    // 2. 向量检索历史
+    // 2. Truy xuất lịch sử theo Vector
     if (settings.useVectorRetrieval && window.contextVectorManager) {
         try {
             const vectorResults = await window.contextVectorManager.retrieveRelevantHistory(userMessage);
             if (vectorResults && vectorResults.length > 0) {
-                const vectorContent = vectorResults.map(r => r.summary || `用户:${r.userMessage}\nAI:${r.aiResponse?.substring(0, 200)}...`).join('\n---\n');
-                contextParts.push(`【相关历史记忆】\n${vectorContent}`);
+                const vectorContent = vectorResults.map(r => r.summary || `Người dùng:${r.userMessage}\nAI:${r.aiResponse?.substring(0, 200)}...`).join('\n---\n');
+                contextParts.push(`【Ký ức lịch sử liên quan】\n${vectorContent}`);
                 if (showDetails) {
-                    console.log('[📱手机上下文构建] 向量检索结果:', vectorResults.length, '条');
+                    console.log('[📱Xây dựng ngữ cảnh điện thoại] Kết quả truy xuất Vector:', vectorResults.length, 'mục');
                 }
             }
         } catch (e) {
-            console.warn('[📱手机上下文构建] 向量检索失败:', e);
+            console.warn('[📱Xây dựng ngữ cảnh điện thoại] Truy xuất Vector thất bại:', e);
         }
     }
 
-    // 3. 人物图谱检索
+    // 3. Truy xuất sơ đồ nhân vật
     if (settings.useCharacterGraph && window.characterGraphManager) {
         try {
             const charResults = await window.characterGraphManager.searchByText(userMessage + ' ' + chatContext);
             if (charResults && charResults.length > 0) {
                 const charContent = charResults.map(c => {
                     let info = `【${c.name}】`;
-                    if (c.relation) info += ` 关系:${c.relation}`;
-                    if (c.personality) info += ` 性格:${c.personality}`;
-                    if (c.appearance) info += ` 外貌:${c.appearance}`;
+                    if (c.relation) info += ` Quan hệ:${c.relation}`;
+                    if (c.personality) info += ` Tính cách:${c.personality}`;
+                    if (c.appearance) info += ` Ngoại hình:${c.appearance}`;
                     if (c.history && c.history.length > 0) {
-                        info += `\n  历史互动: ${c.history.slice(-3).join('; ')}`;
+                        info += `\n  Tương tác lịch sử: ${c.history.slice(-3).join('; ')}`;
                     }
                     return info;
                 }).join('\n');
-                contextParts.push(`【相关人物信息】\n${charContent}`);
+                contextParts.push(`【Thông tin nhân vật liên quan】\n${charContent}`);
                 if (showDetails) {
-                    console.log('[📱手机上下文构建] 人物图谱检索结果:', charResults.length, '人');
+                    console.log('[📱Xây dựng ngữ cảnh điện thoại] Kết quả truy xuất sơ đồ nhân vật:', charResults.length, 'người');
                 }
             }
         } catch (e) {
-            console.warn('[📱手机上下文构建] 人物图谱检索失败:', e);
+            console.warn('[📱Xây dựng ngữ cảnh điện thoại] Truy xuất sơ đồ nhân vật thất bại:', e);
         }
     }
 
-    // 4. History矩阵检索
+    // 4. Truy xuất ma trận lịch sử (History Matrix)
     if (settings.useHistoryMatrix && window.matrixManager && window.matrixManager.historyMatrix) {
         try {
             const matrixResults = window.matrixManager.historyMatrix.searchByMatrix(userMessage, 10);
             if (matrixResults && matrixResults.length > 0) {
                 const matrixContent = matrixResults.map(h => h.aiResponse || h.content || h.text || h).join('\n---\n');
-                contextParts.push(`【历史事件矩阵】\n${matrixContent}`);
+                contextParts.push(`【Ma trận sự kiện lịch sử】\n${matrixContent}`);
                 if (showDetails) {
-                    console.log('[📱手机上下文构建] History矩阵检索结果:', matrixResults.length, '条');
+                    console.log('[📱Xây dựng ngữ cảnh điện thoại] Kết quả truy xuất ma trận History:', matrixResults.length, 'mục');
                 }
             }
         } catch (e) {
-            console.warn('[📱手机上下文构建] History矩阵检索失败:', e);
+            console.warn('[📱Xây dựng ngữ cảnh điện thoại] Truy xuất ma trận History thất bại:', e);
         }
     }
 
-    // 5. 📖 读取主API最近正文层数
+    // 5. 📖 Đọc số tầng nội dung chính gần đây từ API chính
     const mainApiHistoryDepth = settings.mainApiHistoryDepth ?? 5;
-    // 兼容两种历史记录字段名：gameHistory（主要）和 conversationHistory（备用）
+    // Tương thích cả hai tên trường lịch sử: gameHistory (chính) và conversationHistory (dự phòng)
     const mainHistory = window.gameState?.gameHistory || window.gameState?.conversationHistory;
     if (mainApiHistoryDepth > 0 && mainHistory && mainHistory.length > 0) {
         try {
             const history = mainHistory;
-            // conversationHistory 格式: [{role: 'user', content: '...'}, {role: 'assistant', content: '...'}, ...]
-            // 需要配对提取，每2条为1层
+            // Định dạng conversationHistory: [{role: 'user', content: '...'}, {role: 'assistant', content: '...'}, ...]
+            // Cần trích xuất theo cặp, cứ 2 mục là 1 tầng
             const totalPairs = Math.floor(history.length / 2);
             const startPair = Math.max(0, totalPairs - mainApiHistoryDepth);
 
@@ -1034,32 +1044,32 @@ async function buildMobileAIMessages(userMessage, chatContext = '', mobileSystem
                     const userEntry = history[i];
                     const aiEntry = history[i + 1];
 
-                    // 确保是 user-assistant 配对
+                    // Đảm bảo là cặp user-assistant
                     if (userEntry?.role === 'user' && aiEntry?.role === 'assistant') {
                         const userMsg = userEntry.content || '';
                         const aiMsg = aiEntry.content || '';
 
-                        // 发送完整内容，不截取
-                        recentContent += `[第${floorNum}层]\n玩家: ${userMsg}\nAI: ${aiMsg}\n\n`;
+                        // Gửi nội dung đầy đủ, không cắt xén
+                        recentContent += `[Tầng ${floorNum}]\nNgười chơi: ${userMsg}\nAI: ${aiMsg}\n\n`;
                         floorNum++;
                     }
                 }
 
                 if (recentContent) {
-                    const mainApiContext = `【主线剧情（最近${floorNum - startPair - 1}层）】\n${recentContent.trim()}`;
+                    const mainApiContext = `【Cốt truyện chính (Gần đây ${floorNum - startPair - 1} tầng)】\n${recentContent.trim()}`;
                     contextParts.push(mainApiContext);
                     if (showDetails) {
-                        console.log('[📱手机上下文构建] 📖 读取主API正文:', floorNum - startPair - 1, '层');
-                        console.log('[📱手机上下文构建] 📖 内容预览:', mainApiContext.substring(0, 200) + '...');
+                        console.log('[📱Xây dựng ngữ cảnh điện thoại] 📖 Đọc nội dung chính API:', floorNum - startPair - 1, 'tầng');
+                        console.log('[📱Xây dựng ngữ cảnh điện thoại] 📖 Xem trước nội dung:', mainApiContext.substring(0, 200) + '...');
                     }
                 }
             }
         } catch (e) {
-            console.warn('[📱手机上下文构建] 读取主API正文失败:', e);
+            console.warn('[📱Xây dựng ngữ cảnh điện thoại] Đọc nội dung chính API thất bại:', e);
         }
     }
 
-    // 6. 🔍 向量检索远处正文（匹配主对话的相关内容）
+    // 6. 🔍 Truy xuất Vector nội dung chính ở xa (Khớp nội dung liên quan của hội thoại chính)
     if (settings.useMainVectorSearch && window.contextVectorManager) {
         try {
             const vectorSearchCount = settings.vectorSearchCount || 3;
@@ -1071,60 +1081,60 @@ async function buildMobileAIMessages(userMessage, chatContext = '', mobileSystem
                     const userMsg = item.userMessage || '';
                     const aiMsg = item.aiResponse || '';
 
-                    // 截取合理长度
+                    // Cắt độ dài hợp lý
                     const userPreview = userMsg.substring(0, 80) + (userMsg.length > 80 ? '...' : '');
                     const aiPreview = aiMsg.substring(0, 250) + (aiMsg.length > 250 ? '...' : '');
 
-                    farContent += `[匹配${index + 1}] 相似度:${(item.similarity * 100).toFixed(1)}%\n玩家: ${userPreview}\nAI: ${aiPreview}\n\n`;
+                    farContent += `[Khớp ${index + 1}] Độ tương đồng:${(item.similarity * 100).toFixed(1)}%\nNgười chơi: ${userPreview}\nAI: ${aiPreview}\n\n`;
                 });
 
-                contextParts.push(`【相关远处剧情（向量匹配）】\n${farContent.trim()}`);
+                contextParts.push(`【Cốt truyện ở xa liên quan (Khớp Vector)】\n${farContent.trim()}`);
                 if (showDetails) {
-                    console.log('[📱手机上下文构建] 🔍 向量检索远处正文:', farResults.length, '条');
+                    console.log('[📱Xây dựng ngữ cảnh điện thoại] 🔍 Truy xuất Vector nội dung chính ở xa:', farResults.length, 'mục');
                     farResults.forEach((item, i) => {
-                        console.log(`   [${i + 1}] 相似度: ${(item.similarity * 100).toFixed(1)}%`);
+                        console.log(`   [${i + 1}] Độ tương đồng: ${(item.similarity * 100).toFixed(1)}%`);
                     });
                 }
             }
         } catch (e) {
-            console.warn('[📱手机上下文构建] 向量检索远处正文失败:', e);
+            console.warn('[📱Xây dựng ngữ cảnh điện thoại] Truy xuất Vector nội dung ở xa thất bại:', e);
         }
     }
 
-    // 7. 获取当前游戏状态摘要
+    // 7. Lấy tóm tắt trạng thái trò chơi hiện tại
     let gameStateSummary = '';
     if (window.gameState && window.gameState.variables) {
         const v = window.gameState.variables;
-        gameStateSummary = `【当前状态】
-角色: ${v.name || '未知'} | ${v.gender || ''} | ${v.age || ''}岁
-身份: ${v.identity || '无'}
-位置: ${v.location || '未知'}
-时间: ${v.currentDateTime || '未知'}`;
+        gameStateSummary = `【Trạng thái hiện tại】
+Nhân vật: ${v.name || 'Không rõ'} | ${v.gender || ''} | ${v.age || ''} tuổi
+Thân phận: ${v.identity || 'Không'}
+Vị trí: ${v.location || 'Không rõ'}
+Thời gian: ${v.currentDateTime || 'Không rõ'}`;
         if (showDetails) {
-            console.log('[📱手机上下文构建] 游戏状态已添加');
+            console.log('[📱Xây dựng ngữ cảnh điện thoại] Đã thêm trạng thái trò chơi');
         }
     }
 
-    // 构建最终上下文
+    // Xây dựng ngữ cảnh cuối cùng
     const fullContext = [gameStateSummary, ...contextParts].filter(Boolean).join('\n\n');
 
     if (showDetails) {
-        console.log('[📱手机上下文构建] ==== 构建完成 ====');
-        console.log('[📱手机上下文构建] 上下文总长度:', fullContext.length, '字符');
+        console.log('[📱Xây dựng ngữ cảnh điện thoại] ==== Xây dựng hoàn tất ====');
+        console.log('[📱Xây dựng ngữ cảnh điện thoại] Tổng độ dài ngữ cảnh:', fullContext.length, 'ký tự');
     }
 
-    // 构建messages数组（不包含系统提示词，后续由调用方添加）
+    // Xây dựng mảng messages (không bao gồm gợi ý hệ thống, sẽ được gọi bởi phía gọi hàm sau)
     const messages = [];
 
-    // 添加上下文作为系统消息的一部分
+    // Thêm ngữ cảnh vào như một phần của tin nhắn hệ thống
     if (fullContext) {
         messages.push({
             role: 'system',
-            content: `你是一个游戏中的虚拟手机助手。以下是相关的上下文信息：\n\n${fullContext}\n\n请根据这些信息回答用户的问题。`
+            content: `Bạn là một trợ lý điện thoại ảo trong trò chơi. Dưới đây là các thông tin ngữ cảnh liên quan:\n\n${fullContext}\n\nVui lòng dựa trên các thông tin này để trả lời câu hỏi của người dùng.`
         });
     }
 
-    // 添加用户消息
+    // Thêm tin nhắn người dùng
     messages.push({
         role: 'user',
         content: userMessage
@@ -1133,15 +1143,15 @@ async function buildMobileAIMessages(userMessage, chatContext = '', mobileSystem
     return messages;
 }
 
-// Stream-capable overrides. Declared at the end so they replace older implementations safely.
+// Các ghi đè (overrides) hỗ trợ Stream. Được khai báo ở cuối để thay thế các triển khai cũ một cách an toàn.
 async function callExtraOpenAI(messages) {
     return await requestOpenAICompatibleCompletion(extraApiConfig, messages, {
         maxTokens: getConfiguredMaxTokens(),
         temperature: 0.8,
-        errorPrefix: 'Extra API error',
-        logPrefix: '[Extra API] Raw response:',
-        warnPrefix: '[callExtraOpenAI] Missing choices:',
-        emptyMessage: 'Extra API response format is invalid.'
+        errorPrefix: 'Lỗi API phụ',
+        logPrefix: '[API phụ] Phản hồi thô:',
+        warnPrefix: '[callExtraOpenAI] Thiếu lựa chọn (choices):',
+        emptyMessage: 'Định dạng phản hồi API phụ không hợp lệ.'
     });
 }
 
@@ -1149,8 +1159,8 @@ async function callExtraGemini(messages) {
     return await requestGeminiCompletion(extraApiConfig, messages, {
         temperature: 0.8,
         maxTokens: 8192,
-        errorPrefix: 'Extra Gemini API error',
-        blockedMessage: '(Extra API) request was blocked or returned no content.'
+        errorPrefix: 'Lỗi Gemini API phụ',
+        blockedMessage: '(API phụ) yêu cầu bị chặn hoặc không trả về nội dung.'
     });
 }
 
@@ -1158,11 +1168,11 @@ async function callOpenAI(messages) {
     return await requestOpenAICompatibleCompletion(apiConfig, messages, {
         maxTokens: getConfiguredMaxTokens(),
         temperature: 0.8,
-        errorPrefix: 'API error',
-        logPrefix: 'API raw response:',
-        warnPrefix: '[callOpenAI] Missing choices:',
-        emptyMessage: 'API response format is invalid.',
-        onProgress: (text) => updateStreamPreview(text, 'AI生成中...')
+        errorPrefix: 'Lỗi API',
+        logPrefix: 'Phản hồi thô API:',
+        warnPrefix: '[callOpenAI] Thiếu lựa chọn (choices):',
+        emptyMessage: 'Định dạng phản hồi API không hợp lệ.',
+        onProgress: (text) => updateStreamPreview(text, 'AI đang tạo...')
     });
 }
 
@@ -1170,9 +1180,9 @@ async function callGemini(messages) {
     return await requestGeminiCompletion(apiConfig, messages, {
         temperature: 0.8,
         maxTokens: 8192,
-        errorPrefix: 'Gemini API error',
-        blockedMessage: 'Gemini request was blocked or returned no content.',
-        onProgress: (text) => updateStreamPreview(text, 'AI生成中...')
+        errorPrefix: 'Lỗi Gemini API',
+        blockedMessage: 'Yêu cầu Gemini bị chặn hoặc không trả về nội dung.',
+        onProgress: (text) => updateStreamPreview(text, 'AI đang tạo...')
     });
 }
 
@@ -1180,10 +1190,10 @@ async function callMobileOpenAI(messages) {
     return await requestOpenAICompatibleCompletion(window.mobileApiConfig, messages, {
         maxTokens: getConfiguredMaxTokens(),
         temperature: 0.8,
-        errorPrefix: 'Mobile API error',
-        logPrefix: '[Mobile API] Raw response:',
-        warnPrefix: '[callMobileOpenAI] Missing choices:',
-        emptyMessage: 'Mobile API response format is invalid.'
+        errorPrefix: 'Lỗi API điện thoại',
+        logPrefix: '[API điện thoại] Phản hồi thô:',
+        warnPrefix: '[callMobileOpenAI] Thiếu lựa chọn (choices):',
+        emptyMessage: 'Định dạng phản hồi API điện thoại không hợp lệ.'
     });
 }
 
@@ -1191,7 +1201,7 @@ async function callMobileGemini(messages) {
     return await requestGeminiCompletion(window.mobileApiConfig, messages, {
         temperature: 0.8,
         maxTokens: 8192,
-        errorPrefix: 'Mobile Gemini API error',
-        blockedMessage: '(Mobile API) request was blocked or returned no content.'
+        errorPrefix: 'Lỗi Gemini API điện thoại',
+        blockedMessage: '(API điện thoại) yêu cầu bị chặn hoặc không trả về nội dung.'
     });
 }

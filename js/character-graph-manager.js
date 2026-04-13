@@ -1,34 +1,33 @@
 /**
- * 人物图谱管理器 - 基于向量匹配的人物信息检索系统
- * 
- * 功能：
- * 1. 将人际关系中的姓名、性格、外貌提取并向量化存储
- * 2. 通过向量相似度匹配来检索相关人物
- * 3. 支持阈值过滤，只返回高度匹配的人物
- * 4. 动态构建上下文，而不是全部加载到变量表单
+ * Trình quản lý sơ đồ nhân vật - Hệ thống truy xuất thông tin nhân vật dựa trên so khớp vector
+ * * Tính năng:
+ * 1. Trích xuất tên, tính cách, ngoại hình trong quan hệ nhân vật và lưu trữ dưới dạng vector hóa
+ * 2. Truy xuất nhân vật liên quan thông qua so khớp độ tương đồng vector
+ * 3. Hỗ trợ lọc theo ngưỡng, chỉ trả về các nhân vật có độ khớp cao
+ * 4. Xây dựng ngữ cảnh động, thay vì tải toàn bộ vào biểu mẫu biến (variables)
  */
 
 class CharacterGraphManager {
     constructor(config = {}) {
-        this.characters = new Map(); // 存储完整的人物信息 {name: characterData}
-        this.vectors = new Map(); // 存储人物向量 {name: vector}
+        this.characters = new Map(); // Lưu trữ thông tin nhân vật đầy đủ {name: characterData}
+        this.vectors = new Map(); // Lưu trữ vector nhân vật {name: vector}
         this.indexedDB = null;
         this.dbName = 'CharacterGraphDB';
         this.storeName = 'characters';
         this.isInitialized = false;
 
-        // 配置参数
+        // Tham số cấu hình
         this.config = {
-            nameWeight: config.nameWeight || 3, // 姓名权重
-            matchThreshold: config.matchThreshold || 0.4, // 匹配阈值（384维向量：40%）
-            maxResults: config.maxResults || 3, // 最大返回结果数
-            enableDebug: config.enableDebug !== undefined ? config.enableDebug : true, // 默认启用调试日志
-            personalityWeight: config.personalityWeight || 1.0, // 性格权重
-            appearanceWeight: config.appearanceWeight || 1.0, // 外貌权重
-            vectorDim: config.vectorDim || 384 // 向量维度（与embedding API对应）
+            nameWeight: config.nameWeight || 3, // Trọng số tên
+            matchThreshold: config.matchThreshold || 0.4, // Ngưỡng khớp (Vector 384 chiều: 40%)
+            maxResults: config.maxResults || 3, // Số lượng kết quả tối đa trả về
+            enableDebug: config.enableDebug !== undefined ? config.enableDebug : true, // Mặc định bật nhật ký gỡ lỗi
+            personalityWeight: config.personalityWeight || 1.0, // Trọng số tính cách
+            appearanceWeight: config.appearanceWeight || 1.0, // Trọng số ngoại hình
+            vectorDim: config.vectorDim || 384 // Số chiều vector (tương ứng với embedding API)
         };
 
-        // 统计信息
+        // Thông tin thống kê
         this.stats = {
             totalCharacters: 0,
             lastUpdate: null,
@@ -38,7 +37,7 @@ class CharacterGraphManager {
     }
 
     /**
-     * 初始化IndexedDB
+     * Khởi tạo IndexedDB
      */
     async init() {
         if (this.isInitialized) {
@@ -46,7 +45,7 @@ class CharacterGraphManager {
         }
 
         try {
-            console.log('[人物图谱] 初始化IndexedDB...');
+            console.log('[Sơ đồ nhân vật] Đang khởi tạo IndexedDB...');
 
             const db = await new Promise((resolve, reject) => {
                 const request = indexedDB.open(this.dbName, 1);
@@ -57,33 +56,33 @@ class CharacterGraphManager {
                 request.onupgradeneeded = (event) => {
                     const db = event.target.result;
 
-                    // 创建人物存储
+                    // Tạo kho lưu trữ đối tượng nhân vật
                     if (!db.objectStoreNames.contains(this.storeName)) {
                         const store = db.createObjectStore(this.storeName, { keyPath: 'name' });
                         store.createIndex('addedAt', 'addedAt', { unique: false });
                         store.createIndex('lastMatchedAt', 'lastMatchedAt', { unique: false });
-                        console.log('[人物图谱] 创建对象存储:', this.storeName);
+                        console.log('[Sơ đồ nhân vật] Đã tạo Object Store:', this.storeName);
                     }
                 };
             });
 
             this.indexedDB = db;
 
-            // 加载已有数据到内存
+            // Tải dữ liệu hiện có vào bộ nhớ
             await this.loadFromIndexedDB();
 
             this.isInitialized = true;
-            console.log(`[人物图谱] ✅ 初始化完成，已加载 ${this.stats.totalCharacters} 个人物`);
+            console.log(`[Sơ đồ nhân vật] ✅ Khởi tạo hoàn tất, đã tải ${this.stats.totalCharacters} nhân vật`);
             return true;
 
         } catch (error) {
-            console.error('[人物图谱] ❌ 初始化失败:', error);
+            console.error('[Sơ đồ nhân vật] ❌ Khởi tạo thất bại:', error);
             return false;
         }
     }
 
     /**
-     * 从IndexedDB加载数据
+     * Tải dữ liệu từ IndexedDB
      */
     async loadFromIndexedDB() {
         return new Promise((resolve, reject) => {
@@ -94,43 +93,43 @@ class CharacterGraphManager {
             request.onsuccess = async () => {
                 const characters = request.result || [];
 
-                // 🔧 处理加载的数据，移除旧的vector字段，重新生成
+                // 🔧 Xử lý dữ liệu tải lên, loại bỏ trường vector cũ, tạo lại cái mới
                 for (const char of characters) {
-                    // 移除旧的vector字段（如果存在）
+                    // Loại bỏ trường vector cũ (nếu có)
                     const { vector, ...charWithoutVector } = char;
 
-                    // 保存到内存（不包含vector）
+                    // Lưu vào bộ nhớ (không bao gồm vector)
                     this.characters.set(char.name, charWithoutVector);
 
-                    // 重新生成向量（或使用旧的vector如果存在）
+                    // Tạo lại vector (hoặc sử dụng vector cũ nếu tồn tại)
                     if (vector) {
-                        // 旧数据有vector，直接使用
+                        // Dữ liệu cũ có vector, sử dụng trực tiếp
                         this.vectors.set(char.name, vector);
                     } else {
-                        // 新数据没有vector，需要重新生成
+                        // Dữ liệu mới không có vector, cần tạo lại
                         try {
                             const newVector = await this.generateVector(char.name, char.personality, char.appearance);
                             this.vectors.set(char.name, newVector);
                         } catch (error) {
-                            console.warn(`[人物图谱] ⚠️ 无法为 ${char.name} 生成向量:`, error);
+                            console.warn(`[Sơ đồ nhân vật] ⚠️ Không thể tạo vector cho ${char.name}:`, error);
                         }
                     }
                 }
 
                 this.stats.totalCharacters = characters.length;
-                console.log(`[人物图谱] 从IndexedDB加载了 ${characters.length} 个人物`);
+                console.log(`[Sơ đồ nhân vật] Đã tải ${characters.length} nhân vật từ IndexedDB`);
                 resolve();
             };
 
             request.onerror = () => {
-                console.error('[人物图谱] 加载失败:', request.error);
+                console.error('[Sơ đồ nhân vật] Tải thất bại:', request.error);
                 reject(request.error);
             };
         });
     }
 
     /**
-     * 保存单个人物到IndexedDB
+     * Lưu một nhân vật đơn lẻ vào IndexedDB
      */
     async saveCharacter(character) {
         return new Promise((resolve, reject) => {
@@ -139,21 +138,21 @@ class CharacterGraphManager {
             const request = store.put(character);
 
             request.onsuccess = () => {
-                console.log(`[人物图谱] ✅ 保存人物: ${character.name}`);
+                console.log(`[Sơ đồ nhân vật] ✅ Đã lưu nhân vật: ${character.name}`);
                 resolve();
             };
 
             request.onerror = () => {
-                console.error(`[人物图谱] ❌ 保存失败: ${character.name}`, request.error);
+                console.error(`[Sơ đồ nhân vật] ❌ Lưu thất bại: ${character.name}`, request.error);
                 reject(request.error);
             };
         });
     }
 
     /**
-     * 添加或更新人物信息
-     * @param {Object} relationship - 从AI响应的relationships中提取的人物信息
-     * @param {number} turnIndex - 🆕 当前轮次索引（用于回滚时删除）
+     * Thêm hoặc cập nhật thông tin nhân vật
+     * @param {Object} relationship - Thông tin nhân vật trích xuất từ relationships trong phản hồi AI
+     * @param {number} turnIndex - 🆕 Chỉ số lượt hiện tại (dùng để xóa khi hồi quy/rollback)
      */
     async addOrUpdateCharacter(relationship, turnIndex = null) {
         if (!this.isInitialized) {
@@ -163,75 +162,75 @@ class CharacterGraphManager {
         const { name, personality, appearance, ...otherData } = relationship;
 
         if (!name) {
-            console.warn('[人物图谱] ⚠️ 人物缺少姓名，跳过');
+            console.warn('[Sơ đồ nhân vật] ⚠️ Nhân vật thiếu tên, bỏ qua');
             return null;
         }
 
-        // 🔧 防护：过滤掉无效的角色名（系统变量名等）
+        // 🔧 Phòng vệ: Lọc bỏ các tên nhân vật không hợp lệ (tên biến hệ thống, v.v.)
         const invalidNames = ['relationships', 'items', 'history', 'attributes', 'bodyParts',
             'equipment', 'specialStatus', 'protagonist', 'undefined', 'null'];
         if (invalidNames.includes(name) || name.startsWith('relationships.')) {
-            console.warn(`[人物图谱] ⚠️ 检测到无效角色名 "${name}"，跳过保存`);
+            console.warn(`[Sơ đồ nhân vật] ⚠️ Phát hiện tên nhân vật không hợp lệ "${name}", bỏ qua lưu trữ`);
             return null;
         }
 
-        // 检查是否已存在
+        // Kiểm tra xem đã tồn tại chưa
         const existing = this.characters.get(name);
 
-        // 🆕 计算当前轮次索引（如果没有传入）
+        // 🆕 Tính toán chỉ số lượt hiện tại (nếu không truyền vào)
         if (turnIndex === null && window.gameState) {
             turnIndex = Math.floor((window.gameState.conversationHistory?.length || 0) / 2);
         }
 
-        // 准备人物数据（不包含vector，避免浪费存储和发送给AI）
+        // Chuẩn bị dữ liệu nhân vật (không bao gồm vector, tránh lãng phí lưu trữ và gửi cho AI)
         const characterData = {
             name,
-            personality: personality || existing?.personality || '未知',
-            appearance: appearance || existing?.appearance || '未知',
+            personality: personality || existing?.personality || 'Chưa rõ',
+            appearance: appearance || existing?.appearance || 'Chưa rõ',
             ...otherData,
             addedAt: existing?.addedAt || Date.now(),
-            addedAtTurn: existing?.addedAtTurn ?? turnIndex, // 🆕 记录首次添加时的轮次
+            addedAtTurn: existing?.addedAtTurn ?? turnIndex, // 🆕 Ghi lại lượt khi thêm lần đầu
             updatedAt: Date.now(),
             lastMatchedAt: existing?.lastMatchedAt || null,
             matchCount: existing?.matchCount || 0
         };
 
-        // 生成向量（基于姓名、性格、外貌）
+        // Tạo vector (dựa trên tên, tính cách, ngoại hình)
         const vector = await this.generateVector(name, personality, appearance);
 
-        // 🔧 重要：vector只存储在this.vectors中，不存储在characterData中
-        // 这样可以避免：
-        // 1. 浪费IndexedDB存储空间（384个浮点数）
-        // 2. 浪费AI的上下文token（向量对AI无意义）
+        // 🔧 Quan trọng: vector chỉ lưu trong this.vectors, không lưu trong characterData
+        // Việc này để tránh:
+        // 1. Lãng phí không gian lưu trữ IndexedDB (384 số thực dấu phẩy động)
+        // 2. Lãng phí token ngữ cảnh của AI (vector vô nghĩa đối với AI)
 
-        // 保存到内存
+        // Lưu vào bộ nhớ
         this.characters.set(name, characterData);
         this.vectors.set(name, vector);
 
-        // 保存到IndexedDB（不包含vector）
+        // Lưu vào IndexedDB (không bao gồm vector)
         await this.saveCharacter(characterData);
 
-        // 更新统计
+        // Cập nhật thống kê
         if (!existing) {
             this.stats.totalCharacters++;
         }
         this.stats.lastUpdate = Date.now();
 
-        console.log(`[人物图谱] ${existing ? '更新' : '添加'} 人物: ${name}`);
+        console.log(`[Sơ đồ nhân vật] ${existing ? 'Cập nhật' : 'Thêm mới'} nhân vật: ${name}`);
         return characterData;
     }
 
     /**
-     * 生成人物向量（使用supply.js的384维embedding）
-     * @param {string} name - 人物姓名
-     * @param {string} personality - 性格
-     * @param {string} appearance - 外貌
-     * @returns {Array|Object} 向量表示（384维数组或关键词对象）
+     * Tạo vector nhân vật (sử dụng embedding 384 chiều của supply.js)
+     * @param {string} name - Tên nhân vật
+     * @param {string} personality - Tính cách
+     * @param {string} appearance - Ngoại hình
+     * @returns {Array|Object} Biểu diễn vector (mảng 384 chiều hoặc đối tượng từ khóa)
      */
     async generateVector(name, personality = '', appearance = '') {
         if (!window.contextVectorManager) {
-            console.error('[人物图谱] contextVectorManager未加载，使用降级方案');
-            // 降级：返回简单的关键词对象
+            console.error('[Sơ đồ nhân vật] contextVectorManager chưa tải, sử dụng phương án hạ cấp');
+            // Hạ cấp: Trả về đối tượng từ khóa đơn giản
             const vector = {};
             vector[name] = this.config.nameWeight * 10;
             if (personality) vector[personality] = 5;
@@ -239,24 +238,24 @@ class CharacterGraphManager {
             return vector;
         }
 
-        // 🔧 使用transformer生成384维向量，增强姓名权重
-        // 重复姓名多次以提高权重
+        // 🔧 Sử dụng transformer tạo vector 384 chiều, tăng cường trọng số tên
+        // Lặp lại tên nhiều lần để tăng trọng số
         const nameRepeated = Array(this.config.nameWeight * 2).fill(name).join(' ');
         const text = `${nameRepeated} ${name} ${personality} ${appearance}`;
 
         try {
             let vector;
             if (window.contextVectorManager.embeddingMethod === 'transformers') {
-                // 使用384维transformer向量
+                // Sử dụng vector transformer 384 chiều
                 vector = await window.contextVectorManager.getEmbeddingFromTransformers(text);
                 if (this.config.enableDebug) {
-                    console.log(`[人物图谱] 生成向量: ${name}`);
-                    console.log(`  文本: "${text}"`);
-                    console.log(`  向量类型: Dense (384维)`);
-                    console.log(`  向量前5维: [${vector.slice(0, 5).map(v => v.toFixed(3)).join(', ')}...]`);
+                    console.log(`[Sơ đồ nhân vật] Đã tạo vector: ${name}`);
+                    console.log(`  Văn bản: "${text}"`);
+                    console.log(`  Loại vector: Dense (384 chiều)`);
+                    console.log(`  5 chiều đầu của vector: [${vector.slice(0, 5).map(v => v.toFixed(3)).join(', ')}...]`);
                 }
             } else {
-                // 回退到关键词向量
+                // Quay lại vector từ khóa
                 vector = window.contextVectorManager.createKeywordVector(text);
                 if (this.config.enableDebug) {
                     const keywordList = Object.entries(vector)
@@ -264,64 +263,64 @@ class CharacterGraphManager {
                         .slice(0, 10)
                         .map(([word, weight]) => `${word}(${weight.toFixed(1)})`)
                         .join(', ');
-                    console.log(`[人物图谱] 生成向量: ${name}`);
-                    console.log(`  文本: "${text}"`);
-                    console.log(`  向量类型: Sparse (关键词)`);
-                    console.log(`  关键词(前10): ${keywordList}`);
+                    console.log(`[Sơ đồ nhân vật] Đã tạo vector: ${name}`);
+                    console.log(`  Văn bản: "${text}"`);
+                    console.log(`  Loại vector: Sparse (Từ khóa)`);
+                    console.log(`  Từ khóa (Top 10): ${keywordList}`);
                 }
             }
 
             return vector;
         } catch (error) {
-            console.error(`[人物图谱] 向量生成失败: ${error.message}`);
-            // 降级到关键词方法
+            console.error(`[Sơ đồ nhân vật] Tạo vector thất bại: ${error.message}`);
+            // Hạ cấp xuống phương pháp từ khóa
             return window.contextVectorManager.createKeywordVector(text);
         }
     }
 
     /**
-     * 计算余弦相似度（智能识别向量类型）
-     * @param {Array|Object} vecA - 向量A（数组或对象）
-     * @param {Array|Object} vecB - 向量B（数组或对象）
-     * @returns {number} 相似度（0-1）
+     * Tính toán độ tương đồng Cosine (nhận diện thông minh loại vector)
+     * @param {Array|Object} vecA - Vector A (mảng hoặc đối tượng)
+     * @param {Array|Object} vecB - Vector B (mảng hoặc đối tượng)
+     * @returns {number} Độ tương đồng (0-1)
      */
     cosineSimilarity(vecA, vecB) {
         if (!window.contextVectorManager) {
-            console.error('[人物图谱] contextVectorManager未加载');
+            console.error('[Sơ đồ nhân vật] contextVectorManager chưa tải');
             return 0;
         }
 
-        // 智能识别向量类型
+        // Nhận diện thông minh loại vector
         const isArrayA = Array.isArray(vecA);
         const isArrayB = Array.isArray(vecB);
 
         if (isArrayA && isArrayB) {
-            // 两个都是数组，使用数组向量相似度
+            // Cả hai đều là mảng, sử dụng độ tương đồng vector mảng
             return window.contextVectorManager.calculateArrayCosineSimilarity(vecA, vecB);
         } else if (!isArrayA && !isArrayB) {
-            // 两个都是对象，使用对象向量相似度
+            // Cả hai đều là đối tượng, sử dụng độ tương đồng vector đối tượng
             return window.contextVectorManager.calculateObjectCosineSimilarity(vecA, vecB);
         } else {
-            // 类型不匹配
-            console.warn('[人物图谱] 向量类型不匹配，无法计算相似度');
+            // Loại không khớp
+            console.warn('[Sơ đồ nhân vật] Loại vector không khớp, không thể tính độ tương đồng');
             return 0;
         }
     }
 
     /**
-     * 🆕 直接用向量搜索人物（推荐方法）
-     * @param {string} queryText - 用户输入的文本（可能包含AI回复）
-     * @param {string} userInputOnly - 可选，仅用户输入部分（用于区分匹配来源）
-     * @returns {Array} 匹配的人物列表，按相似度排序
+     * 🆕 Tìm kiếm nhân vật trực tiếp bằng vector (Phương pháp khuyên dùng)
+     * @param {string} queryText - Văn bản người dùng nhập (có thể bao gồm phản hồi AI)
+     * @param {string} userInputOnly - Tùy chọn, chỉ phần người dùng nhập (để phân biệt nguồn khớp)
+     * @returns {Array} Danh sách nhân vật khớp, sắp xếp theo độ tương đồng
      */
     async searchByText(queryText, userInputOnly = null) {
         if (!this.isInitialized) {
             await this.init();
         }
 
-        // 🔧 第一步：精确名字匹配（优先级最高）
-        // 如果文本中明确包含人物姓名，应该直接匹配，不依赖向量相似度
-        // 匹配来源：用户输入 或 AI回复
+        // 🔧 Bước 1: Khớp tên chính xác (ưu tiên cao nhất)
+        // Nếu văn bản chứa tên nhân vật rõ ràng, nên khớp trực tiếp, không phụ thuộc độ tương đồng vector
+        // Nguồn khớp: Người dùng nhập HOẶC AI phản hồi
         const exactNameMatches = new Map(); // {name: 'user' | 'ai_reply' | 'both'}
         for (const [name, character] of this.characters.entries()) {
             const inUserInput = userInputOnly ? userInputOnly.includes(name) : queryText.includes(name);
@@ -330,7 +329,7 @@ class CharacterGraphManager {
             if (inFullText) {
                 let matchSource = 'unknown';
                 if (userInputOnly) {
-                    // 有区分用户输入和完整文本
+                    // Có phân biệt người dùng nhập và toàn bộ văn bản
                     if (inUserInput && inFullText) {
                         matchSource = 'both';
                     } else if (inUserInput) {
@@ -345,21 +344,21 @@ class CharacterGraphManager {
                 exactNameMatches.set(name, matchSource);
                 if (this.config.enableDebug) {
                     const sourceLabel = {
-                        'user': '用户输入',
-                        'ai_reply': 'AI回复',
-                        'both': '用户输入+AI回复',
-                        'text': '查询文本',
-                        'unknown': '文本'
+                        'user': 'Người dùng nhập',
+                        'ai_reply': 'AI phản hồi',
+                        'both': 'Người dùng+AI',
+                        'text': 'Văn bản truy vấn',
+                        'unknown': 'Văn bản'
                     }[matchSource];
-                    console.log(`[人物图谱] 🎯 精确名字匹配: "${name}" 在${sourceLabel}中找到`);
+                    console.log(`[Sơ đồ nhân vật] 🎯 Khớp tên chính xác: "${name}" tìm thấy trong ${sourceLabel}`);
                 }
             }
         }
 
-        // 使用与人物向量相同的方法生成查询向量
+        // Sử dụng cùng một phương pháp với vector nhân vật để tạo vector truy vấn
         if (!window.contextVectorManager) {
-            console.error('[人物图谱] contextVectorManager未加载');
-            // 如果有精确名字匹配，仍然返回结果
+            console.error('[Sơ đồ nhân vật] contextVectorManager chưa tải');
+            // Nếu có khớp tên chính xác, vẫn trả về kết quả
             if (exactNameMatches.size > 0) {
                 const exactResults = [];
                 for (const [name, matchSource] of exactNameMatches) {
@@ -367,7 +366,7 @@ class CharacterGraphManager {
                     if (character) {
                         exactResults.push({
                             ...character,
-                            matchScore: 1.0, // 精确匹配给最高分
+                            matchScore: 1.0, // Khớp chính xác cho điểm cao nhất
                             matchType: 'exact_name',
                             matchSource
                         });
@@ -378,18 +377,18 @@ class CharacterGraphManager {
             return [];
         }
 
-        // 🔧 使用384维transformer向量
+        // 🔧 Sử dụng vector transformer 384 chiều
         let queryVector;
         try {
             if (window.contextVectorManager.embeddingMethod === 'transformers') {
-                // 使用384维transformer向量
+                // Sử dụng vector transformer 384 chiều
                 queryVector = await window.contextVectorManager.getEmbeddingFromTransformers(queryText);
                 if (this.config.enableDebug) {
-                    console.log(`[人物图谱] 查询向量类型: Dense (384维)`);
-                    console.log(`[人物图谱] 查询向量前5维: [${queryVector.slice(0, 5).map(v => v.toFixed(3)).join(', ')}...]`);
+                    console.log(`[Sơ đồ nhân vật] Loại vector truy vấn: Dense (384 chiều)`);
+                    console.log(`[Sơ đồ nhân vật] 5 chiều đầu của vector truy vấn: [${queryVector.slice(0, 5).map(v => v.toFixed(3)).join(', ')}...]`);
                 }
             } else {
-                // 回退到关键词向量
+                // Quay lại vector từ khóa
                 queryVector = window.contextVectorManager.createKeywordVector(queryText);
                 if (this.config.enableDebug) {
                     const keywordList = Object.entries(queryVector)
@@ -397,61 +396,61 @@ class CharacterGraphManager {
                         .slice(0, 10)
                         .map(([word, weight]) => `${word}(${weight.toFixed(1)})`)
                         .join(', ');
-                    console.log(`[人物图谱] 查询向量类型: Sparse (关键词)`);
-                    console.log(`[人物图谱] 查询关键词(前10): ${keywordList}`);
+                    console.log(`[Sơ đồ nhân vật] Loại vector truy vấn: Sparse (Từ khóa)`);
+                    console.log(`[Sơ đồ nhân vật] Từ khóa truy vấn (Top 10): ${keywordList}`);
                 }
             }
         } catch (error) {
-            console.error(`[人物图谱] 查询向量生成失败: ${error.message}`);
-            // 降级到关键词方法
+            console.error(`[Sơ đồ nhân vật] Tạo vector truy vấn thất bại: ${error.message}`);
+            // Hạ cấp xuống phương pháp từ khóa
             queryVector = window.contextVectorManager.createKeywordVector(queryText);
         }
 
-        // 计算所有人物的相似度
+        // Tính toán độ tương đồng cho tất cả nhân vật
         const matches = [];
-        const allMatches = []; // 🔧 保存所有匹配分数用于调试
+        const allMatches = []; // 🔧 Lưu tất cả điểm khớp để gỡ lỗi
 
         for (const [name, character] of this.characters.entries()) {
             const vector = this.vectors.get(name);
 
             if (!vector) {
-                console.warn(`[人物图谱] ⚠️ 人物 ${name} 没有向量，跳过匹配`);
+                console.warn(`[Sơ đồ nhân vật] ⚠️ Nhân vật ${name} không có vector, bỏ qua so khớp`);
                 continue;
             }
 
-            // 🔧 调试向量计算
-            if (this.config.enableDebug && name === '小翠') {
-                console.log(`[人物图谱调试] 🎯 检查小翠的向量计算:`);
+            // 🔧 Gỡ lỗi tính toán vector
+            if (this.config.enableDebug && name === 'Tiểu Thúy') {
+                console.log(`[Gỡ lỗi sơ đồ nhân vật] 🎯 Kiểm tra tính toán vector cho Tiểu Thúy:`);
                 const queryIsArray = Array.isArray(queryVector);
                 const vectorIsArray = Array.isArray(vector);
-                console.log(`  查询向量类型:`, queryIsArray ? `Dense (${queryVector.length}维)` : `Sparse (${Object.keys(queryVector).length}关键词)`);
-                console.log(`  小翠向量类型:`, vectorIsArray ? `Dense (${vector.length}维)` : `Sparse (${Object.keys(vector).length}关键词)`);
+                console.log(`  Loại vector truy vấn:`, queryIsArray ? `Dense (${queryVector.length} chiều)` : `Sparse (${Object.keys(queryVector).length} từ khóa)`);
+                console.log(`  Loại vector Tiểu Thúy:`, vectorIsArray ? `Dense (${vector.length} chiều)` : `Sparse (${Object.keys(vector).length} từ khóa)`);
                 if (queryIsArray) {
-                    console.log(`  查询向量前5维:`, queryVector.slice(0, 5).map(v => v.toFixed(3)));
+                    console.log(`  5 chiều đầu vector truy vấn:`, queryVector.slice(0, 5).map(v => v.toFixed(3)));
                 }
                 if (vectorIsArray) {
-                    console.log(`  小翠向量前5维:`, vector.slice(0, 5).map(v => v.toFixed(3)));
+                    console.log(`  5 chiều đầu vector Tiểu Thúy:`, vector.slice(0, 5).map(v => v.toFixed(3)));
                 }
             }
 
             const similarity = this.cosineSimilarity(queryVector, vector);
 
-            // 🔧 调试相似度结果
-            if (this.config.enableDebug && name === '小翠') {
-                console.log(`[人物图谱调试] 📊 小翠相似度结果: ${similarity}`);
+            // 🔧 Gỡ lỗi kết quả độ tương đồng
+            if (this.config.enableDebug && name === 'Tiểu Thúy') {
+                console.log(`[Gỡ lỗi sơ đồ nhân vật] 📊 Kết quả độ tương đồng Tiểu Thúy: ${similarity}`);
                 if (similarity === 0) {
-                    console.log(`[人物图谱调试] ❌ 相似度为0，可能原因:`);
-                    console.log(`  1. contextVectorManager未加载:`, !window.contextVectorManager);
-                    console.log(`  2. 查询向量为空:`, Object.keys(queryVector || {}).length === 0);
-                    console.log(`  3. 小翠向量为空:`, Object.keys(vector || {}).length === 0);
+                    console.log(`[Gỡ lỗi sơ đồ nhân vật] ❌ Độ tương đồng bằng 0, lý do có thể:`);
+                    console.log(`  1. contextVectorManager chưa tải:`, !window.contextVectorManager);
+                    console.log(`  2. Vector truy vấn trống:`, Object.keys(queryVector || {}).length === 0);
+                    console.log(`  3. Vector Tiểu Thúy trống:`, Object.keys(vector || {}).length === 0);
                 }
             }
 
-            // 🔧 检查是否是精确名字匹配
+            // 🔧 Kiểm tra xem có khớp tên chính xác không
             const isExactNameMatch = exactNameMatches.has(name);
             const matchSource = exactNameMatches.get(name); // 'user' | 'ai_reply' | 'both' | undefined
 
-            // 保存所有匹配结果（用于调试）
+            // Lưu tất cả kết quả khớp (để gỡ lỗi)
             allMatches.push({
                 name,
                 matchScore: similarity,
@@ -460,12 +459,12 @@ class CharacterGraphManager {
                 matchSource
             });
 
-            // 🔧 修改匹配逻辑：精确名字匹配或向量相似度达到阈值
+            // 🔧 Sửa đổi logic khớp: Khớp tên chính xác HOẶC độ tương đồng vector đạt ngưỡng
             if (isExactNameMatch || similarity >= this.config.matchThreshold) {
-                // 精确名字匹配时，至少给予阈值分数，确保不会被过滤
+                // Khi khớp tên chính xác, ít nhất cho điểm đạt ngưỡng để đảm bảo không bị lọc mất
                 const finalScore = isExactNameMatch ? Math.max(similarity, this.config.matchThreshold + 0.1) : similarity;
                 matches.push({
-                    ...character,  // 包含完整的relationship数据（含history），不包含vector
+                    ...character,  // Bao gồm dữ liệu relationship đầy đủ (kèm history), không bao gồm vector
                     matchScore: finalScore,
                     matchType: isExactNameMatch ? 'exact_name' : 'vector',
                     matchSource: matchSource || null
@@ -473,14 +472,14 @@ class CharacterGraphManager {
             }
         }
 
-        // 按相似度排序（降序）
+        // Sắp xếp theo độ tương đồng (giảm dần)
         matches.sort((a, b) => b.matchScore - a.matchScore);
         allMatches.sort((a, b) => b.matchScore - a.matchScore);
 
-        // 限制返回数量
+        // Giới hạn số lượng trả về
         const results = matches.slice(0, this.config.maxResults);
 
-        // 更新统计和最后匹配时间
+        // Cập nhật thống kê và thời gian khớp cuối cùng
         results.forEach(char => {
             const original = this.characters.get(char.name);
             if (original) {
@@ -490,7 +489,7 @@ class CharacterGraphManager {
             }
         });
 
-        // 更新统计
+        // Cập nhật thống kê chung
         if (results.length > 0) {
             this.stats.matchCount++;
             const avgScore = results.reduce((sum, r) => sum + r.matchScore, 0) / results.length;
@@ -498,37 +497,37 @@ class CharacterGraphManager {
         }
 
         if (this.config.enableDebug) {
-            console.log(`[人物图谱] 🔍 查询: "${queryText.substring(0, 50)}..."`);
-            console.log(`[人物图谱] 图谱中共有 ${this.characters.size} 个人物`);
-            console.log(`[人物图谱] 匹配阈值: ${(this.config.matchThreshold * 100).toFixed(0)}%`);
+            console.log(`[Sơ đồ nhân vật] 🔍 Truy vấn: "${queryText.substring(0, 50)}..."`);
+            console.log(`[Sơ đồ nhân vật] Có tổng cộng ${this.characters.size} nhân vật trong sơ đồ`);
+            console.log(`[Sơ đồ nhân vật] Ngưỡng khớp: ${(this.config.matchThreshold * 100).toFixed(0)}%`);
 
-            // 显示精确名字匹配详情
+            // Hiển thị chi tiết khớp tên chính xác
             if (exactNameMatches.size > 0) {
                 const matchDetails = Array.from(exactNameMatches.entries())
                     .map(([name, source]) => {
                         const sourceLabel = {
-                            'user': '👤用户输入',
-                            'ai_reply': '🤖AI回复',
+                            'user': '👤Người dùng nhập',
+                            'ai_reply': '🤖AI phản hồi',
                             'both': '👤+🤖',
-                            'text': '📝文本'
+                            'text': '📝Văn bản'
                         }[source] || source;
                         return `${name}(${sourceLabel})`;
                     }).join(', ');
-                console.log(`[人物图谱] 精确名字匹配: ${matchDetails}`);
+                console.log(`[Sơ đồ nhân vật] Khớp tên chính xác: ${matchDetails}`);
             } else {
-                console.log(`[人物图谱] 精确名字匹配: 无`);
+                console.log(`[Sơ đồ nhân vật] Khớp tên chính xác: Không có`);
             }
 
-            console.log(`[人物图谱] 找到 ${results.length} 个匹配:`);
+            console.log(`[Sơ đồ nhân vật] Tìm thấy ${results.length} kết quả khớp:`);
             results.forEach((r, i) => {
                 const matchTypeIcon = r.matchType === 'exact_name' ? '🎯' : '📊';
-                const sourceInfo = r.matchSource ? ` [来源: ${r.matchSource}]` : '';
-                console.log(`  ${i + 1}. ${r.name} ${matchTypeIcon} (相似度: ${(r.matchScore * 100).toFixed(1)}%, 类型: ${r.matchType || 'vector'}${sourceInfo})`);
+                const sourceInfo = r.matchSource ? ` [Nguồn: ${r.matchSource}]` : '';
+                console.log(`  ${i + 1}. ${r.name} ${matchTypeIcon} (Độ tương đồng: ${(r.matchScore * 100).toFixed(1)}%, Loại: ${r.matchType || 'vector'}${sourceInfo})`);
             });
 
-            // 🔧 显示所有人物的匹配分数（即使未达到阈值）
+            // 🔧 Hiển thị điểm khớp của tất cả nhân vật (ngay cả khi không đạt ngưỡng)
             if (allMatches.length > 0) {
-                console.log(`[人物图谱] 所有人物的匹配分数:`);
+                console.log(`[Sơ đồ nhân vật] Điểm khớp của tất cả nhân vật:`);
                 allMatches.forEach((r, i) => {
                     const isMatched = r.isExactNameMatch || r.matchScore >= this.config.matchThreshold;
                     const status = isMatched ? '✅' : '❌';
@@ -538,11 +537,11 @@ class CharacterGraphManager {
                         'both': '👤+🤖',
                         'text': '📝'
                     }[r.matchSource] || '' : '';
-                    const matchInfo = r.isExactNameMatch ? `, 精确匹配${sourceLabel}` : '';
-                    console.log(`  ${i + 1}. ${r.name} ${status} (向量相似度: ${(r.matchScore * 100).toFixed(1)}%${matchInfo})`);
+                    const matchInfo = r.isExactNameMatch ? `, Khớp chính xác ${sourceLabel}` : '';
+                    console.log(`  ${i + 1}. ${r.name} ${status} (Tương đồng vector: ${(r.matchScore * 100).toFixed(1)}%${matchInfo})`);
                 });
             } else {
-                console.log(`[人物图谱] ❌ 没有任何人物的匹配分数（可能是向量计算问题）`);
+                console.log(`[Sơ đồ nhân vật] ❌ Không có điểm khớp nào (có thể do lỗi tính toán vector)`);
             }
         }
 
@@ -550,49 +549,49 @@ class CharacterGraphManager {
     }
 
     /**
-     * 搜索匹配的人物（兼容旧方法）
-     * @param {string} queryName - 查询姓名
-     * @param {string} queryPersonality - 查询性格
-     * @param {string} queryAppearance - 查询外貌
-     * @returns {Array} 匹配的人物列表，按相似度排序
+     * Tìm kiếm nhân vật khớp (tương thích phương pháp cũ)
+     * @param {string} queryName - Tên truy vấn
+     * @param {string} queryPersonality - Tính cách truy vấn
+     * @param {string} queryAppearance - Ngoại hình truy vấn
+     * @returns {Array} Danh sách nhân vật khớp, sắp xếp theo độ tương đồng
      */
     async searchCharacters(queryName, queryPersonality = '', queryAppearance = '') {
-        // 如果只有queryName，使用新的searchByText方法
+        // Nếu chỉ có queryName, sử dụng phương pháp searchByText mới
         if (queryName && !queryPersonality && !queryAppearance) {
             return await this.searchByText(queryName);
         }
 
-        // 否则使用原有的三参数匹配
+        // Ngược lại sử dụng so khớp 3 tham số ban đầu
         if (!this.isInitialized) {
             await this.init();
         }
 
-        // 生成查询向量
+        // Tạo vector truy vấn
         const queryVector = await this.generateVector(queryName, queryPersonality, queryAppearance);
 
-        // 计算所有人物的相似度
+        // Tính toán độ tương đồng cho tất cả nhân vật
         const matches = [];
 
         for (const [name, vector] of this.vectors.entries()) {
             const similarity = this.cosineSimilarity(queryVector, vector);
 
-            // 过滤低于阈值的结果
+            // Lọc các kết quả dưới ngưỡng
             if (similarity >= this.config.matchThreshold) {
                 const character = this.characters.get(name);
                 matches.push({
-                    ...character,  // 包含完整的relationship数据（含history），不包含vector
+                    ...character,  // Bao gồm dữ liệu relationship đầy đủ (kèm history), không bao gồm vector
                     matchScore: similarity
                 });
             }
         }
 
-        // 按相似度排序（降序）
+        // Sắp xếp theo độ tương đồng (giảm dần)
         matches.sort((a, b) => b.matchScore - a.matchScore);
 
-        // 限制返回数量
+        // Giới hạn số lượng trả về
         const results = matches.slice(0, this.config.maxResults);
 
-        // 更新统计
+        // Cập nhật thống kê
         if (results.length > 0) {
             this.stats.matchCount++;
             const avgScore = results.reduce((sum, r) => sum + r.matchScore, 0) / results.length;
@@ -600,9 +599,9 @@ class CharacterGraphManager {
         }
 
         if (this.config.enableDebug) {
-            console.log(`[人物图谱] 🔍 查询: ${queryName} | 找到 ${results.length} 个匹配`);
+            console.log(`[Sơ đồ nhân vật] 🔍 Truy vấn: ${queryName} | Tìm thấy ${results.length} kết quả khớp`);
             results.forEach((r, i) => {
-                console.log(`  ${i + 1}. ${r.name} (相似度: ${(r.matchScore * 100).toFixed(1)}%)`);
+                console.log(`  ${i + 1}. ${r.name} (Độ tương đồng: ${(r.matchScore * 100).toFixed(1)}%)`);
             });
         }
 
@@ -610,14 +609,14 @@ class CharacterGraphManager {
     }
 
     /**
-     * 获取人物完整信息
+     * Lấy thông tin đầy đủ của nhân vật
      */
     getCharacter(name) {
         return this.characters.get(name);
     }
 
     /**
-     * 删除人物
+     * Xóa nhân vật
      */
     async deleteCharacter(name) {
         if (!this.isInitialized) {
@@ -633,22 +632,22 @@ class CharacterGraphManager {
                 this.characters.delete(name);
                 this.vectors.delete(name);
                 this.stats.totalCharacters--;
-                console.log(`[人物图谱] 🗑️ 删除人物: ${name}`);
+                console.log(`[Sơ đồ nhân vật] 🗑️ Đã xóa nhân vật: ${name}`);
                 resolve();
             };
 
             request.onerror = () => {
-                console.error(`[人物图谱] ❌ 删除失败: ${name}`, request.error);
+                console.error(`[Sơ đồ nhân vật] ❌ Xóa thất bại: ${name}`, request.error);
                 reject(request.error);
             };
         });
     }
 
     /**
-     * 🆕 根据轮次范围删除人物（用于消息回滚）
-     * @param {number} turnStart - 起始轮次（包含）
-     * @param {number} turnEnd - 结束轮次（包含）
-     * @returns {Array} 被删除的人物名称列表
+     * 🆕 Xóa nhân vật theo phạm vi lượt (dùng cho hồi quy tin nhắn)
+     * @param {number} turnStart - Lượt bắt đầu (bao gồm)
+     * @param {number} turnEnd - Lượt kết thúc (bao gồm)
+     * @returns {Array} Danh sách tên các nhân vật bị xóa
      */
     async deleteCharactersByTurnRange(turnStart, turnEnd) {
         if (!this.isInitialized) {
@@ -657,30 +656,30 @@ class CharacterGraphManager {
 
         const deletedNames = [];
 
-        // 找出在指定轮次范围内首次添加的人物
+        // Tìm các nhân vật được thêm lần đầu trong phạm vi lượt chỉ định
         for (const [name, char] of this.characters.entries()) {
             const addedAtTurn = char.addedAtTurn;
 
-            // 只删除在指定轮次范围内首次添加的人物
+            // Chỉ xóa nhân vật lần đầu thêm vào trong phạm vi lượt chỉ định
             if (addedAtTurn !== undefined && addedAtTurn >= turnStart && addedAtTurn <= turnEnd) {
                 try {
                     await this.deleteCharacter(name);
                     deletedNames.push(name);
                 } catch (error) {
-                    console.error(`[人物图谱] 回滚删除失败: ${name}`, error);
+                    console.error(`[Sơ đồ nhân vật] Xóa hồi quy thất bại: ${name}`, error);
                 }
             }
         }
 
         if (deletedNames.length > 0) {
-            console.log(`[人物图谱] 🔄 回滚删除了 ${deletedNames.length} 个人物（轮次${turnStart}-${turnEnd}）:`, deletedNames);
+            console.log(`[Sơ đồ nhân vật] 🔄 Đã xóa hồi quy ${deletedNames.length} nhân vật (Lượt ${turnStart}-${turnEnd}):`, deletedNames);
         }
 
         return deletedNames;
     }
 
     /**
-     * 清空所有人物
+     * Xóa tất cả nhân vật
      */
     async clearAll() {
         if (!this.isInitialized) {
@@ -696,26 +695,26 @@ class CharacterGraphManager {
                 this.characters.clear();
                 this.vectors.clear();
                 this.stats.totalCharacters = 0;
-                console.log('[人物图谱] 🗑️ 已清空所有人物');
+                console.log('[Sơ đồ nhân vật] 🗑️ Đã xóa sạch tất cả nhân vật');
                 resolve();
             };
 
             request.onerror = () => {
-                console.error('[人物图谱] ❌ 清空失败:', request.error);
+                console.error('[Sơ đồ nhân vật] ❌ Xóa sạch thất bại:', request.error);
                 reject(request.error);
             };
         });
     }
 
     /**
-     * 批量添加人物（从现有的relationships迁移）
+     * Thêm nhân vật hàng loạt (di chuyển từ relationships hiện có)
      */
     async batchAddCharacters(relationships) {
         if (!this.isInitialized) {
             await this.init();
         }
 
-        console.log(`[人物图谱] 📥 批量添加 ${relationships.length} 个人物...`);
+        console.log(`[Sơ đồ nhân vật] 📥 Đang thêm hàng loạt ${relationships.length} nhân vật...`);
 
         const results = [];
         for (const rel of relationships) {
@@ -723,55 +722,55 @@ class CharacterGraphManager {
                 const result = await this.addOrUpdateCharacter(rel);
                 results.push(result);
             } catch (error) {
-                console.error(`[人物图谱] 添加失败: ${rel.name}`, error);
+                console.error(`[Sơ đồ nhân vật] Thêm thất bại: ${rel.name}`, error);
             }
         }
 
-        console.log(`[人物图谱] ✅ 批量添加完成: ${results.length}/${relationships.length}`);
+        console.log(`[Sơ đồ nhân vật] ✅ Thêm hàng loạt hoàn tất: ${results.length}/${relationships.length}`);
         return results;
     }
 
     /**
-     * 🔧 调试：查看所有人物的向量
+     * 🔧 Gỡ lỗi: Xem vector của tất cả nhân vật
      */
     debugShowAllVectors() {
         console.log('╔════════════════════════════════════════════════╗');
-        console.log('║  🎭 人物图谱向量调试                          ║');
+        console.log('║  🎭 Gỡ lỗi Vector Sơ đồ nhân vật               ║');
         console.log('╠════════════════════════════════════════════════╣');
 
         this.characters.forEach((character, name) => {
             const vector = this.vectors.get(name);
             console.log(`║  👤 ${name}:`);
-            console.log(`║     人物数据: ${JSON.stringify(character, null, 6).substring(0, 100)}...`);
+            console.log(`║     Dữ liệu nhân vật: ${JSON.stringify(character, null, 6).substring(0, 100)}...`);
 
             if (vector) {
                 if (Array.isArray(vector)) {
-                    // 密集向量（数组）
-                    console.log(`║     向量类型: Dense (${vector.length}维)`);
-                    console.log(`║     向量前8维: [${vector.slice(0, 8).map(v => v.toFixed(3)).join(', ')}]`);
+                    // Vector dày đặc (mảng)
+                    console.log(`║     Loại vector: Dense (${vector.length} chiều)`);
+                    console.log(`║     8 chiều đầu của vector: [${vector.slice(0, 8).map(v => v.toFixed(3)).join(', ')}]`);
                 } else {
-                    // 稀疏向量（对象）
+                    // Vector thưa thớt (đối tượng)
                     const keywordList = Object.entries(vector)
                         .sort((a, b) => b[1] - a[1])
                         .slice(0, 8)
                         .map(([word, weight]) => `${word}(${weight.toFixed(1)})`)
                         .join(', ');
-                    console.log(`║     向量类型: Sparse (关键词)`);
-                    console.log(`║     关键词(前8): ${keywordList}`);
-                    console.log(`║     总关键词数: ${Object.keys(vector).length}`);
+                    console.log(`║     Loại vector: Sparse (Từ khóa)`);
+                    console.log(`║     Từ khóa (Top 8): ${keywordList}`);
+                    console.log(`║     Tổng số từ khóa: ${Object.keys(vector).length}`);
                 }
             } else {
-                console.log(`║     ❌ 向量为空！`);
+                console.log(`║     ❌ Vector trống!`);
             }
             console.log('║');
         });
 
         console.log(`╚════════════════════════════════════════════════╝`);
-        console.log(`总计: ${this.characters.size} 个人物`);
+        console.log(`Tổng cộng: ${this.characters.size} nhân vật`);
     }
 
     /**
-     * 获取统计信息
+     * Lấy thông tin thống kê
      */
     getStats() {
         return {
@@ -781,15 +780,15 @@ class CharacterGraphManager {
     }
 
     /**
-     * 更新配置
+     * Cập nhật cấu hình
      */
     updateConfig(newConfig) {
         this.config = { ...this.config, ...newConfig };
-        console.log('[人物图谱] 配置已更新:', this.config);
+        console.log('[Sơ đồ nhân vật] Cấu hình đã cập nhật:', this.config);
     }
 
     /**
-     * 导出所有人物数据
+     * Xuất toàn bộ dữ liệu nhân vật
      */
     exportData() {
         const characters = Array.from(this.characters.values());
@@ -802,14 +801,14 @@ class CharacterGraphManager {
     }
 
     /**
-     * 导入人物数据
+     * Nhập dữ liệu nhân vật
      */
     async importData(data) {
         if (!this.isInitialized) {
             await this.init();
         }
 
-        console.log(`[人物图谱] 📥 导入 ${data.characters.length} 个人物...`);
+        console.log(`[Sơ đồ nhân vật] 📥 Đang nhập ${data.characters.length} nhân vật...`);
 
         for (const char of data.characters) {
             await this.addOrUpdateCharacter(char);
@@ -819,12 +818,12 @@ class CharacterGraphManager {
             this.updateConfig(data.config);
         }
 
-        console.log('[人物图谱] ✅ 导入完成');
+        console.log('[Sơ đồ nhân vật] ✅ Nhập hoàn tất');
     }
 }
 
-// 创建全局实例
+// Tạo thực thể toàn cục
 if (typeof window !== 'undefined') {
     window.characterGraphManager = new CharacterGraphManager();
-    console.log('[人物图谱] 全局实例已创建: window.characterGraphManager');
+    console.log('[Sơ đồ nhân vật] Thực thể toàn cục đã được tạo: window.characterGraphManager');
 }

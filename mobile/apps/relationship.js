@@ -4,7 +4,7 @@ const relationshipApp = `
         <div class="stat-panel love">
             <div class="panel-icon">❤️</div>
             <div class="panel-data">
-                <div class="panel-label">DATA_道侣</div>
+                <div class="panel-label">DATA_Đạo lữ</div>
                 <div class="panel-value">00</div>
             </div>
             <div class="panel-bar"></div>
@@ -13,7 +13,7 @@ const relationshipApp = `
         <div class="stat-panel friend">
             <div class="panel-icon">👥</div>
             <div class="panel-data">
-                <div class="panel-label">DATA_好友</div>
+                <div class="panel-label">DATA_Hảo hữu</div>
                 <div class="panel-value">12</div>
             </div>
             <div class="panel-bar" style="width: 40%"></div>
@@ -22,7 +22,7 @@ const relationshipApp = `
         <div class="stat-panel enemy">
             <div class="panel-icon">⚔️</div>
             <div class="panel-data">
-                <div class="panel-label">DATA_仇家</div>
+                <div class="panel-label">DATA_Cừu gia</div>
                 <div class="panel-value glitch-text">99+</div>
             </div>
             <div class="panel-bar full"></div>
@@ -40,8 +40,8 @@ const relationshipApp = `
                 <span class="hex-content">👩</span>
             </div>
             <div class="contact-info">
-                <div class="contact-name">ID: 师姐 <span class="status-tag online">ONLINE</span></div>
-                <div class="contact-meta">LEVEL: 筑基后期 | TRUST: 85%</div>
+                <div class="contact-name">ID: Sư tỷ <span class="status-tag online">ONLINE</span></div>
+                <div class="contact-meta">LEVEL: Trúc Cơ hậu kỳ | TRUST: 85%</div>
             </div>
             <div class="contact-btn">ACCESS</div>
         </div>
@@ -51,8 +51,8 @@ const relationshipApp = `
                 <span class="hex-content">👨</span>
             </div>
             <div class="contact-info">
-                <div class="contact-name">ID: 师弟 <span class="status-tag online">ONLINE</span></div>
-                <div class="contact-meta">LEVEL: 练气巅峰 | TRUST: 92%</div>
+                <div class="contact-name">ID: Sư đệ <span class="status-tag online">ONLINE</span></div>
+                <div class="contact-meta">LEVEL: Luyện Khí đỉnh phong | TRUST: 92%</div>
             </div>
             <div class="contact-btn">ACCESS</div>
         </div>
@@ -62,8 +62,8 @@ const relationshipApp = `
                 <span class="hex-content">🧙</span>
             </div>
             <div class="contact-info">
-                <div class="contact-name">ID: 掌门 <span class="status-tag offline">OFFLINE</span></div>
-                <div class="contact-meta">LEVEL: 元婴期 | TRUST: 50%</div>
+                <div class="contact-name">ID: Chưởng môn <span class="status-tag offline">OFFLINE</span></div>
+                <div class="contact-meta">LEVEL: Nguyên Anh kỳ | TRUST: 50%</div>
             </div>
             <div class="contact-btn">LOCKED</div>
         </div>
@@ -73,8 +73,8 @@ const relationshipApp = `
                 <span class="hex-content">😈</span>
             </div>
             <div class="contact-info">
-                <div class="contact-name">ID: 宿敌 <span class="status-tag online">TRACKING</span></div>
-                <div class="contact-meta">LEVEL: 金丹初期 | THREAT: HIGH</div>
+                <div class="contact-name">ID: Túc địch <span class="status-tag online">TRACKING</span></div>
+                <div class="contact-meta">LEVEL: Kim Đan sơ kỳ | THREAT: HIGH</div>
             </div>
             <div class="contact-btn danger">ATTACK</div>
         </div>

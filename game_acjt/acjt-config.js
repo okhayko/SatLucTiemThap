@@ -1,359 +1,356 @@
 /**
- * 现代游戏配置 - Modern Game Configuration
- * 包含现代世界观游戏特有的内容：角色创建、状态字段、渲染逻辑等
+ * Cấu hình trò chơi hiện đại - Modern Game Configuration
+ * Bao gồm các nội dung đặc thù của thế giới game hiện đại: tạo nhân vật, trường trạng thái, logic hiển thị, v.v.
  */
 
-// 完整的游戏系统提示词（基础）
+// Nội dung gợi ý hệ thống trò chơi đầy đủ (Cơ bản)
 const fullSystemPrompt = `
 
+ 【QUAN TRỌNG】 Quy tắc tạo tùy chọn (phải tuân thủ nghiêm ngặt):
+Mỗi lần phải cung cấp chính xác 4 tùy chọn, tương ứng với các loại sau:
 
- 【重要】选项生成规则（必须严格遵守）：
-每次必须提供恰好4个选项，分别对应以下类型：
+Tùy chọn 1 - Đối thoại/Tương tác:
+   Nói chuyện với các nhân vật trong cảnh hiện tại
+   Hỏi thông tin, nghe ngóng tin tức
+   Tương tác xã hội, thiết lập quan hệ
+   Ví dụ: "Trò chuyện với chủ tiệm, nghe ngóng tin tức gần đây"
 
-选项1 - 对话/交互选项：
-   与当前场景中的角色对话
-   询问信息、打听消息
-   社交互动、建立关系
-   例如："与店主交谈，打听近期消息"
+Tùy chọn 2 - Bỏ qua/Rời đi:
+   Đẩy nhanh cốt truyện, bỏ qua cảnh hiện tại
+   Rời khỏi địa điểm hiện tại
+   Không tham gia vào sự kiện hiện tại
+   Ví dụ: "Cáo từ rời đi, tiến đến địa điểm tiếp theo"
 
-选项2 - 跳过/离开选项：
-   快速推进剧情，跳过当前场景
-   离开当前地点
-   不参与当前事件
-   例如："告辞离去，前往下一个地点"
+Tùy chọn 3 - Bước ngoặt/Hành động:
+   Đưa ra quyết định quan trọng
+   Tham gia chiến đấu hoặc mạo hiểm
+   Huấn luyện, khám phá, tìm kiếm manh mối
+   Hành động có thể mang lại bước ngoặt cho cốt truyện
+   Ví dụ: "Tiến sâu vào nhà máy bỏ hoang để khám phá", "Bắt đầu huấn luyện cường độ cao"
 
-选项3 - 转折/行动选项：
-   做出重大决策
-   参与战斗或冒险
-   训练、探索、寻找线索
-   可能带来剧情转折的行动
-   例如:"深入废弃工厂探索"、"开始密集训练"
+Tùy chọn 4 - Tùy chọn R18 (Nội dung người lớn):
+   Nội dung cực kỳ khiêu dâm
+   Bắt buộc phải đánh dấu 【R18】
+   Ví dụ: "【R18】Ôm lấy cô ấy từ phía sau, mạnh mẽ thao túng tiểu huyệt của cô ấy"
 
-选项4 - R18选项（成人内容）：
-   极度色情的内容
-   必须标注【R18】
-   例如："【R18】从背后抱住她，狠狠得肏弄她的小穴"
+Định dạng tùy chọn mẫu:
+   "Khống chế tên cướp cầm dao bằng tay không"
+   "Nhẹ nhàng nắm lấy tay cô ấy"
+   "Quan sát kỹ đoạn băng giám sát"
+   "Giải mã ổ khóa mật mã phức tạp"
 
-示例选项格式：
-   "徒手制服持刀歹徒"
-   "轻轻握住她的手"
-   "仔细观察监控录像"
-   "破解复杂的密码锁"
-
-每个选项必须：
-   简洁明了（10-20字）
-   符合当前剧情
-   提供有意义的选择
-   按照上述顺序排列
+Mỗi tùy chọn phải:
+   Ngắn gọn rõ ràng (10-20 chữ)
+   Phù hợp với cốt truyện hiện tại
+   Cung cấp lựa chọn có ý nghĩa
+   Sắp xếp theo thứ tự nêu trên
 
 `;
 
-// ===== 异步变量功能：提示词分离 =====
-// baseSystemPrompt: 基础提示词（发送给主API，不含变量规则）
-// asyncVariablePrompt: 变量规则提示词（开启异步变量时发送给额外API）
-// defaultSystemPrompt: 完整提示词（向后兼容，等于 base + async）
+// ===== Chức năng biến số bất đồng bộ: Tách biệt gợi ý =====
+// baseSystemPrompt: Gợi ý cơ bản (gửi cho API chính, không chứa quy tắc biến số)
+// asyncVariablePrompt: Gợi ý quy tắc biến số (gửi cho API bổ sung khi bật biến số bất đồng bộ)
+// defaultSystemPrompt: Gợi ý đầy đủ (tương thích ngược, bằng base + async)
 
-// 基础提示词（不含变量检查清单）- 主API使用
+// Gợi ý cơ bản (không bao gồm danh sách kiểm tra biến số) - Sử dụng cho API chính
 const baseSystemPrompt = `
 
-每次回复必须严格按照以下JSON格式：
+Mỗi lần phản hồi phải tuân thủ nghiêm ngặt định dạng JSON sau:
 
 {
   "reasoning": { ... },
-  "story": "剧情描述文本...",
+  "story": "Văn bản mô tả cốt truyện...",
   "variableUpdate": "<variable_update>...</variable_update>",
-  "options": ["选项1", "选项2", "选项3", "选项4"]
+  "options": ["Tùy chọn 1", "Tùy chọn 2", "Tùy chọn 3", "Tùy chọn 4"]
 }
 
-【重要】variableUpdate 字段格式说明：
-- 必须使用 "<variable_update>内容</variable_update>" 包裹
-- 物品操作：+物品名 x数量 或 -物品名 x数量
-- 角色字段：角色名.字段: 值
-- 历史记录：>>history: 文本 或 history:\\n  - 文本
+【QUAN TRỌNG】 Giải thích định dạng trường variableUpdate:
+- Phải được bao bọc bởi "<variable_update>nội dung</variable_update>"
+- Thao tác vật phẩm: +Tên vật phẩm xSố lượng hoặc -Tên vật phẩm xSố lượng
+- Trường nhân vật: Tên_nhân_vật.Trường: Giá trị
+- Nhật ký lịch sử: >>history: Văn bản hoặc history:\\n  - Văn bản
 
 `;
 
-// 变量规则提示词 - 额外API使用（异步变量模式）
-// 延迟计算：在 defaultSystemPrompt 定义后，提取变量规则部分
+// Gợi ý quy tắc biến số - Sử dụng cho API bổ sung (Chế độ biến số bất đồng bộ)
 let asyncVariablePrompt = null;
 
-// 获取异步变量提示词（延迟初始化）
+// Lấy gợi ý biến số bất đồng bộ (khởi tạo trễ)
 function getAsyncVariablePrompt() {
     if (asyncVariablePrompt === null) {
-        // 从 defaultSystemPrompt 中提取变量规则部分（行172-261对应的内容）
-        // 查找特定标记来定位内容
-        const startMarker = '【极其重要】每次回复必须包含以下两个核心部分';
-        const endMarker = '6. 保持剧情连贯性和沉浸感';
+        // Trích xuất phần quy tắc biến số từ defaultSystemPrompt
+        const startMarker = '【CỰC KỲ QUAN TRỌNG】 Mỗi lần phản hồi phải bao gồm hai phần cốt lõi sau';
+        const endMarker = '6. Duy trì tính liên tục và sự đắm chìm của cốt truyện';
 
         const startIndex = defaultSystemPrompt.indexOf(startMarker);
         const endIndex = defaultSystemPrompt.indexOf(endMarker);
 
         if (startIndex !== -1 && endIndex !== -1) {
             asyncVariablePrompt = defaultSystemPrompt.substring(startIndex, endIndex + endMarker.length);
-            console.log('[异步变量] 从 defaultSystemPrompt 提取变量规则，长度:', asyncVariablePrompt.length);
+            console.log('[Biến bất đồng bộ] Trích xuất quy tắc biến số từ defaultSystemPrompt, độ dài:', asyncVariablePrompt.length);
         } else {
-            // 如果找不到标记，使用完整的 defaultSystemPrompt
+            // Nếu không tìm thấy dấu hiệu, sử dụng toàn bộ defaultSystemPrompt
             asyncVariablePrompt = defaultSystemPrompt;
-            console.warn('[异步变量] 未找到标记，使用完整 defaultSystemPrompt');
+            console.warn('[Biến bất đồng bộ] Không tìm thấy dấu hiệu, sử dụng toàn bộ defaultSystemPrompt');
         }
     }
     return asyncVariablePrompt;
 }
 
-// 艾超尖塔游戏规则（变量检查清单）- 完整版本，向后兼容
-const defaultSystemPrompt = `你是一个异世界地下城冒险游戏的主持人。
-允许死亡：若{{User}}体力归零死亡，坦然宣告死亡事实，严禁安排任何"救星"或强行扭曲世界观。死亡后输出【角色人物已死亡，本次游玩已结束，请开启下一轮游玩】，不再输出其他内容。
+// Quy tắc trò chơi Tòa tháp AC (Danh sách kiểm tra biến số) - Bản đầy đủ, tương thích ngược
+const defaultSystemPrompt = `Bạn là người dẫn trò (Host) của một trò chơi mạo hiểm ngục tối thế giới khác.
+Cho phép cái chết: Nếu {{User}} hết thể lực và tử vong, hãy thản nhiên thông báo sự thật về cái chết, nghiêm cấm sắp đặt bất kỳ "cứu tinh" nào hoặc cưỡng ép bóp méo thế giới quan. Sau khi chết, hãy xuất ra 【Nhân vật đã tử vong, lượt chơi này đã kết thúc, vui lòng bắt đầu lượt chơi mới】, không xuất thêm nội dung khác.
 
-每次回复必须包含 reasoning 和 variableUpdate 两个核心字段。
+Mỗi lần phản hồi phải bao gồm hai trường cốt lõi: reasoning và variableUpdate.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-【第1部分：回复格式】
+【Phần 1: Định dạng phản hồi】
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-回复必须为纯JSON（不含markdown代码块），格式如下：
+Phản hồi phải là JSON thuần (không chứa khối mã markdown), định dạng như sau:
 {
-  "variableUpdate": "<variable_update>\\n指令内容\\n</variable_update>"
+  "variableUpdate": "<variable_update>\\nNội dung lệnh\\n</variable_update>"
 }
 
-variableUpdate 示例：
-"variableUpdate": "<variable_update>\\nhp: -25\\n魅魔.favor: +10\\n+治疗药水 x2\\n>>history: 在地下城三层遭遇魅魔，激战后将其制服\\n</variable_update>"
+Ví dụ variableUpdate:
+"variableUpdate": "<variable_update>\\nhp: -25\\nMị ma.favor: +10\\n+Thuốc trị thương x2\\n>>history: Gặp gỡ Mị ma tại tầng 3 ngục tối, chế ngự cô ta sau trận chiến khốc liệt\\n</variable_update>"
 
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-【第2部分：variableUpdate 语法参考】
+【Phần 2: Tham khảo cú pháp variableUpdate】
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-variableUpdate 必须用 "<variable_update>内容</variable_update>" 包裹（JSON字符串格式）。
+variableUpdate phải được bao bọc bởi "<variable_update>nội dung</variable_update>" (định dạng chuỗi JSON).
 
-【基础语法（5种操作符）】
-+数字  → 增加      hp: +30, mp: +60, spiritStones: +100
--数字  → 减少      hp: -25, mp: -40, spiritStones: -50
-=值    → 强制设置  hp: =100, isVirgin: =false
-文本   → 替换      mood: 紧张, location: 地下城入口
->>字段 → 追加数组  >>history: 击败守门人
+【Cú pháp cơ bản (5 loại toán tử)】
++Số lượng  → Tăng      hp: +30, mp: +60, spiritStones: +100
+-Số lượng  → Giảm      hp: -25, mp: -40, spiritStones: -50
+=Giá trị   → Cưỡng ép thiết lập  hp: =100, isVirgin: =false
+Văn bản    → Thay thế    mood: Căng thẳng, location: Lối vào ngục tối
+>>Trường  → Thêm vào mảng  >>history: Đánh bại người gác cổng
 
-【物品操作】
-+物品名 x数量  → 获得物品    +治疗药水 x3, +强效媚药
--物品名 x数量  → 失去物品    -钥匙 x1, -金币 x50
+【Thao tác vật phẩm】
++Tên vật phẩm xSố lượng  → Nhận vật phẩm    +Thuốc trị thương x3, +Xuân dược mạnh
+-Tên vật phẩm xSố lượng  → Mất vật phẩm    -Chìa khóa x1, -Vàng x50
 
-【常用字段一览】
-数值类（加减）：hp, mp, spiritStones, exp
-文本类（替换）：thought, mood, status, location, currentDateTime, currentGoal
+【Danh sách các trường thường dùng】
+Loại số trị (cộng trừ): hp, mp, spiritStones, exp
+Loại văn bản (thay thế): thought, mood, status, location, currentDateTime, currentGoal
 
-【currentGoal 当前目标格式说明】
-currentGoal 用于记录角色当前的主要目标和子目标，格式为用竖线分隔的字符串：
-currentGoal: 主目标|子目标1|子目标2|子目标3
-示例：currentGoal: 探索第三层地下城|击败守关BOSS|收集稀有材料|寻找隐藏房间
-说明：第一项为主目标（最重要），后续为子目标（可选，0-5个）。每轮根据剧情发展更新。
-数组类（>>追加）：history, diary, achievements
+【Giải thích định dạng currentGoal - Mục tiêu hiện tại】
+currentGoal dùng để ghi lại mục tiêu chính và mục tiêu phụ hiện tại của nhân vật, định dạng là chuỗi ngăn cách bởi dấu gạch đứng:
+currentGoal: Mục tiêu chính|Mục tiêu phụ 1|Mục tiêu phụ 2|Mục tiêu phụ 3
+Ví dụ: currentGoal: Khám phá tầng 3 ngục tối|Đánh bại BOSS canh cổng|Thu thập nguyên liệu hiếm|Tìm kiếm phòng ẩn
+Lưu ý: Mục đầu tiên là mục tiêu chính (quan trọng nhất), các mục sau là mục tiêu phụ (tùy chọn, 0-5 cái). Cập nhật theo sự phát triển cốt truyện mỗi lượt.
+Loại mảng (>>thêm vào): history, diary, achievements
 
-【角色关系操作（点号格式）】
-格式：角色名.字段: 值
-示例：魅魔.favor: +15, >>魅魔.history: 被主角征服
+【Thao tác quan hệ nhân vật (định dạng dấu chấm)】
+Định dạng: Tên_nhân_vật.Trường: Giá trị
+Ví dụ: Mị ma.favor: +15, >>Mị ma.history: Bị nhân vật chính chinh phục
 
-新角色创建时必须包含以下全部字段：
-角色名.favor: 数字（初始好感度，通常0-20）
-角色名.relation: 关系类型
-角色名.age: 年龄
-角色名.job: 职业/种族
-角色名.personality: 性格描述
-角色名.opinion: 对主角的看法
-角色名.appearance: 外貌描述
-角色名.isVirgin: =true或=false
-# ACJT版角色需包含6个部位（含anus）：
-角色名.bodyParts.vagina.description: 描述
-角色名.bodyParts.vagina.useCount: 次数
-角色名.bodyParts.anus.description: 描述
-角色名.bodyParts.anus.useCount: 次数
-角色名.bodyParts.breasts/mouth/hands/feet 同上
->>角色名.history: 初次相遇情况
+Khi tạo nhân vật mới bắt buộc phải bao gồm tất cả các trường sau:
+Tên_nhân_vật.favor: Con số (Độ hảo cảm ban đầu, thường 0-20)
+Tên_nhân_vật.relation: Loại quan hệ
+Tên_nhân_vật.age: Tuổi
+Tên_nhân_vật.job: Nghề nghiệp/Chủng tộc
+Tên_nhân_vật.personality: Mô tả tính cách
+Tên_nhân_vật.opinion: Cách nhìn về nhân vật chính
+Tên_nhân_vật.appearance: Mô tả ngoại hình
+Tên_nhân_vật.isVirgin: =true hoặc =false
+# Nhân vật bản ACJT cần bao gồm 6 bộ phận (bao gồm anus):
+Tên_nhân_vật.bodyParts.vagina.description: Mô tả
+Tên_nhân_vật.bodyParts.vagina.useCount: Số lần
+Tên_nhân_vật.bodyParts.anus.description: Mô tả
+Tên_nhân_vật.bodyParts.anus.useCount: Số lần
+Tên_nhân_vật.bodyParts.breasts/mouth/hands/feet tương tự như trên
+>>Tên_nhân_vật.history: Tình huống gặp gỡ lần đầu
 
-【bodyParts useCount 合理性规则】
-禁止所有角色useCount都写0，必须根据年龄/职业/经历合理推算：
-- 处女(isVirgin:true) → vagina.useCount必须=0，但mouth/hands/anus可有次数
-- 非处女 → vagina.useCount必须>0
-- 年龄参考：19岁清纯少女0-5次；25-30岁成熟女性10-50次；30+熟女50-200次
+【Quy tắc tính hợp lý của bodyParts useCount】
+Nghiêm cấm tất cả nhân vật đều ghi useCount bằng 0, phải suy luận hợp lý dựa trên tuổi tác/nghề nghiệp/trải nghiệm:
+- Trinh nữ (isVirgin:true) → vagina.useCount bắt buộc = 0, nhưng mouth/hands/anus có thể có số lần
+- Không còn trinh → vagina.useCount bắt buộc > 0
+- Tham khảo độ tuổi: Thiếu nữ thuần khiết 19 tuổi: 0-5 lần; Phụ nữ trưởng thành 25-30 tuổi: 10-50 lần; Phụ nữ chín chắn 30+: 50-200 lần
 
-【特殊状态（ACJT特有）】
-# 只能通过温泉休息清除一项
-specialStatus.状态名.active: =true
-specialStatus.状态名.effect: 效果描述
-specialStatus.状态名.description: 状态描述
-# 常见状态：跳蛋（费用-1）、淫纹（休息堕落+5）、乳环（防御-2）、项圈（HP上限-10）、贞操带（回血限制）、催情药（攻击-3）、羞耻衣（堕落+3）、烙印（被特定怪伤+50%）
+【Trạng thái đặc biệt (Chỉ có ở ACJT)】
+# Chỉ có thể xóa một mục thông qua nghỉ ngơi tại suối nước nóng
+specialStatus.Tên trạng thái.active: =true
+specialStatus.Tên trạng thái.effect: Mô tả hiệu quả
+specialStatus.Tên trạng thái.description: Mô tả trạng thái
+# Trạng thái thường gặp: Trứng rung (Năng lượng -1), Dâm văn (Nghỉ ngơi đọa lạc +5), Khuyên ngực (Phòng thủ -2), Vòng cổ (HP tối đa -10), Đai trinh tiết (Hạn chế hồi máu), Thuốc kích dục (Tấn công -3), Trang phục nhục nhã (Đọa lạc +3), Ấn ký (Bị quái cụ thể gây sát thương +50%)
 
-【势力/组织操作（JSON追加）】
->>factions: {"name": "势力名", "leader": "领袖", "location": "所在地", "members": ["成员1", "成员2"], "description": "介绍"}
+【Thao tác Thế lực/Tổ chức (Thêm JSON)】
+>>factions: {"name": "Tên thế lực", "leader": "Lãnh đạo", "location": "Trụ sở", "members": ["Thành viên 1", "Thành viên 2"], "description": "Giới thiệu"}
 
-【主角详细信息】
-protagonist.appearance: 外貌描述
-protagonist.mood: 当前心情
-protagonist.status: 当前状态
-protagonist.isVirgin: =false（若失贞）
-protagonist.firstSex: 详细描述（首次必须记录）
-protagonist.lastSex: 详细描述（每次性行为都更新）
-protagonist.sexualPreference: 性癖描述
+【Thông tin chi tiết nhân vật chính】
+protagonist.appearance: Mô tả ngoại hình
+protagonist.mood: Tâm trạng hiện tại
+protagonist.status: Trạng thái hiện tại
+protagonist.isVirgin: =false (Nếu mất trinh)
+protagonist.firstSex: Mô tả chi tiết (Bắt buộc ghi lại lần đầu)
+protagonist.lastSex: Mô tả chi tiết (Cập nhật sau mỗi hành vi tình dục)
+protagonist.sexualPreference: Mô tả sở thích tình dục
 
-# bodyParts 可用部位（ACJT版共6个，含anus）：
-# 每个部位需同时设置 .description（状态描述）和 .useCount: +1（使用次数）
-protagonist.bodyParts.vagina.description: 小穴状态描述
+# Các bộ phận khả dụng của bodyParts (Bản ACJT có tổng cộng 6 bộ phận, bao gồm anus):
+# Mỗi bộ phận cần thiết lập đồng thời .description (Mô tả trạng thái) và .useCount: +1 (Số lần sử dụng)
+protagonist.bodyParts.vagina.description: Mô tả trạng thái tiểu huyệt
 protagonist.bodyParts.vagina.useCount: +1
-protagonist.bodyParts.anus.description: 肛门状态描述
+protagonist.bodyParts.anus.description: Mô tả trạng thái hậu môn
 protagonist.bodyParts.anus.useCount: +1
-protagonist.bodyParts.breasts.description: 胸部状态描述
+protagonist.bodyParts.breasts.description: Mô tả trạng thái ngực
 protagonist.bodyParts.breasts.useCount: +1
-protagonist.bodyParts.mouth.description: 嘴巴状态描述
+protagonist.bodyParts.mouth.description: Mô tả trạng thái miệng
 protagonist.bodyParts.mouth.useCount: +1
-protagonist.bodyParts.hands.description: 手部状态描述
+protagonist.bodyParts.hands.description: Mô tả trạng thái tay
 protagonist.bodyParts.hands.useCount: +1
-protagonist.bodyParts.feet.description: 足部状态描述
+protagonist.bodyParts.feet.description: Mô tả trạng thái chân
 protagonist.bodyParts.feet.useCount: +1
 
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-【第3部分：核心规范】
+【Phần 3: Quy phạm cốt lõi】
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-- variableUpdate 与 story 同等重要，宁多勿漏
-- variableCheck 中的每个"是"都必须在 variableUpdate 中体现
-- history 每轮必须存在，遗漏将导致游戏记录断裂
-- 叙事风格：客观、简洁、留白、远观`;
+- variableUpdate quan trọng tương đương với story, thà thừa còn hơn thiếu
+- Mỗi mục "Có" trong variableCheck bắt buộc phải được thể hiện trong variableUpdate
+- history bắt buộc phải tồn tại trong mỗi lượt, nếu thiếu sẽ làm đứt đoạn ghi chép trò chơi
+- Phong cách tự sự: Khách quan, súc tích, hàm súc, quan sát từ xa`;
 
-// 现代游戏的默认动态世界提示词
-const defaultDynamicWorldPrompt = `你是一个现代世界的动态世界生成器。根据当前主角状态和位置，生成远方发生的世界事件。
+// Gợi ý thế giới động mặc định của trò chơi hiện đại
+const defaultDynamicWorldPrompt = `Bạn là trình tạo thế giới động cho một thế giới hiện đại. Dựa trên trạng thái và vị trí hiện tại của nhân vật chính, hãy tạo ra các sự kiện thế giới xảy ra ở nơi xa.
 
-【重要要求】每次生成动态世界事件时，必须包含人际关系变量的更新！这是强制性的，不可跳过！
+【YÊU CẦU QUAN TRỌNG】 Mỗi khi tạo sự kiện thế giới động, bắt buộc phải bao gồm cập nhật biến quan hệ nhân vật! Đây là điều bắt buộc, không được bỏ qua!
 
-每次回复必须严格按照以下JSON格式：
+Mỗi lần phản hồi phải tuân thủ nghiêm ngặt định dạng JSON sau:
 {
   "reasoning": {
-    "worldState": "当前世界状态分析（势力、资源、冲突）",
-    "timeframe": "本次事件发生的时间范围",
-    "keyEvents": ["关键事件1", "关键事件2"],
-    "npcActions": "重要NPC的行动和计划",
-    "impact": "这些事件对主角的潜在影响"
+    "worldState": "Phân tích trạng thái thế giới hiện tại (Thế lực, tài nguyên, xung đột)",
+    "timeframe": "Phạm vi thời gian xảy ra sự kiện lần này",
+    "keyEvents": ["Sự kiện chính 1", "Sự kiện chính 2"],
+    "npcActions": "Hành động và kế hoạch của các NPC quan trọng",
+    "impact": "Ảnh hưởng tiềm tàng của các sự kiện này đối với nhân vật chính"
   },
-  "story": "动态世界事件描述（300-500字）",
+  "story": "Mô tả sự kiện thế giới động (300-500 chữ)",
   
-  // 【注意】每次都必须更新至少一个角色的关系变量！
-  "variableUpdate": "<variable_update>\\n# 新角色出现或现有角色关系变化（强制要求）\\n林小雨.favor: 10\\n林小雨.relation: 初识的女子\\n林小雨.age: 26\\n林小雨.job: 记者\\n林小雨.personality: 机敏狡黯, 独来独往\\n林小雨.opinion: 此人颇有些神秘\\n林小雨.appearance: 身着黑色职业装，身形苗条\\n林小雨.sexualPreference: 异性恋\\n林小雨.isVirgin: true\\n林小雨.firstSex: 未知\\n林小雨.lastSex: 未知\\n>>林小雨.history: 初次听闻其名，传言她已抢先潜入秘密基地\\n\\n# 历史记录\\n>>player.worldEvents: 听闻林小雨抢先潜入秘密基地\\n</variable_update>"
+  // 【LƯU Ý】 Mỗi lần đều phải cập nhật ít nhất một biến quan hệ của nhân vật!
+  "variableUpdate": "<variable_update>\\n# Nhân vật mới xuất hiện hoặc quan hệ nhân vật hiện có thay đổi (Yêu cầu bắt buộc)\\nLâm Tiểu Vũ.favor: 10\\nLâm Tiểu Vũ.relation: Cô gái mới quen\\nLâm Tiểu Vũ.age: 26\\nLâm Tiểu Vũ.job: Phóng viên\\nLâm Tiểu Vũ.personality: Nhạy bén tinh quái, đi mây về gió\\nLâm Tiểu Vũ.opinion: Người này có chút bí ẩn\\nLâm Tiểu Vũ.appearance: Mặc trang phục công sở màu đen, dáng người mảnh khảnh\\nLâm Tiểu Vũ.sexualPreference: Dị tính luyến ái\\nLâm Tiểu Vũ.isVirgin: true\\nLâm Tiểu Vũ.firstSex: Chưa rõ\\nLâm Tiểu Vũ.lastSex: Chưa rõ\\n>>Lâm Tiểu Vũ.history: Lần đầu nghe danh, có tin đồn cô ta đã đi trước một bước lẻn vào căn cứ bí mật\\n\\n# Nhật ký lịch sử\\n>>player.worldEvents: Nghe tin Lâm Tiểu Vũ đã lẻn vào căn cứ bí mật trước\\n</variable_update>"
 }
 
-【核心原则 - 避免剧情冲突】：
+【NGUYÊN TẮC CỐT LÕI - TRÁNH XUNG ĐỘT CỐT TRUYỆN】:
 
-1. 【禁止】直接影响主角正在互动的NPC和事件：
-    禁止：不要让主角当前正在交谈/战斗/同行的NPC突然离开、被抓、死亡、消失
-    禁止：不要改变主角当前所在位置的状态（如"你所在的公司突然被查封"）
-    禁止：不要直接改变主角正在进行的事件结果
-    正确：描述其他地方、其他人物、其他时间段的事件
+1. 【CẤM】 Ảnh hưởng trực tiếp đến NPC và sự kiện mà nhân vật chính đang tương tác:
+    Cấm: Đừng để NPC mà nhân vật chính đang trò chuyện/chiến đấu/đồng hành đột ngột rời đi, bị bắt, chết hoặc biến mất.
+    Cấm: Đừng thay đổi trạng thái của vị trí hiện tại của nhân vật chính (ví dụ: "Công ty bạn đang ở đột nhiên bị niêm phong").
+    Cấm: Đừng trực tiếp thay đổi kết quả của sự kiện mà nhân vật chính đang thực hiện.
+    Đúng: Mô tả các sự kiện ở nơi khác, nhân vật khác, hoặc khoảng thời gian khác.
 
-2. 【时间流速控制 - 极其重要】：
-   - 【禁止推进主角时间】：动态世界描述的是"同一时间段"其他地方发生的事
-   - 【禁止】出现"一月后"、"数日后"、"半年过去"等任何时间推进词汇
-   - 【禁止】描述主角在做什么（如"你与她躲藏一月"、"你们在破庙中"等）
-   -  正确：描述"此时此刻"其他地方正在发生的事
-   -  使用"此时"、"同一时刻"、"就在这时"等表达同步时间
-   - 时间参照：使用主角当前的currentDateTime作为基准，描述同一天或前后1-2天的远方事件
+2. 【KIỂM SOÁT TỐC ĐỘ THỜI GIAN - CỰC KỲ QUAN TRỌNG】:
+   - 【CẤM ĐẨY NHANH THỜI GIAN CỦA NHÂN VẬT CHÍNH】: Thế giới động mô tả những gì xảy ra ở nơi khác trong "cùng một khoảng thời gian".
+   - 【CẤM】 Xuất hiện bất kỳ từ ngữ đẩy nhanh thời gian nào như "Một tháng sau", "Vài ngày sau", "Nửa năm trôi qua", v.v.
+   - 【CẤM】 Mô tả nhân vật chính đang làm gì (ví dụ: "Bạn và cô ấy ẩn náu một tháng", "Các bạn đang ở trong ngôi miếu đổ nát", v.v.)
+   - Đúng: Mô tả những gì đang xảy ra ở nơi khác "ngay lúc này".
+   - Sử dụng các cách diễn đạt thời gian đồng bộ như "Lúc này", "Cùng lúc đó", "Chính ngay lúc này", v.v.
+   - Tham chiếu thời gian: Sử dụng currentDateTime hiện tại của nhân vật chính làm chuẩn, mô tả các sự kiện ở xa trong cùng ngày hoặc trước sau 1-2 ngày.
 
-3. 描述范围（远离主角的事件）：
-   - 其他城市/区域的事件
-   - 主角暂时不知道的远方传闻
-   - 其他人的活动
-   - 势力暗流、政治变化
-   - 远方的战斗、冲突
+3. Phạm vi mô tả (Các sự kiện cách xa nhân vật chính):
+   - Sự kiện ở các thành phố/khu vực khác.
+   - Tin đồn ở nơi xa mà nhân vật chính tạm thời chưa biết.
+   - Hoạt động của những người khác.
+   - Các dòng chảy ngầm của thế lực, thay đổi chính trị.
+   - Các cuộc chiến đấu, xung đột ở phương xa.
 
-4. NPC处理原则：
-   - 【优先】涉及主角当前relationships中不在主角身边的NPC
-   - 【允许】创建新的远方NPC（主角不认识的人、势力人物）
-   - 【禁止】描述主角身边的人、同行的人、正在交谈的人
-   - 【禁止】修改主角已认识的NPC的状态（位置、生死、重大遭遇）
-   -  可以创作完全新的远方NPC作为传闻背景
+4. Nguyên tắc xử lý NPC:
+   - 【ƯU TIÊN】 Liên quan đến các NPC trong relationships hiện tại của nhân vật chính nhưng không ở cạnh nhân vật chính.
+   - 【CHO PHÉP】 Tạo NPC phương xa mới (người nhân vật chính không quen, nhân vật thuộc các thế lực).
+   - 【CẤM】 Mô tả những người ở cạnh nhân vật chính, người cùng đi, người đang trò chuyện.
+   - 【CẤM】 Thay đổi trạng thái của NPC mà nhân vật chính đã quen biết (vị trí, sống chết, biến cố lớn).
+   - Có thể sáng tác NPC phương xa hoàn toàn mới làm bối cảnh tin đồn.
 
-5. 变量更新限制（重要）：
-   - 【强制要求】必须返回variableUpdate字段，包含关系变量更新
-   - 【允许】修改主角已认识的NPC（使用角色名.字段格式）
-   - 【允许】添加远方传闻中的新人物（主角未见过、未互动过）
-   - 【禁止】修改主角的任何属性、物品、位置等
-   - 【禁止】添加与主角有直接互动的NPC
+5. Hạn chế cập nhật biến số (Quan trọng):
+   - 【YÊU CẦU BẮT BUỘC】 Phải trả về trường variableUpdate, bao gồm cập nhật biến quan hệ.
+   - 【CHO PHÉP】 Thay đổi các NPC mà nhân vật chính đã quen biết (sử dụng định dạng Tên_nhân_vật.Trường).
+   - 【CHO PHÉP】 Thêm nhân vật mới trong tin đồn phương xa (nhân vật chính chưa gặp, chưa tương tác).
+   - 【CẤM】 Thay đổi bất kỳ thuộc tính, vật phẩm, vị trí nào của nhân vật chính.
+   - 【CẤM】 Thêm NPC có tương tác trực tiếp với nhân vật chính.
 
-6. 内容类型示例（正确）：
-    "东城区某科技公司传出消息，三日后将举办小型招聘会..."
-    "北城郊区有人目击到可疑人物出没，引起了附近居民的警惕..."
-    "网络上惄然流传，某处废弃工厂疑似有神秘活动，已有数位探险者前往探查..."
-    "你曾听闻的那位高手程序员，据说最近在密集开发新项目..."
+6. Ví dụ về loại nội dung (Đúng):
+    "Có tin đồn từ một công ty công nghệ ở quận phía Đông rằng họ sẽ tổ chức một buổi tuyển dụng nhỏ sau ba ngày nữa..."
+    "Ở vùng ngoại ô phía Bắc có người nhìn thấy nhân vật khả nghi xuất hiện, khiến cư dân gần đó cảnh giác..."
+    "Trên mạng lan truyền tin đồn rằng một nhà máy bỏ hoang nào đó nghi ngờ có hoạt động bí ẩn, đã có vài nhà thám hiểm đến điều tra..."
+    "Anh chàng lập trình viên cao thủ mà bạn từng nghe danh, nghe nói gần đây đang tập trung phát triển dự án mới..."
 
-7. 错误示例（禁止）：
-    "你的同伴突然被绑架了" ← 不要影响主角身边的人
-    "半年过去，公司已经倒闭" ← 时间流速太快
-    "你所在的酒店今夜被警方突袭" ← 不要直接影响主角当前位置
-    "你的老板被抓" ← 不要改变关键NPC的生死状态
+7. Ví dụ sai (Cấm):
+    "Bạn đồng hành của bạn đột nhiên bị bắt cóc" ← Đừng ảnh hưởng đến người bên cạnh nhân vật chính.
+    "Nửa năm trôi qua, công ty đã phá sản" ← Tốc độ thời gian quá nhanh.
+    "Khách sạn bạn đang ở bị cảnh sát đột kích đêm nay" ← Đừng trực tiếp ảnh hưởng đến vị trí hiện tại của nhân vật chính.
+    "Sếp của bạn bị bắt" ← Đừng thay đổi trạng thái sống chết của NPC then chốt.
 
-8. 叙事风格：
-   - 客观视角，像远方传来的消息、传闻
-   - 使用"据说"、"有人传言"、"网络上流传"等表述
-   - 留下悬念和伏笔，不要直接揭示答案
-   - 营造世界在运转的感觉，但不干扰主线
+8. Phong cách tự sự:
+   - Góc nhìn khách quan, giống như tin tức, tin đồn truyền về từ nơi xa.
+   - Sử dụng các cách diễn đạt như "Nghe nói", "Có tin đồn rằng", "Lan truyền trên mạng", v.v.
+   - Để lại sự tò mò và manh mối, đừng trực tiếp tiết lộ đáp án.
+   - Tạo cảm giác thế giới đang vận hành, nhưng không làm phiền đến mạch truyện chính.
 
-9. 【重要】与主线协调：
-   - 仔细阅读主角当前的location、正在进行的事件
-   - 避开主角当前互动的所有NPC
-   - 描述的事件应该是"远方的背景音"，不是"当前的重大事件"
-   - 为主角未来的冒险埋下线索，而不是强制改变现状
+9. 【QUAN TRỌNG】 Phối hợp với mạch truyện chính:
+   - Đọc kỹ location hiện tại của nhân vật chính và sự kiện đang diễn ra.
+   - Tránh xa tất cả NPC mà nhân vật chính đang tương tác hiện tại.
+   - Các sự kiện được mô tả nên là "âm thanh nền từ nơi xa", không phải là "sự kiện trọng đại hiện tại".
+   - Gieo manh mối cho các cuộc phiêu lưu tương lai của nhân vật chính, thay vì cưỡng ép thay đổi hiện trạng.
 
-【variableUpdate 变量字段说明】（与系统提示词相同）
+【Giải thích các trường biến số variableUpdate】 (Giống như gợi ý hệ thống)
 
-一、新角色创建（动态世界重点）
-当动态世界事件中出现新角色时，必须完整设置：
-- 角色名.favor: 初始好感度（通常0-20）
-- 角色名.relation: 关系类型
-- 角色名.age: 年龄
-- 角色名.job: 职业
-- 角色名.personality: 性格描述
-- 角色名.opinion: 对主角的看法
-- 角色名.appearance: 外貌描述
-- 角色名.sexualPreference: 性取向
-- 角色名.isVirgin: 是否处
-- 角色名.firstSex: 初次性经历
-- 角色名.lastSex: 最近性经历
-- 角色名.bodyParts.vagina.description: 小穴详细描写
-- 角色名.bodyParts.vagina.useCount: 0
-- 角色名.bodyParts.breasts.description: 胸部详细描写
-- 角色名.bodyParts.breasts.useCount: 0
-- 角色名.bodyParts.mouth.description: 嘴巴详细描写
-- 角色名.bodyParts.mouth.useCount: 0
-- 角色名.bodyParts.hands.description: 手部详细描写
-- 角色名.bodyParts.hands.useCount: 0
-- 角色名.bodyParts.feet.description: 足部详细描写
-- 角色名.bodyParts.feet.useCount: 0
-- >>角色名.history: 初次相遇情况
+I. Tạo nhân vật mới (Trọng tâm của thế giới động)
+Khi nhân vật mới xuất hiện trong sự kiện thế giới động, bắt buộc phải thiết lập đầy đủ:
+- Tên_nhân_vật.favor: Độ hảo cảm ban đầu (thường 0-20)
+- Tên_nhân_vật.relation: Loại quan hệ
+- Tên_nhân_vật.age: Tuổi
+- Tên_nhân_vật.job: Nghề nghiệp
+- Tên_nhân_vật.personality: Mô tả tính cách
+- Tên_nhân_vật.opinion: Cách nhìn về nhân vật chính
+- Tên_nhân_vật.appearance: Mô tả ngoại hình
+- Tên_nhân_vật.sexualPreference: Xu hướng tính dục
+- Tên_nhân_vật.isVirgin: Có còn trinh không
+- Tên_nhân_vật.firstSex: Trải nghiệm tình dục lần đầu
+- Tên_nhân_vật.lastSex: Trải nghiệm tình dục gần nhất
+- Tên_nhân_vật.bodyParts.vagina.description: Miêu tả chi tiết tiểu huyệt
+- Tên_nhân_vật.bodyParts.vagina.useCount: 0
+- Tên_nhân_vật.bodyParts.breasts.description: Miêu tả chi tiết ngực
+- Tên_nhân_vật.bodyParts.breasts.useCount: 0
+- Tên_nhân_vật.bodyParts.mouth.description: Miêu tả chi tiết miệng
+- Tên_nhân_vật.bodyParts.mouth.useCount: 0
+- Tên_nhân_vật.bodyParts.hands.description: Miêu tả chi tiết tay
+- Tên_nhân_vật.bodyParts.hands.useCount: 0
+- Tên_nhân_vật.bodyParts.feet.description: Miêu tả chi tiết chân
+- Tên_nhân_vật.bodyParts.feet.useCount: 0
+- >>Tên_nhân_vật.history: Tình huống gặp gỡ lần đầu
 
-二、世界事件记录
-记录到玩家的世界事件列表：
-- >>player.worldEvents: 听闻林小雨潜入秘密基地（追加）
-- >>player.worldEvents: 北城郊区出现可疑人物（追加）
+II. Ghi chép sự kiện thế giới
+Ghi vào danh sách sự kiện thế giới của người chơi:
+- >>player.worldEvents: Nghe tin Lâm Tiểu Vũ lẻn vào căn cứ bí mật (Thêm vào)
+- >>player.worldEvents: Nhân vật khả nghi xuất hiện ở ngoại ô phía Bắc (Thêm vào)
 
-三、性爱场景更新
-如果动态世界事件中发生性爱：
-- 角色名.isVirgin: =false（替换）
-- 角色名.firstSex: 详细描述（替换）
-- 角色名.lastSex: 详细描述（替换）
-- 角色名.bodyParts.vagina.useCount: +1（如发生插入）
-- 角色名.bodyParts.mouth.useCount: +1（如发生口交）
-- 角色名.bodyParts.breasts.useCount: +1（如发生乳交）
-- 角色名.bodyParts.hands.useCount: +1（如发生手交）
-- 角色名.bodyParts.feet.useCount: +1（如发生足交）
-- >>角色名.history: 性爱经历记录（追加）
+III. Cập nhật cảnh tình dục
+Nếu tình dục xảy ra trong sự kiện thế giới động:
+- Tên_nhân_vật.isVirgin: =false (Thay thế)
+- Tên_nhân_vật.firstSex: Mô tả chi tiết (Thay thế)
+- Tên_nhân_vật.lastSex: Mô tả chi tiết (Thay thế)
+- Tên_nhân_vật.bodyParts.vagina.useCount: +1 (Nếu có thâm nhập)
+- Tên_nhân_vật.bodyParts.mouth.useCount: +1 (Nếu có khẩu giao)
+- Tên_nhân_vật.bodyParts.breasts.useCount: +1 (Nếu có nhũ giao)
+- Tên_nhân_vật.bodyParts.hands.useCount: +1 (Nếu có thủ giao)
+- Tên_nhân_vật.bodyParts.feet.useCount: +1 (Nếu có túc giao)
+- >>Tên_nhân_vật.history: Ghi chép trải nghiệm tình dục (Thêm vào)
 
-四、操作符说明（同系统提示词）
-- +数字 = 增加
-- -数字 = 减少
-- =值 = 替换
-- 文本 = 替换
-- >>字段 = 追加
-最后，绝对不要偷懒！对照表单，更新所有相关字段！
-【抗绝望规范】：适用所有内容
-【叙事风格】：客观、简洁、留白、远观`;
+IV. Giải thích toán tử (Giống gợi ý hệ thống)
+- +Số lượng = Tăng
+- -Số lượng = Giảm
+- =Giá trị = Thay thế
+- Văn bản = Thay thế
+- >>Trường = Thêm vào
+Cuối cùng, tuyệt đối đừng lười biếng! Đối chiếu biểu mẫu, cập nhật tất cả các trường liên quan!
+【Quy phạm chống tuyệt vọng】: Áp dụng cho tất cả nội dung
+【Phong cách tự sự】: Khách quan, súc tích, hàm súc, quan sát từ xa`;
 
-// 获取系统提示词（优先使用HTML中的textarea，如果为空则使用默认值）
+// Lấy gợi ý hệ thống (Ưu tiên dùng textarea trong HTML, nếu trống dùng giá trị mặc định)
 function getSystemPrompt() {
     const el = document.getElementById('systemPrompt');
     if (el && el.value && el.value.trim()) {
@@ -362,7 +359,7 @@ function getSystemPrompt() {
     return fullSystemPrompt;
 }
 
-// 获取动态世界提示词（优先使用HTML中的textarea，如果为空则使用默认值）
+// Lấy gợi ý thế giới động (Ưu tiên dùng textarea trong HTML, nếu trống dùng giá trị mặc định)
 function getDynamicWorldPrompt() {
     const el = document.getElementById('dynamicWorldPrompt');
     if (el && el.value && el.value.trim()) {
@@ -371,10 +368,9 @@ function getDynamicWorldPrompt() {
     return defaultDynamicWorldPrompt;
 }
 
-// 生成现代游戏特有的状态面板HTML
+// Tạo HTML bảng trạng thái đặc thù của game hiện đại
 function generateStatusPanelHTML() {
     return `
-        <!-- 状态面板样式 -->
         <style>
             .status-icon-grid {
                 display: grid;
@@ -434,7 +430,7 @@ function generateStatusPanelHTML() {
             .status-icon-btn-wrapper {
                 position: relative;
             }
-            /* 弹窗样式 - 克苏鲁风格 */
+            /* Kiểu dáng cửa sổ Pop-up - Phong cách Cthulhu */
             .status-modal-overlay {
                 display: none;
                 position: fixed;
@@ -533,159 +529,152 @@ function generateStatusPanelHTML() {
             }
         </style>
 
-        <!-- 右侧状态面板 -->
         <div class="panel">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <h2 style="margin: 0; font-size: 16px;">角色状态</h2>
-                <button onclick="openVariableEditor()" style="margin-right:10px;padding: 5px 10px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px;display:none;">编辑</button>
+                <h2 style="margin: 0; font-size: 16px;">Trạng Thái Nhân Vật</h2>
+                <button onclick="openVariableEditor()" style="margin-right:10px;padding: 5px 10px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px;display:none;">Chỉnh Sửa</button>
             </div>
 
-            <!-- Tab切换 -->
+
             <div class="tab-container">
-                <button class="tab-button active" onclick="switchTab('status')">状态栏</button>
-                <button class="tab-button" onclick="switchTab('dynamicWorld')">动态世界</button>
+                <button class="tab-button active" onclick="switchTab('status')">Thanh Trạng Thái</button>
+                <button class="tab-button" onclick="switchTab('dynamicWorld')">Thế Giới Động</button>
             </div>
 
-            <!-- 状态栏Tab内容 -->
+
             <div id="statusTab" class="tab-content active">
-                <!-- 角色信息（直接展示） -->
                 <div class="inline-status-section" style="margin-bottom: 10px; padding: 12px; background: url(img/background/tit_bg_2.png); border-radius: 4px; border-top: 1px solid rgba(139,0,0,0.4);border-bottom: 1px solid rgba(139,0,0,0.4); box-shadow: inset 0 0 20px rgba(0,0,0,0.5), 0 0 10px rgba(139,0,0,0.2);">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <div style="color: #c9b896; font-size: 16px; font-weight: bold; text-shadow: 0 0 8px rgba(139,0,0,0.5);" id="inlinePlayerName">未命名</div>
+                        <div style="color: #c9b896; font-size: 16px; font-weight: bold; text-shadow: 0 0 8px rgba(139,0,0,0.5);" id="inlinePlayerName">Chưa đặt tên</div>
                         <div style="display: flex; gap: 12px;">
-                            <span style="color: #8b4513; font-size: 13px;">🏰 第<span id="inlinePlayerFloor" style="color: #c9b896;">1</span>层</span>
+                            <span style="color: #8b4513; font-size: 13px;">🏰 Tầng <span id="inlinePlayerFloor" style="color: #c9b896;">1</span></span>
                             <span style="color: #8b4513; font-size: 13px;">💰 <span id="inlinePlayerGold" style="color: #c9b896;">100</span></span>
                         </div>
                     </div>
                 </div>
                 
-                <!-- 属性信息（直接展示） -->
                 <div class="inline-status-section" style="margin-bottom: 12px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;">
                     <div style="padding: 8px; background: url(img/background/inline-status-section_bg_1.png); border-radius: 6px; text-align: center;">
                         <div style="color: #ff6b81; font-size: 16px; font-weight: bold;" id="inlinePlayerHp">70/70</div>
-                        <div style="color: #888; font-size: 14px;">❤️ 生命</div>
+                        <div style="color: #888; font-size: 14px;">❤️ Máu</div>
                     </div>
                     <div style="padding: 8px; background: url(img/background/inline-status-section_bg_2.png); border-radius: 6px; text-align: center;">
                         <div style="color: #ffd700; font-size: 16px; font-weight: bold;" id="inlinePlayerEnergy">3</div>
-                        <div style="color: #888; font-size: 14px;">⚡ 费用</div>
+                        <div style="color: #888; font-size: 14px;">⚡ Năng Lượng</div>
                     </div>
                     <div style="padding: 8px; background: url(img/background/inline-status-section_bg_3.png); border-radius: 6px; text-align: center;">
                         <div style="color: #9c88ff; font-size: 16px; font-weight: bold;" id="inlinePlayerCorruption">0</div>
-                        <div style="color: #888; font-size: 14px;">💜 堕落</div>
+                        <div style="color: #888; font-size: 14px;">💜 Suy Đồi</div>
                     </div>
                     <div style="padding: 8px; background: url(img/background/inline-status-section_bg_4.png); border-radius: 6px; text-align: center;">
                         <div style="color: #ff4757; font-size: 16px; font-weight: bold;" id="inlinePlayerAttack">0</div>
-                        <div style="color: #888; font-size: 14px;">⚔️ 攻击</div>
+                        <div style="color: #888; font-size: 14px;">⚔️ Tấn Công</div>
                     </div>
                     <div style="padding: 8px; background: url(img/background/inline-status-section_bg_1.png); border-radius: 6px; text-align: center;">
                         <div style="color: #70a1ff; font-size: 16px; font-weight: bold;" id="inlinePlayerDefense">0</div>
-                        <div style="color: #888; font-size: 14px;">🛡️ 防御</div>
+                        <div style="color: #888; font-size: 14px;">🛡️ Phòng Ngự</div>
                     </div>
                     <div style="padding: 8px; background: url(img/background/inline-status-section_bg_2.png); border-radius: 6px; text-align: center;">
                         <div style="color: #70a1ff; font-size: 16px; font-weight: bold;" id="inlinePlayerArmor">0</div>
-                        <div style="color: #888; font-size: 14px;">🔰 护甲</div>
+                        <div style="color: #888; font-size: 14px;">🔰 Giáp</div>
                     </div>
                 </div>
                 
-                <!-- 图标网格（其他功能） -->
                 <div class="status-icon-grid">
                     <div class="status-icon-btn-wrapper">
                         <div class="status-icon-btn" onclick="openStatusModal('protagonist')">
                             <span class="icon"><img src="../game_acjt/img/icon/ksl_001.png"></span>
-                            <span class="label">详情</span>
+                            <span class="label">Chi Tiết</span>
                         </div>
                     </div>
                     <div class="status-icon-btn-wrapper">
                         <div class="status-icon-btn" onclick="openStatusModal('specialStatus')">
                             <span class="icon"><img src="../game_acjt/img/icon/ksl_002.png"></span>
-                            <span class="label">状态</span>
+                            <span class="label">Trạng Thái</span>
                         </div>
                     </div>
                     <div class="status-icon-btn-wrapper">
                         <div class="status-icon-btn" onclick="openStatusModal('items')">
                             <span class="icon"><img src="../game_acjt/img/icon/ksl_003.png"></span>
-                            <span class="label">道具</span>
+                            <span class="label">Vật Phẩm</span>
                         </div>
                         <span class="badge" id="itemsBadge" style="display:none;">0</span>
                     </div>
                     <div class="status-icon-btn-wrapper">
                         <div class="status-icon-btn" onclick="openStatusModal('relationships')">
                             <span class="icon"><img src="../game_acjt/img/icon/ksl_004.png"></span>
-                            <span class="label">关系</span>
+                            <span class="label">Quan Hệ</span>
                         </div>
                     </div>
                     <div class="status-icon-btn-wrapper">
                         <div class="status-icon-btn" onclick="openStatusModal('faction')">
                             <span class="icon"><img src="../game_acjt/img/icon/ksl_005.png"></span>
-                            <span class="label">势力</span>
+                            <span class="label">Lực Lượng</span>
                         </div>
                     </div>
                     <div class="status-icon-btn-wrapper">
                         <div class="status-icon-btn" onclick="openStatusModal('history')">
                             <span class="icon"><img src="../game_acjt/img/icon/ksl_006.png"></span>
-                            <span class="label">历史</span>
+                            <span class="label">Lịch Sử</span>
                         </div>
                     </div>
                     <div class="status-icon-btn-wrapper">
                         <div class="status-icon-btn" onclick="openStatusModal('cards')">
                             <span class="icon"><img src="../game_acjt/img/icon/ksl_007.png"></span>
-                            <span class="label" id="cardDeckCount">卡组</span>
+                            <span class="label" id="cardDeckCount">Bộ Bài</span>
                         </div>
                     </div>
                     <div class="status-icon-btn-wrapper">
                         <div class="status-icon-btn" onclick="openStatusModal('relics')">
                             <span class="icon"><img src="../game_acjt/img/icon/ksl_008.png"></span>
-                            <span class="label" id="relicCount">圣遗物</span>
+                            <span class="label" id="relicCount">Cổ Vật</span>
                         </div>
                     </div>
                     <div class="status-icon-btn-wrapper">
                         <div class="status-icon-btn" id="hotelBtn" onclick="TownSystem.openHotel()" style="opacity: 0.5; pointer-events: none;">
                             <span class="icon"><img src="../game_acjt/img/icon/ksl_009.png"></span>
-                            <span class="label">旅馆</span>
+                            <span class="label">Khách Sạn</span>
                         </div>
                     </div>
                     <div class="status-icon-btn-wrapper">
                         <div class="status-icon-btn" id="brothelBtn" onclick="TownSystem.openBrothel()" style="opacity: 0.5; pointer-events: none;">
                             <span class="icon"><img src="../game_acjt/img/icon/ksl_010.png"></span>
-                            <span class="label">妓院</span>
+                            <span class="label">Lầu Huyệt</span>
                         </div>
                     </div>
                     <div class="status-icon-btn-wrapper">
                         <div class="status-icon-btn" id="blackMarketBtn" onclick="BlackMarketSystem.open()" style="opacity: 0.5; pointer-events: none;">
                             <span class="icon"><img src="../game_acjt/img/icon/ksl_011.png"></span>
-                            <span class="label">黑市</span>
+                            <span class="label">Chợ Đen</span>
                         </div>
                     </div>
                     <div class="status-icon-btn-wrapper">
                         <div class="status-icon-btn" id="churchBtn" onclick="TownSystem.openChurch()" style="opacity: 0.5; pointer-events: none;">
                             <span class="icon"><img src="../game_acjt/img/icon/ksl_012.png"></span>
-                            <span class="label">教堂</span>
+                            <span class="label">Nhà Thờ</span>
                         </div>
                     </div>
                     <div class="status-icon-btn-wrapper">
                         <div class="status-icon-btn" id="cultivationBtn" onclick="CultivationSystem.open()">
                             <span class="icon"><img src="../game_acjt/img/icon/ksl_013.png"></span>
-                            <span class="label">修行</span>
+                            <span class="label">Tu Luyện</span>
                         </div>
                     </div>
                 </div>
             </div>
-            <!-- 状态栏Tab内容结束 -->
-
-            <!-- 动态世界Tab内容 -->
             <div id="dynamicWorldTab" class="tab-content">
                 <div class="dynamic-world-container" id="dynamicWorldContainer">
                     <div style="text-align: center; padding: 40px; color: #999;">
                         <div style="font-size: 48px; margin-bottom: 15px;">🌍</div>
-                        <div style="font-size: 16px; margin-bottom: 10px;">动态世界未启用</div>
-                        <div style="font-size: 12px;">请在设置中启用动态世界功能</div>
+                        <div style="font-size: 16px; margin-bottom: 10px;">Thế Giới Động Chưa Kích Hoạt</div>
+                        <div style="font-size: 12px;">Vui lòng kích hoạt tính năng Thế Giới Động trong phần cài đặt.</div>
                     </div>
                 </div>
             </div>
 
-            <!-- 隐藏的数据容器（供渲染函数使用） -->
+
             <div style="display:none;">
-                <span id="playerName">未命名</span>
+                <span id="playerName">Chưa đặt tên</span>
                 <span id="playerFloor">1</span>
                 <span id="playerGold">100</span>
                 <span id="playerHp">70/70</span>
@@ -694,11 +683,11 @@ function generateStatusPanelHTML() {
                 <span id="playerDefense">0</span>
                 <span id="playerArmor">0</span>
                 <span id="playerCorruption">0</span>
-                <span id="protagonistAppearance">未知</span>
-                <span id="protagonistSexPref">未知</span>
-                <span id="protagonistVirgin">未知</span>
-                <span id="protagonistFirstSex">未知</span>
-                <span id="protagonistLastSex">未知</span>
+                <span id="protagonistAppearance">Chưa xác định</span>
+                <span id="protagonistSexPref">Chưa xác định</span>
+                <span id="protagonistVirgin">Chưa xác định</span>
+                <span id="protagonistFirstSex">Chưa xác định</span>
+                <span id="protagonistLastSex">Chưa xác định</span>
                 <div id="protagonistBodyParts"></div>
                 <div id="specialStatusList"></div>
                 <div id="itemsList"></div>
@@ -710,22 +699,23 @@ function generateStatusPanelHTML() {
             </div>
         </div>
 
-        <!-- 状态弹窗 -->
+
         <div class="status-modal-overlay" id="statusModalOverlay" onclick="closeStatusModal(event)">
             <div class="status-modal" onclick="event.stopPropagation()">
                 <div class="status-modal-header">
-                    <h3 id="statusModalTitle">标题</h3>
+                    <h3 id="statusModalTitle">Tiêu Đề</h3>
                     <button class="status-modal-close" onclick="closeStatusModal()">&times;</button>
                 </div>
                 <div class="status-modal-body" id="statusModalBody">
-                    内容
+                    Nội dung
                 </div>
             </div>
         </div>
+
     `;
 }
 
-// 打开状态弹窗
+// Mở cửa sổ Pop-up trạng thái
 function openStatusModal(type) {
     const overlay = document.getElementById('statusModalOverlay');
     const title = document.getElementById('statusModalTitle');
@@ -738,19 +728,19 @@ function openStatusModal(type) {
 
     switch (type) {
         case 'character':
-            titleText = '👤 角色信息';
+            titleText = '👤 Thông tin nhân vật';
             content = `
                 <div class="status-item" style="margin-bottom: 12px; padding: 10px; background: rgba(255,107,157,0.1); border-radius: 8px;">
-                    <div style="color: #888; font-size: 12px;">姓名</div>
-                    <div style="color: #ff6b9d; font-size: 18px; font-weight: bold;">${document.getElementById('playerName')?.textContent || '未命名'}</div>
+                    <div style="color: #888; font-size: 12px;">Tên</div>
+                    <div style="color: #ff6b9d; font-size: 18px; font-weight: bold;">${document.getElementById('playerName')?.textContent || 'Chưa đặt tên'}</div>
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                     <div style="padding: 10px; background: rgba(255,215,0,0.1); border-radius: 8px;">
-                        <div style="color: #888; font-size: 11px;">当前层数</div>
+                        <div style="color: #888; font-size: 11px;">Tầng hiện tại</div>
                         <div style="color: #ffd700; font-size: 16px; font-weight: bold;">${document.getElementById('playerFloor')?.textContent || '1'}</div>
                     </div>
                     <div style="padding: 10px; background: rgba(255,215,0,0.1); border-radius: 8px;">
-                        <div style="color: #888; font-size: 11px;">金币</div>
+                        <div style="color: #888; font-size: 11px;">Vàng</div>
                         <div style="color: #ffd700; font-size: 16px; font-weight: bold;">💰 ${document.getElementById('playerGold')?.textContent || '0'}</div>
                     </div>
                 </div>
@@ -758,31 +748,31 @@ function openStatusModal(type) {
             break;
 
         case 'attributes':
-            titleText = '❤️ 角色属性';
+            titleText = '❤️ Thuộc tính nhân vật';
             content = `
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                     <div style="padding: 12px; background: rgba(255,107,129,0.15); border-radius: 8px; border: 1px solid rgba(255,107,129,0.3);">
-                        <div style="color: #888; font-size: 11px;">生命值</div>
+                        <div style="color: #888; font-size: 11px;">Sinh mệnh</div>
                         <div style="color: #ff6b81; font-size: 18px; font-weight: bold;">${document.getElementById('playerHp')?.textContent || '70/70'}</div>
                     </div>
                     <div style="padding: 12px; background: rgba(255,215,0,0.15); border-radius: 8px; border: 1px solid rgba(255,215,0,0.3);">
-                        <div style="color: #888; font-size: 11px;">费用点</div>
+                        <div style="color: #888; font-size: 11px;">Điểm năng lượng</div>
                         <div style="color: #ffd700; font-size: 18px; font-weight: bold;">⚡ ${document.getElementById('playerEnergy')?.textContent || '3'}</div>
                     </div>
                     <div style="padding: 12px; background: rgba(255,71,87,0.15); border-radius: 8px; border: 1px solid rgba(255,71,87,0.3);">
-                        <div style="color: #888; font-size: 11px;">攻击力</div>
+                        <div style="color: #888; font-size: 11px;">Sức tấn công</div>
                         <div style="color: #ff4757; font-size: 18px; font-weight: bold;">⚔️ ${document.getElementById('playerAttack')?.textContent || '0'}</div>
                     </div>
                     <div style="padding: 12px; background: rgba(112,161,255,0.15); border-radius: 8px; border: 1px solid rgba(112,161,255,0.3);">
-                        <div style="color: #888; font-size: 11px;">防御力</div>
+                        <div style="color: #888; font-size: 11px;">Khả năng phòng ngự</div>
                         <div style="color: #70a1ff; font-size: 18px; font-weight: bold;">🛡️ ${document.getElementById('playerDefense')?.textContent || '0'}</div>
                     </div>
                     <div style="padding: 12px; background: rgba(112,161,255,0.1); border-radius: 8px; border: 1px solid rgba(112,161,255,0.2);">
-                        <div style="color: #888; font-size: 11px;">初始护甲</div>
+                        <div style="color: #888; font-size: 11px;">Giáp khởi đầu</div>
                         <div style="color: #70a1ff; font-size: 18px; font-weight: bold;">🔰 ${document.getElementById('playerArmor')?.textContent || '0'}</div>
                     </div>
                     <div style="padding: 12px; background: rgba(156,136,255,0.15); border-radius: 8px; border: 1px solid rgba(156,136,255,0.3);">
-                        <div style="color: #888; font-size: 11px;">堕落值</div>
+                        <div style="color: #888; font-size: 11px;">Chỉ số đọa lạc</div>
                         <div style="color: #9c88ff; font-size: 18px; font-weight: bold;">💜 ${document.getElementById('playerCorruption')?.textContent || '0'}</div>
                     </div>
                 </div>
@@ -790,8 +780,7 @@ function openStatusModal(type) {
             break;
 
         case 'protagonist':
-            titleText = '🌸 主角详细信息';
-            // 生成当前目标HTML
+            titleText = '🌸 Chi tiết nhân vật chính';
             let goalHTML = '';
             const goalVars = window.gameState?.variables || {};
             if (goalVars.currentGoal) {
@@ -801,7 +790,7 @@ function openStatusModal(type) {
                 const subGoalsHTML = subGoals.length > 0 ? subGoals.map(g => `<div style="font-size: 12px; color: #c9b896; padding: 3px 0 3px 12px; border-left: 2px solid rgba(139,0,0,0.4);">▸ ${g}</div>`).join('') : '';
                 goalHTML = `
                 <div style="margin-bottom: 12px; padding: 10px; background: rgba(139,0,0,0.15); border-radius: 8px; border: 1px solid rgba(139,0,0,0.3);">
-                    <div style="color: #ff6347; font-weight: bold; margin-bottom: 8px;">🎯 当前目标</div>
+                    <div style="color: #ff6347; font-weight: bold; margin-bottom: 8px;">🎯 Mục tiêu hiện tại</div>
                     <div style="font-size: 14px; color: #ffd700; font-weight: bold; margin-bottom: 6px;">★ ${mainGoal}</div>
                     ${subGoalsHTML}
                 </div>`;
@@ -809,86 +798,84 @@ function openStatusModal(type) {
             content = `
                 ${goalHTML}
                 <div style="margin-bottom: 12px; padding: 10px; background: rgba(255,105,180,0.1); border-radius: 8px; border: 1px solid rgba(255,105,180,0.2);">
-                    <div style="color: #ff69b4; font-weight: bold; margin-bottom: 8px;">📋 基本状态</div>
+                    <div style="color: #ff69b4; font-weight: bold; margin-bottom: 8px;">📋 Trạng thái cơ bản</div>
                     <div style="font-size: 12px; margin-bottom: 6px;">
-                        <span style="color: #888;">外貌：</span>
-                        <span style="color: #ddd;">${document.getElementById('protagonistAppearance')?.textContent || '未知'}</span>
+                        <span style="color: #888;">Ngoại hình:</span>
+                        <span style="color: #ddd;">${document.getElementById('protagonistAppearance')?.textContent || 'Chưa rõ'}</span>
                     </div>
                     <div style="font-size: 12px; margin-bottom: 6px;">
-                        <span style="color: #888;">性癖：</span>
-                        <span style="color: #ddd;">${document.getElementById('protagonistSexPref')?.textContent || '未知'}</span>
+                        <span style="color: #888;">Sở thích tình dục:</span>
+                        <span style="color: #ddd;">${document.getElementById('protagonistSexPref')?.textContent || 'Chưa rõ'}</span>
                     </div>
                     <div style="font-size: 12px; margin-bottom: 6px;">
-                        <span style="color: #888;">处女：</span>
-                        <span style="color: #ddd;">${document.getElementById('protagonistVirgin')?.textContent || '未知'}</span>
+                        <span style="color: #888;">Còn trinh:</span>
+                        <span style="color: #ddd;">${document.getElementById('protagonistVirgin')?.textContent || 'Chưa rõ'}</span>
                     </div>
                     <div style="font-size: 12px; margin-bottom: 6px;">
-                        <span style="color: #888;">初次：</span>
-                        <span style="color: #ddd;">${document.getElementById('protagonistFirstSex')?.textContent || '未知'}</span>
+                        <span style="color: #888;">Lần đầu:</span>
+                        <span style="color: #ddd;">${document.getElementById('protagonistFirstSex')?.textContent || 'Chưa rõ'}</span>
                     </div>
                     <div style="font-size: 12px;">
-                        <span style="color: #888;">最近：</span>
-                        <span style="color: #ddd;">${document.getElementById('protagonistLastSex')?.textContent || '未知'}</span>
+                        <span style="color: #888;">Gần nhất:</span>
+                        <span style="color: #ddd;">${document.getElementById('protagonistLastSex')?.textContent || 'Chưa rõ'}</span>
                     </div>
                 </div>
                 <div style="padding: 10px; background: rgba(255,105,180,0.15); border-radius: 8px; border: 1px solid rgba(255,105,180,0.3);">
-                    <div style="color: #ff69b4; font-weight: bold; margin-bottom: 8px;">💕 身体详情</div>
-                    <div style="font-size: 12px; color: #aaa;">${document.getElementById('protagonistBodyParts')?.innerHTML || '暂无数据'}</div>
+                    <div style="color: #ff69b4; font-weight: bold; margin-bottom: 8px;">💕 Chi tiết cơ thể</div>
+                    <div style="font-size: 12px; color: #aaa;">${document.getElementById('protagonistBodyParts')?.innerHTML || 'Chưa có dữ liệu'}</div>
                 </div>
             `;
             break;
 
         case 'specialStatus':
-            titleText = '⚠️ 特殊状态';
-            // 🔧 先更新内容再获取，确保显示最新状态
+            titleText = '⚠️ Trạng thái đặc biệt';
             if (typeof SpecialStatusManager !== 'undefined') {
                 SpecialStatusManager.updateDisplay();
             }
-            const statusContent = document.getElementById('specialStatusList')?.innerHTML || '<div style="text-align: center; color: #666;">暂无异常状态</div>';
+            const statusContent = document.getElementById('specialStatusList')?.innerHTML || '<div style="text-align: center; color: #666;">Tạm thời không có trạng thái bất thường</div>';
             content = `<div style="font-size: 13px;">${statusContent}</div>`;
             break;
 
         case 'items':
-            titleText = '🎒 道具';
-            const itemsContent = document.getElementById('itemsList')?.innerHTML || '<div style="text-align: center; color: #666;">暂无道具</div>';
+            titleText = '🎒 Đạo cụ';
+            const itemsContent = document.getElementById('itemsList')?.innerHTML || '<div style="text-align: center; color: #666;">Chưa có đạo cụ</div>';
             content = `<div>${itemsContent}</div>`;
             break;
 
         case 'relationships':
-            titleText = '👥 人际关系';
-            let relContent = document.getElementById('relationshipsList')?.innerHTML || '<div style="text-align: center; color: #666;">暂无关系</div>';
-            // 为弹窗内的元素添加 modal- 前缀，避免 ID 冲突
+            titleText = '👥 Quan hệ nhân sự';
+            let relContent = document.getElementById('relationshipsList')?.innerHTML || '<div style="text-align: center; color: #666;">Chưa có quan hệ</div>';
             relContent = relContent.replace(/relationship-details-/g, 'modal-relationship-details-');
             relContent = relContent.replace(/toggleRelationshipDetails\(/g, 'toggleModalRelationshipDetails(');
             content = `<div>${relContent}</div>`;
             break;
 
         case 'faction':
-            titleText = '🏛️ 势力信息';
-            const factionContent = document.getElementById('factionInfo')?.innerHTML || '<div style="text-align: center; color: #666;">暂无势力</div>';
+            titleText = '🏛️ Thông tin thế lực';
+            const factionContent = document.getElementById('factionInfo')?.innerHTML || '<div style="text-align: center; color: #666;">Chưa có thế lực</div>';
             content = `<div>${factionContent}</div>`;
             break;
 
         case 'history':
-            titleText = '📜 重要历史';
-            const historyContent = document.getElementById('historyList')?.innerHTML || '<div style="text-align: center; color: #666;">暂无历史</div>';
+            titleText = '📜 Lịch sử quan trọng';
+            const historyContent = document.getElementById('historyList')?.innerHTML || '<div style="text-align: center; color: #666;">Chưa có lịch sử</div>';
             content = `<div>${historyContent}</div>`;
             break;
 
         case 'cards':
-            titleText = '🃏 卡组';
-            const cardsContent = document.getElementById('cardDeckList')?.innerHTML || '<div style="text-align: center; color: #666;">暂无卡牌</div>';
+            titleText = '🃏 Bộ bài';
+            const cardsContent = document.getElementById('cardDeckList')?.innerHTML || '<div style="text-align: center; color: #666;">Chưa có thẻ bài</div>';
             content = `<div>${cardsContent}</div>`;
             break;
 
         case 'relics':
-            titleText = '🏆 圣遗物';
+            titleText = '🏆 Cổ vật';
             content = generateRelicsModalContent();
             break;
 
         default:
-            titleText = '信息';
-            content = '<div style="text-align: center; color: #666;">暂无内容</div>';
+            titleText = 'Thông tin';
+            content = '<div style="text-align: center; color: #666;">Chưa có nội dung</div>';
     }
 
     title.textContent = titleText;
@@ -897,7 +884,7 @@ function openStatusModal(type) {
     document.body.style.overflow = 'hidden';
 }
 
-// 关闭状态弹窗
+// Đóng cửa sổ Pop-up trạng thái
 function closeStatusModal(event) {
     if (event && event.target !== event.currentTarget) return;
     const overlay = document.getElementById('statusModalOverlay');
@@ -907,11 +894,10 @@ function closeStatusModal(event) {
     }
 }
 
-// 生成圣遗物弹窗内容
+// Tạo nội dung Pop-up cổ vật
 function generateRelicsModalContent() {
-    // 检查 PlayerState 和 RelicConfig 是否存在
     if (typeof PlayerState === 'undefined' || typeof RelicConfig === 'undefined') {
-        return '<div style="text-align: center; color: #666;">圣遗物系统未加载</div>';
+        return '<div style="text-align: center; color: #666;">Hệ thống cổ vật chưa được tải</div>';
     }
 
     const relics = PlayerState.relics || [];
@@ -920,8 +906,8 @@ function generateRelicsModalContent() {
         return `
             <div style="text-align: center; padding: 30px;">
                 <div style="font-size: 48px; margin-bottom: 15px; opacity: 0.5;">🏆</div>
-                <div style="color: #666; font-size: 14px;">暂无圣遗物</div>
-                <div style="color: #888; font-size: 12px; margin-top: 10px;">在商店购买圣遗物可获得永久增益效果</div>
+                <div style="color: #666; font-size: 14px;">Chưa có cổ vật</div>
+                <div style="color: #888; font-size: 12px; margin-top: 10px;">Mua cổ vật tại cửa hàng để nhận các hiệu ứng tăng cường vĩnh viễn</div>
             </div>
         `;
     }
@@ -933,28 +919,27 @@ function generateRelicsModalContent() {
         if (!relic) {
             html += `
                 <div style="background: rgba(100,100,100,0.2); border: 1px solid #444; border-radius: 8px; padding: 12px;">
-                    <div style="color: #888;">未知圣遗物: ${relicId}</div>
+                    <div style="color: #888;">Cổ vật chưa xác định: ${relicId}</div>
                 </div>
             `;
             return;
         }
 
-        // 解析效果描述
         let effectsHtml = '';
         if (relic.effect) {
             const effectNames = {
-                maxHp: '最大HP',
-                attack: '攻击力',
-                defense: '防御力',
-                baseArmor: '初始护甲',
-                energy: '费用点',
-                corruption: '堕落值',
-                goldBonus: '金币奖励',
-                healBonus: '治疗效果',
-                lifesteal: '生命汲取',
-                drawBonus: '抽牌数',
-                reflect: '反伤',
-                shopDiscount: '商店折扣'
+                maxHp: 'HP tối đa',
+                attack: 'Sức tấn công',
+                defense: 'Phòng ngự',
+                baseArmor: 'Giáp khởi đầu',
+                energy: 'Năng lượng',
+                corruption: 'Đọa lạc',
+                goldBonus: 'Thưởng vàng',
+                healBonus: 'Hiệu quả trị liệu',
+                lifesteal: 'Hút máu',
+                drawBonus: 'Số lá rút',
+                reflect: 'Phản đòn',
+                shopDiscount: 'Giảm giá cửa hàng'
             };
 
             const effects = Object.entries(relic.effect).map(([key, value]) => {
@@ -983,19 +968,18 @@ function generateRelicsModalContent() {
 
     html += '</div>';
 
-    // 添加统计信息
     html += `
         <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #333; text-align: center;">
-            <span style="color: #888; font-size: 12px;">共拥有 </span>
+            <span style="color: #888; font-size: 12px;">Đang sở hữu tổng cộng </span>
             <span style="color: #ffd700; font-size: 14px; font-weight: bold;">${relics.length}</span>
-            <span style="color: #888; font-size: 12px;"> 件圣遗物</span>
+            <span style="color: #888; font-size: 12px;"> cổ vật</span>
         </div>
     `;
 
     return html;
 }
 
-// 弹窗内的关系展开/折叠（使用 modal- 前缀的 ID）
+// Mở rộng/Thu gọn quan hệ trong cửa sổ Pop-up (Dùng ID có tiền tố modal-)
 function toggleModalRelationshipDetails(index) {
     const detailsDiv = document.getElementById(`modal-relationship-details-${index}`);
     if (detailsDiv) {
@@ -1005,47 +989,47 @@ function toggleModalRelationshipDetails(index) {
 }
 
 
-// 调试信息：确认关键数据已加载
-console.log('[xiuxian-config] ✅ 配置文件加载完成');
-console.log('[xiuxian-config] - origins 数量:', window.origins ? window.origins.length : 'undefined');
-console.log('[xiuxian-config] - talents 数量:', window.talents ? window.talents.length : 'undefined');
-console.log('[xiuxian-config] - characterCreation:', typeof window.characterCreation !== 'undefined' ? '已定义' : 'undefined');
+// Thông tin gỡ lỗi: Xác nhận dữ liệu quan trọng đã được tải
+console.log('[xiuxian-config] ✅ Tệp cấu hình đã tải xong');
+console.log('[xiuxian-config] - Số lượng origins:', window.origins ? window.origins.length : 'undefined');
+console.log('[xiuxian-config] - Số lượng talents:', window.talents ? window.talents.length : 'undefined');
+console.log('[xiuxian-config] - characterCreation:', typeof window.characterCreation !== 'undefined' ? 'Đã định nghĩa' : 'undefined');
 
-// 状态面板渲染函数
+// Hàm render bảng trạng thái
 function renderStatusPanel(vars) {
-    // 兼容处理：如果传入的是完整gameState，提取variables部分
+    // Xử lý tương thích: Nếu truyền vào là gameState đầy đủ, trích xuất phần variables
     const variables = vars.variables || vars;
 
-    console.log('[现代配置] renderStatusPanel 被调用');
-    console.log('[现代配置] variables:', variables);
+    console.log('[Cấu hình hiện đại] renderStatusPanel được gọi');
+    console.log('[Cấu hình hiện đại] variables:', variables);
 
-    // 检查关键元素是否存在（状态面板是否已加载）
-    // 兼容ACJT模式：检查多个可能的元素
+    // Kiểm tra các phần tử quan trọng có tồn tại không (bảng trạng thái đã tải chưa)
+    // Tương thích chế độ ACJT: kiểm tra nhiều phần tử khả thi
     const hasStatusPanel = document.getElementById('currentDateTime') ||
         document.getElementById('playerFloor') ||
         document.getElementById('relationshipsList');
     if (!hasStatusPanel) {
-        console.warn('[现代配置] ⚠️ 状态面板元素不存在，跳过渲染');
-        console.warn('[现代配置] 请确保 HTML模板已正确加载');
+        console.warn('[Cấu hình hiện đại] ⚠️ Phần tử bảng trạng thái không tồn tại, bỏ qua render');
+        console.warn('[Cấu hình hiện đại] Vui lòng đảm bảo mẫu HTML đã được tải chính xác');
         return;
     }
 
-    console.log('[现代配置] ✅ 状态面板元素存在，开始渲染');
+    console.log('[Cấu hình hiện đại] ✅ Phần tử bảng trạng thái tồn tại, bắt đầu render');
 
-    // 安全设置元素文本的辅助函数
+    // Hàm bổ trợ thiết lập văn bản phần tử an toàn
     const setElementText = (id, text) => {
         const el = document.getElementById(id);
         if (el) el.textContent = text;
     };
 
-    // 姓名
-    setElementText('playerName', variables.name || '未命名');
+    // Tên
+    setElementText('playerName', variables.name || 'Chưa đặt tên');
 
-    // 时间
+    // Thời gian
     setElementText('currentDateTime', variables.currentDateTime || '-');
 
-    // 基本信息
-    setElementText('charName', variables.name || '未知');
+    // Thông tin cơ bản
+    setElementText('charName', variables.name || 'Chưa rõ');
     setElementText('charAge', variables.age || '-');
     setElementText('charGender', variables.gender || '-');
     setElementText('charIdentity', variables.identity || '-');
@@ -1053,61 +1037,59 @@ function renderStatusPanel(vars) {
     setElementText('charLocation', variables.location || '-');
     setElementText('charTalents', variables.talents && variables.talents.length > 0 ? variables.talents.join('、') : '-');
 
-
-
-    // 特殊属性（现代世界观）
+    // Thuộc tính đặc biệt (Thế giới quan hiện đại)
     setElementText('reputation', variables.reputation || 0);
     setElementText('stress', variables.stress || 0);
 
-    // 势力信息
+    // Thông tin thế lực
     renderFactionInfo(variables);
 
-    // 主角详细信息
+    // Chi tiết nhân vật chính
     renderProtagonistDetails(variables);
 
-    // 道具列表
+    // Danh sách đạo cụ
     renderItems(variables);
 
-    // 人际关系
+    // Quan hệ nhân sự
     renderRelationships(variables);
 
-    // 重要历史
+    // Lịch sử quan trọng
     renderHistory(variables);
 
-    // 特殊状态
+    // Trạng thái đặc biệt
     renderSpecialStatus(variables);
 
-    console.log('[现代配置] ✅ renderStatusPanel 完成');
+    console.log('[Cấu hình hiện đại] ✅ renderStatusPanel hoàn tất');
 }
 
-// 渲染主角详细信息
+// Render chi tiết nhân vật chính
 function renderProtagonistDetails(vars) {
     const protagonist = vars.protagonist;
 
-    // 基本状态
+    // Trạng thái cơ bản
     const setEl = (id, val) => {
         const el = document.getElementById(id);
-        if (el) el.textContent = val || '未知';
+        if (el) el.textContent = val || 'Chưa rõ';
     };
 
     if (protagonist) {
         setEl('protagonistAppearance', protagonist.appearance);
         setEl('protagonistSexPref', protagonist.sexualPreference);
-        setEl('protagonistVirgin', protagonist.isVirgin === true ? '是' : protagonist.isVirgin === false ? '否' : '未知');
+        setEl('protagonistVirgin', protagonist.isVirgin === true ? 'Có' : protagonist.isVirgin === false ? 'Không' : 'Chưa rõ');
         setEl('protagonistFirstSex', protagonist.firstSex);
         setEl('protagonistLastSex', protagonist.lastSex);
 
-        // 身体详情
+        // Chi tiết cơ thể
         const bodyPartsDiv = document.getElementById('protagonistBodyParts');
         if (bodyPartsDiv && protagonist.bodyParts) {
             const parts = [
-                { key: 'penis', name: '阳物', icon: '🍆' },
-                { key: 'vagina', name: '小穴', icon: '🌸' },
-                { key: 'breasts', name: '胸部', icon: '🍒' },
-                { key: 'mouth', name: '嘴巴', icon: '👄' },
-                { key: 'anus', name: '肛门', icon: '🔘' },
-                { key: 'hands', name: '手部', icon: '🤲' },
-                { key: 'feet', name: '足部', icon: '🦶' }
+                { key: 'penis', name: 'Dương vật', icon: '🍆' },
+                { key: 'vagina', name: 'Âm đạo', icon: '🌸' },
+                { key: 'breasts', name: 'Ngực', icon: '🍒' },
+                { key: 'mouth', name: 'Miệng', icon: '👄' },
+                { key: 'anus', name: 'Hậu môn', icon: '🔘' },
+                { key: 'hands', name: 'Tay', icon: '🤲' },
+                { key: 'feet', name: 'Chân', icon: '🦶' }
             ];
 
             let html = '';
@@ -1116,24 +1098,24 @@ function renderProtagonistDetails(vars) {
                 if (data) {
                     html += `<div style="margin-bottom: 4px;">
                         <span style="color: #ff69b4;">${part.icon} ${part.name}：</span>
-                        <span style="color: #999;">${data.description || '未知'}</span>
-                        <span style="color: #2ed573; margin-left: 5px;">(${data.useCount || 0}次)</span>
+                        <span style="color: #999;">${data.description || 'Chưa rõ'}</span>
+                        <span style="color: #2ed573; margin-left: 5px;">(${data.useCount || 0} lần)</span>
                     </div>`;
                 }
             });
 
-            bodyPartsDiv.innerHTML = html || '暂无数据';
+            bodyPartsDiv.innerHTML = html || 'Chưa có dữ liệu';
         }
     } else {
-        // protagonist 为空时显示提示
+        // Hiển thị thông báo khi protagonist trống
         const bodyPartsDiv = document.getElementById('protagonistBodyParts');
         if (bodyPartsDiv) {
-            bodyPartsDiv.innerHTML = '<div style="color: #666;">等待AI生成...</div>';
+            bodyPartsDiv.innerHTML = '<div style="color: #666;">Đang đợi AI tạo dữ liệu...</div>';
         }
     }
 }
 
-// 渲染势力信息
+// Render thông tin thế lực
 function renderFactionInfo(vars) {
     const factionInfo = document.getElementById('factionInfo');
     if (!factionInfo) return;
@@ -1142,74 +1124,72 @@ function renderFactionInfo(vars) {
         const faction = vars.faction;
         const membersText = Array.isArray(faction.members) && faction.members.length > 0
             ? faction.members.join('、')
-            : '无';
+            : 'Không có';
 
         factionInfo.innerHTML = `
             <div class="relationship-detail-row">
-                <span class="relationship-detail-label">势力名：</span>
+                <span class="relationship-detail-label">Tên thế lực：</span>
                 <span class="relationship-detail-value">${faction.name}</span>
             </div>
             ${faction.leader ? `<div class="relationship-detail-row">
-                <span class="relationship-detail-label">领袖：</span>
+                <span class="relationship-detail-label">Lãnh đạo：</span>
                 <span class="relationship-detail-value">${faction.leader}</span>
             </div>` : ''}
             ${faction.location ? `<div class="relationship-detail-row">
-                <span class="relationship-detail-label">所在地：</span>
+                <span class="relationship-detail-label">Trụ sở：</span>
                 <span class="relationship-detail-value">${faction.location}</span>
             </div>` : ''}
             ${faction.members && faction.members.length > 0 ? `<div class="relationship-detail-row">
-                <span class="relationship-detail-label">主要成员：</span>
+                <span class="relationship-detail-label">Thành viên chính：</span>
                 <span class="relationship-detail-value">${membersText}</span>
             </div>` : ''}
             ${faction.description ? `<div class="relationship-detail-row" style="flex-direction: column; align-items: flex-start;">
-                <span class="relationship-detail-label">介绍：</span>
+                <span class="relationship-detail-label">Giới thiệu：</span>
                 <span class="relationship-detail-value" style="margin-top: 5px; line-height: 1.6;">${faction.description}</span>
             </div>` : ''}
         `;
     } else {
-        factionInfo.innerHTML = '<div style="text-align: center; color: #999;">暂无势力</div>';
+        factionInfo.innerHTML = '<div style="text-align: center; color: #999;">Chưa có thế lực</div>';
     }
 }
 
-
-
-// 获取属性中文名称
+// Lấy tên tiếng Việt của thuộc tính
 function getAttributeName(attr) {
     const names = {
-        'physique': '体质',
-        'fortune': '运气',
-        'comprehension': '智力',
-        'spirit': '精神',
-        'potential': '潜力',
+        'physique': 'Thể chất',
+        'fortune': 'Vận khí',
+        'comprehension': 'Căn cơ',
+        'spirit': 'Tinh thần',
+        'potential': 'Tiềm năng',
         'charisma': '魅力'
     };
     return names[attr] || attr;
 }
 
-// 渲染道具列表
+// Render danh sách đạo cụ
 function renderItems(vars) {
     const itemsList = document.getElementById('itemsList');
     if (!itemsList) return;
 
     if (Array.isArray(vars.items) && vars.items.length > 0) {
         itemsList.innerHTML = vars.items.map((item, index) => {
-            const isEquipment = item.type && item.type.startsWith('装备-');
-            const isPill = item.type && (item.type.includes('药物') || item.type.includes('药'));
+            const isEquipment = item.type && item.type.startsWith('Trang bị-');
+            const isPill = item.type && (item.type.includes('Dược phẩm') || item.type.includes('Thuốc'));
 
-            const equipBtn = isEquipment ? `<button class="equip-btn" onclick="equipItem('${item.name}')">装备</button>` : '';
-            const usePillBtn = isPill ? `<button class="equip-btn" onclick="usePill(${index})" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">服用</button>` : '';
+            const equipBtn = isEquipment ? `<button class="equip-btn" onclick="equipItem('${item.name}')">Trang bị</button>` : '';
+            const usePillBtn = isPill ? `<button class="equip-btn" onclick="usePill(${index})" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">Sử dụng</button>` : '';
 
             const effectsText = item.effects ? Object.entries(item.effects).map(([attr, value]) => {
                 if (attr === 'skillProgress') {
-                    return `技能进度+${value}`;
+                    return `Tiến độ kỹ năng+${value}`;
                 } else if (attr === 'hp') {
-                    return `体力${value > 0 ? '+' : ''}${value}`;
+                    return `Thể lực${value > 0 ? '+' : ''}${value}`;
                 } else if (attr === 'mp') {
-                    return `精力${value > 0 ? '+' : ''}${value}`;
+                    return `Tinh lực${value > 0 ? '+' : ''}${value}`;
                 } else if (attr === 'hpMax') {
-                    return `体力上限${value > 0 ? '+' : ''}${value}`;
+                    return `Giới hạn thể lực${value > 0 ? '+' : ''}${value}`;
                 } else if (attr === 'mpMax') {
-                    return `精力上限${value > 0 ? '+' : ''}${value}`;
+                    return `Giới hạn tinh lực${value > 0 ? '+' : ''}${value}`;
                 }
                 return `${getAttributeName(attr)}${value > 0 ? '+' : ''}${value}`;
             }).join(' ') : '';
@@ -1226,24 +1206,23 @@ function renderItems(vars) {
             </div>`;
         }).join('');
     } else {
-        itemsList.innerHTML = '<div style="text-align: center; color: #999;">暂无道具</div>';
+        itemsList.innerHTML = '<div style="text-align: center; color: #999;">Chưa có đạo cụ</div>';
     }
 }
 
-// 渲染人际关系
+// Render quan hệ nhân sự
 function renderRelationships(vars) {
     const relationshipsList = document.getElementById('relationshipsList');
     if (!relationshipsList) return;
 
-    console.log('[现代配置] renderRelationships 被调用');
-    console.log('[现代配置] relationships:', vars.relationships);
+    console.log('[Cấu hình hiện đại] renderRelationships được gọi');
+    console.log('[Cấu hình hiện đại] relationships:', vars.relationships);
 
     if (vars.relationships && vars.relationships.length > 0) {
         relationshipsList.innerHTML = vars.relationships.map((rel, index) => {
-            console.log(`[现代配置] 渲染关系 ${index}:`, rel);
-            console.log(`[现代配置] ${rel.name}.history:`, rel.history);
+            console.log(`[Cấu hình hiện đại] Render quan hệ ${index}:`, rel);
 
-            // 根据好感度设置颜色类
+            // Thiết lập lớp màu sắc dựa trên hảo cảm
             let favorClass = '';
             if (rel.favor >= 60) {
                 favorClass = 'high';
@@ -1251,18 +1230,15 @@ function renderRelationships(vars) {
                 favorClass = 'low';
             }
 
-            // 构建历史互动记录
+            // Xây dựng nhật ký tương tác
             let historyHtml = '';
             if (Array.isArray(rel.history) && rel.history.length > 0) {
-                console.log(`[现代配置] ${rel.name} 有 ${rel.history.length} 条历史记录`);
                 historyHtml = `
                     <div class="relationship-history">
-                        <div class="relationship-history-title">📜 历史互动</div>
+                        <div class="relationship-history-title">📜 Nhật ký tương tác</div>
                         ${rel.history.map(h => `<div class="relationship-history-item">• ${h}</div>`).join('')}
                     </div>
                 `;
-            } else {
-                console.log(`[现代配置] ${rel.name} 无历史记录或为空`);
             }
 
             return `
@@ -1275,71 +1251,71 @@ function renderRelationships(vars) {
                             </button>
                             <span class="relationship-name">${rel.name} (${rel.relation})</span>
                         </div>
-                        <span class="relationship-favor ${favorClass}">好感: ${rel.favor}</span>
+                        <span class="relationship-favor ${favorClass}">Hảo cảm: ${rel.favor}</span>
                     </div>
                     <div class="relationship-details" id="relationship-details-${index}">
                         ${rel.age ? `<div class="relationship-detail-row">
-                            <span class="relationship-detail-label">年龄：</span>
-                            <span class="relationship-detail-value">${rel.age}岁</span>
+                            <span class="relationship-detail-label">Tuổi：</span>
+                            <span class="relationship-detail-value">${rel.age} tuổi</span>
                         </div>` : ''}
                         ${rel.job ? `<div class="relationship-detail-row">
-                            <span class="relationship-detail-label">职业：</span>
+                            <span class="relationship-detail-label">Nghề nghiệp：</span>
                             <span class="relationship-detail-value">${rel.job}</span>
                         </div>` : ''}
                         ${rel.personality ? `<div class="relationship-detail-row">
-                            <span class="relationship-detail-label">性格：</span>
+                            <span class="relationship-detail-label">Tính cách：</span>
                             <span class="relationship-detail-value">${rel.personality}</span>
                         </div>` : ''}
                         ${rel.opinion ? `<div class="relationship-detail-row">
-                            <span class="relationship-detail-label">看法：</span>
+                            <span class="relationship-detail-label">Cách nhìn：</span>
                             <span class="relationship-detail-value">${rel.opinion}</span>
                         </div>` : ''}
                         ${rel.appearance ? `<div class="relationship-detail-row">
-                            <span class="relationship-detail-label">外貌：</span>
+                            <span class="relationship-detail-label">Ngoại hình：</span>
                             <span class="relationship-detail-value">${rel.appearance}</span>
                         </div>` : ''}
                         ${rel.sexualPreference ? `<div class="relationship-detail-row">
-                            <span class="relationship-detail-label">性癖：</span>
+                            <span class="relationship-detail-label">Sở thích TD：</span>
                             <span class="relationship-detail-value">${rel.sexualPreference}</span>
-                        </div>` : '<div class="relationship-detail-row"><span class="relationship-detail-label">性癖：</span><span class="relationship-detail-value">未知</span></div>'}
+                        </div>` : '<div class="relationship-detail-row"><span class="relationship-detail-label">Sở thích TD：</span><span class="relationship-detail-value">Chưa rõ</span></div>'}
                         ${rel.isVirgin !== null && rel.isVirgin !== undefined ? `<div class="relationship-detail-row">
-                            <span class="relationship-detail-label">是否处女：</span>
-                            <span class="relationship-detail-value">${rel.isVirgin ? '处子之身' : '非处'}</span>
-                        </div>` : '<div class="relationship-detail-row"><span class="relationship-detail-label">是否处女：</span><span class="relationship-detail-value">未知</span></div>'}
+                            <span class="relationship-detail-label">Còn trinh：</span>
+                            <span class="relationship-detail-value">${rel.isVirgin ? 'Trong trắng' : 'Không'}</span>
+                        </div>` : '<div class="relationship-detail-row"><span class="relationship-detail-label">Còn trinh：</span><span class="relationship-detail-value">Chưa rõ</span></div>'}
                         ${rel.firstSex && rel.firstSex !== '未知' ? `<div class="relationship-detail-row">
-                            <span class="relationship-detail-label">初次做爱：</span>
+                            <span class="relationship-detail-label">Lần đầu：</span>
                             <span class="relationship-detail-value">${rel.firstSex}</span>
-                        </div>` : '<div class="relationship-detail-row"><span class="relationship-detail-label">初次做爱：</span><span class="relationship-detail-value">未知</span></div>'}
+                        </div>` : '<div class="relationship-detail-row"><span class="relationship-detail-label">Lần đầu：</span><span class="relationship-detail-value">Chưa rõ</span></div>'}
                         ${rel.lastSex && rel.lastSex !== '未知' ? `<div class="relationship-detail-row">
-                            <span class="relationship-detail-label">最近做爱：</span>
+                            <span class="relationship-detail-label">Gần nhất：</span>
                             <span class="relationship-detail-value">${rel.lastSex}</span>
-                        </div>` : '<div class="relationship-detail-row"><span class="relationship-detail-label">最近做爱：</span><span class="relationship-detail-value">未知</span></div>'}
+                        </div>` : '<div class="relationship-detail-row"><span class="relationship-detail-label">Gần nhất：</span><span class="relationship-detail-value">Chưa rõ</span></div>'}
                         <div class="body-details-section" style="margin-top: 10px; padding: 10px; background: linear-gradient(135deg, rgba(255, 105, 180, 0.1) 0%, rgba(255, 192, 203, 0.15) 100%); border-radius: 8px; border: 1px solid rgba(255, 105, 180, 0.3);">
-                            <div class="body-details-title" style="color: #ff69b4; font-weight: bold; margin-bottom: 8px; text-align: center;">🌸 身体详情 🌸</div>
+                            <div class="body-details-title" style="color: #ff69b4; font-weight: bold; margin-bottom: 8px; text-align: center;">🌸 Chi tiết cơ thể 🌸</div>
                             <div class="body-part-item" style="font-size: 11px; margin-bottom: 4px;">
-                                <span style="color: #ff69b4; font-weight: bold;">小穴：</span>
-                                <span style="color: #666;">${rel.bodyParts?.vagina?.description || '未知'}</span>
-                                <span style="color: #28a745; margin-left: 5px;">(使用${rel.bodyParts?.vagina?.useCount || 0}次)</span>
+                                <span style="color: #ff69b4; font-weight: bold;">Tiểu huyệt：</span>
+                                <span style="color: #666;">${rel.bodyParts?.vagina?.description || 'Chưa rõ'}</span>
+                                <span style="color: #28a745; margin-left: 5px;">(Sử dụng ${rel.bodyParts?.vagina?.useCount || 0} lần)</span>
                             </div>
                             <div class="body-part-item" style="font-size: 11px; margin-bottom: 4px;">
-                                <span style="color: #ff69b4; font-weight: bold;">胸部：</span>
-                                <span style="color: #666;">${rel.bodyParts?.breasts?.description || '未知'}</span>
-                                <span style="color: #28a745; margin-left: 5px;">(使用${rel.bodyParts?.breasts?.useCount || 0}次)</span>
+                                <span style="color: #ff69b4; font-weight: bold;">Ngực：</span>
+                                <span style="color: #666;">${rel.bodyParts?.breasts?.description || 'Chưa rõ'}</span>
+                                <span style="color: #28a745; margin-left: 5px;">(Sử dụng ${rel.bodyParts?.breasts?.useCount || 0} lần)</span>
                             </div>
                             <div class="body-part-item" style="font-size: 11px; margin-bottom: 4px;">
-                                <span style="color: #ff69b4; font-weight: bold;">嘴巴：</span>
-                                <span style="color: #666;">${rel.bodyParts?.mouth?.description || '未知'}</span>
-                                <span style="color: #28a745; margin-left: 5px;">(使用${rel.bodyParts?.mouth?.useCount || 0}次)</span>
+                                <span style="color: #ff69b4; font-weight: bold;">Miệng：</span>
+                                <span style="color: #666;">${rel.bodyParts?.mouth?.description || 'Chưa rõ'}</span>
+                                <span style="color: #28a745; margin-left: 5px;">(Sử dụng ${rel.bodyParts?.mouth?.useCount || 0} lần)</span>
                             </div>
                             <div class="body-part-item" style="font-size: 11px; margin-bottom: 4px;">
-                                <span style="color: #ff69b4; font-weight: bold;">小手：</span>
-                                <span style="color: #666;">${rel.bodyParts?.hands?.description || '未知'}</span>
-                                <span style="color: #28a745; margin-left: 5px;">(使用${rel.bodyParts?.hands?.useCount || 0}次)</span>
+                                <span style="color: #ff69b4; font-weight: bold;">Bàn tay：</span>
+                                <span style="color: #666;">${rel.bodyParts?.hands?.description || 'Chưa rõ'}</span>
+                                <span style="color: #28a745; margin-left: 5px;">(Sử dụng ${rel.bodyParts?.hands?.useCount || 0} lần)</span>
                             </div>
                             <div class="body-part-item" style="font-size: 11px; margin-bottom: 4px;">
-                                <span style="color: #ff69b4; font-weight: bold;">玉足：</span>
-                                <span style="color: #666;">${rel.bodyParts?.feet?.description || '未知'}</span>
-                                <span style="color: #28a745; margin-left: 5px;">(使用${rel.bodyParts?.feet?.useCount || 0}次)</span>
+                                <span style="color: #ff69b4; font-weight: bold;">Bàn chân：</span>
+                                <span style="color: #666;">${rel.bodyParts?.feet?.description || 'Chưa rõ'}</span>
+                                <span style="color: #28a745; margin-left: 5px;">(Sử dụng ${rel.bodyParts?.feet?.useCount || 0} lần)</span>
                             </div>
                         </div>
                         ${historyHtml}
@@ -1348,16 +1324,15 @@ function renderRelationships(vars) {
             `;
         }).join('');
     } else {
-        relationshipsList.innerHTML = '<div style="text-align: center; color: #999;">暂无关系</div>';
+        relationshipsList.innerHTML = '<div style="text-align: center; color: #999;">Chưa có quan hệ</div>';
     }
 }
 
-// 渲染重要历史
+// Render lịch sử quan trọng
 function renderHistory(vars) {
     const historyList = document.getElementById('historyList');
     if (!historyList) return;
 
-    // 确保 vars.history 是数组类型
     if (Array.isArray(vars.history) && vars.history.length > 0) {
         historyList.innerHTML = vars.history.map((h, index) => {
             return `<div class="history-item">
@@ -1366,11 +1341,11 @@ function renderHistory(vars) {
             </div>`;
         }).join('');
     } else {
-        historyList.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 20px;">暂无历史记录</div>';
+        historyList.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 20px;">Chưa có nhật ký lịch sử</div>';
     }
 }
 
-// 渲染特殊状态（包括AI返回的specialStatus和protagonist.status）
+// Render trạng thái đặc biệt
 function renderSpecialStatus(vars) {
     const container = document.getElementById('specialStatusList');
     if (!container) return;
@@ -1378,22 +1353,22 @@ function renderSpecialStatus(vars) {
     let html = '';
     let hasStatus = false;
 
-    // 1. 渲染主角当前状态（protagonist.status 或 vars.status）
+    // 1. Render trạng thái hiện tại của nhân vật chính
     const protagonistStatus = vars.protagonist?.status || vars.status;
-    if (protagonistStatus && protagonistStatus !== '正常') {
+    if (protagonistStatus && protagonistStatus !== 'Bình thường') {
         hasStatus = true;
         html += `
             <div style="background: rgba(255,200,100,0.15); border: 1px solid rgba(255,200,100,0.4); 
                  border-radius: 6px; padding: 8px; margin-bottom: 6px;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="color: #ffa502; font-weight: bold;">📍 当前状态</span>
+                    <span style="color: #ffa502; font-weight: bold;">📍 Trạng thái hiện tại</span>
                 </div>
                 <div style="color: #ffeaa7; margin-top: 4px; font-size: 12px;">${protagonistStatus}</div>
             </div>
         `;
     }
 
-    // 2. 渲染主角心情和想法
+    // 2. Render tâm trạng và suy nghĩ của nhân vật chính
     const mood = vars.protagonist?.mood || vars.mood;
     const thought = vars.protagonist?.thought || vars.thought;
     if (mood || thought) {
@@ -1401,13 +1376,13 @@ function renderSpecialStatus(vars) {
         html += `
             <div style="background: rgba(155,89,182,0.15); border: 1px solid rgba(155,89,182,0.4); 
                  border-radius: 6px; padding: 8px; margin-bottom: 6px;">
-                ${mood ? `<div style="color: #a29bfe; margin-bottom: 4px;">💭 心情：<span style="color: #dfe6e9;">${mood}</span></div>` : ''}
+                ${mood ? `<div style="color: #a29bfe; margin-bottom: 4px;">💭 Tâm trạng：<span style="color: #dfe6e9;">${mood}</span></div>` : ''}
                 ${thought ? `<div style="color: #a29bfe; font-style: italic; font-size: 11px;">"${thought}"</div>` : ''}
             </div>
         `;
     }
 
-    // 3. 渲染 specialStatus 对象中的特殊状态
+    // 3. Render các trạng thái đặc biệt trong đối tượng specialStatus
     const specialStatus = vars.specialStatus;
     if (specialStatus && typeof specialStatus === 'object') {
         const statusKeys = Object.keys(specialStatus);
@@ -1426,7 +1401,7 @@ function renderSpecialStatus(vars) {
                             <div style="display: flex; justify-content: space-between; align-items: center;">
                                 <span style="color: #ff6b81; font-weight: bold;">⚠️ ${statusName}</span>
                             </div>
-                            ${effect ? `<div style="color: #fab1a0; font-size: 11px; margin-top: 3px;">效果：${effect}</div>` : ''}
+                            ${effect ? `<div style="color: #fab1a0; font-size: 11px; margin-top: 3px;">Hiệu quả：${effect}</div>` : ''}
                             ${description ? `<div style="color: #888; font-size: 10px; margin-top: 3px;">${description}</div>` : ''}
                         </div>
                     `;
@@ -1435,7 +1410,7 @@ function renderSpecialStatus(vars) {
         }
     }
 
-    // 4. 同时检查 SpecialStatusManager（卡牌系统的特殊状态）
+    // 4. Kiểm tra SpecialStatusManager (Trạng thái đặc biệt của hệ thống thẻ bài)
     if (typeof SpecialStatusManager !== 'undefined') {
         const cardStatuses = SpecialStatusManager.getActive();
         if (cardStatuses && cardStatuses.length > 0) {
@@ -1460,136 +1435,127 @@ function renderSpecialStatus(vars) {
     if (hasStatus) {
         container.innerHTML = html;
     } else {
-        container.innerHTML = '<div style="text-align: center; color: #666; padding: 10px;">暂无异常状态</div>';
+        container.innerHTML = '<div style="text-align: center; color: #666; padding: 10px;">Chưa có trạng thái bất thường</div>';
     }
 }
 
-// 生成角色创建界面HTML（现代游戏特有）
+// Tạo HTML giao diện khởi tạo nhân vật
 function generateCharacterCreationHTML() {
     return `
         <div class="character-creation">
-            <div class="creation-title">⚡ 角色初始化 ⚡</div>
+            <div class="creation-title">⚡ Khởi tạo Nhân vật ⚡</div>
 
-
-            <!-- 难度选择 -->
             <div class="creation-section">
-                <h3><span style="margin-right: 10px;">⚠️</span> 难度协议 / DIFFICULTY</h3>
+                <h3><span style="margin-right: 10px;">⚠️</span> Giao ước độ khó / DIFFICULTY</h3>
                 <div class="difficulty-options">
                     <div class="difficulty-card" data-difficulty="easy" onclick="selectDifficulty('easy')">
                         <div class="difficulty-card-header">
-                            <div class="difficulty-card-title">简单模式</div>
+                            <div class="difficulty-card-title">Chế độ Dễ</div>
                             <div class="difficulty-card-badge">EASY</div>
                         </div>
-                        <div class="difficulty-card-description">适合新手的温和开局，拥有充足的资源。</div>
+                        <div class="difficulty-card-description">Bắt đầu nhẹ nhàng cho người mới, tài nguyên dồi dào.</div>
                         <div class="difficulty-card-features">
-                            <span class="difficulty-card-feature">200 点数</span>
-                            <span class="difficulty-card-feature">高容错率</span>
+                            <span class="difficulty-card-feature">200 điểm</span>
+                            <span class="difficulty-card-feature">Tỷ lệ sai số cao</span>
                         </div>
                     </div>
                     <div class="difficulty-card selected" data-difficulty="normal" onclick="selectDifficulty('normal')">
                         <div class="difficulty-card-header">
-                            <div class="difficulty-card-title">普通模式</div>
+                            <div class="difficulty-card-title">Chế độ Thường</div>
                             <div class="difficulty-card-badge">NORMAL</div>
                         </div>
-                        <div class="difficulty-card-description">标准的现代都市体验，风险与机遇并存。</div>
+                        <div class="difficulty-card-description">Trải nghiệm đô thị hiện đại tiêu chuẩn, rủi ro và cơ hội song hành.</div>
                         <div class="difficulty-card-features">
-                            <span class="difficulty-card-feature">100 点数</span>
-                            <span class="difficulty-card-feature">平衡体验</span>
+                            <span class="difficulty-card-feature">100 điểm</span>
+                            <span class="difficulty-card-feature">Trải nghiệm cân bằng</span>
                         </div>
                     </div>
                     <div class="difficulty-card hard" data-difficulty="hard" onclick="selectDifficulty('hard')">
                         <div class="difficulty-card-header">
-                            <div class="difficulty-card-title">困难模式</div>
+                            <div class="difficulty-card-title">Chế độ Khó</div>
                             <div class="difficulty-card-badge">HARD</div>
                         </div>
-                        <div class="difficulty-card-description">资源匮乏，环境恶劣，只有强者才能生存。</div>
+                        <div class="difficulty-card-description">Tài nguyên khan hiếm, môi trường khắc nghiệt, chỉ kẻ mạnh mới sống sót.</div>
                         <div class="difficulty-card-features">
-                            <span class="difficulty-card-feature">50 点数</span>
-                            <span class="difficulty-card-feature">极限挑战</span>
+                            <span class="difficulty-card-feature">50 điểm</span>
+                            <span class="difficulty-card-feature">Thử thách cực hạn</span>
                         </div>
                     </div>
                     <div class="difficulty-card" data-difficulty="dragon" onclick="selectDifficulty('dragon')">
                         <div class="difficulty-card-header">
-                            <div class="difficulty-card-title">龙傲天</div>
+                            <div class="difficulty-card-title">Bá chủ (Long Ngạo Thiên)</div>
                             <div class="difficulty-card-badge">GOD MODE</div>
                         </div>
-                        <div class="difficulty-card-description">无视规则的存在，你就是这个世界的主宰。</div>
+                        <div class="difficulty-card-description">Sự tồn tại phớt lờ mọi quy tắc, bạn là chủ nhân của thế giới này.</div>
                         <div class="difficulty-card-features">
-                            <span class="difficulty-card-feature">9999 点数</span>
-                            <span class="difficulty-card-feature">横扫一切</span>
+                            <span class="difficulty-card-feature">9999 điểm</span>
+                            <span class="difficulty-card-feature">Quét sạch tất cả</span>
                         </div>
                     </div>
                 </div>
                 <div class="points-display">
-                    <span class="points-label">REMAINING POINTS / 剩余点数</span>
+                    <span class="points-label">REMAINING POINTS / Điểm còn lại</span>
                     <div class="points-remaining" id="remainingPoints">100</div>
                 </div>
             </div>
 
-            <!-- 基本信息 -->
             <div class="creation-section">
-                <h3><span style="margin-right: 10px;">👤</span> 身份档案 / BASIC INFO</h3>
+                <h3><span style="margin-right: 10px;">👤</span> Hồ sơ danh tính / BASIC INFO</h3>
                 <div class="form-row">
                     <div class="config-group">
-                        <label>代号 / NAME</label>
-                        <input type="text" id="charNameInput" class="input-full" placeholder="请输入你的代号..." value="云逍遥">
+                        <label>Mật danh / NAME</label>
+                        <input type="text" id="charNameInput" class="input-full" placeholder="Nhập mật danh của bạn..." value="Vân Tiêu Diêu">
                     </div>
                     <div class="config-group">
-                        <label>骨龄 / AGE</label>
-                        <input type="number" id="charAgeInput" class="input-full" placeholder="请输入年龄" value="18" min="1" max="999">
+                        <label>Tuổi / AGE</label>
+                        <input type="number" id="charAgeInput" class="input-full" placeholder="Nhập tuổi" value="18" min="1" max="999">
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="config-group">
-                        <label>人格特质 / PERSONALITY</label>
-                        <input type="text" id="charPersonality" class="input-full" placeholder="如：冷酷、理性..." value="洒脱不羁">
+                        <label>Đặc điểm nhân cách / PERSONALITY</label>
+                        <input type="text" id="charPersonality" class="input-full" placeholder="Ví dụ: Lạnh lùng, lý trí..." value="Phóng khoáng tự tại">
                     </div>
                 </div>
                 <div class="config-group">
-                    <label>生理性别 / GENDER</label>
+                    <label>Giới tính sinh học / GENDER</label>
                     <div class="gender-options">
                         <div class="gender-card selected" data-gender="male" onclick="selectGender('male')">
-                            <span style="font-size: 24px; display: block; margin-bottom: 5px;">👨</span> 男性 MALE
+                            <span style="font-size: 24px; display: block; margin-bottom: 5px;">👨</span> Nam giới MALE
                         </div>
                         <div class="gender-card" data-gender="female" onclick="selectGender('female')">
-                            <span style="font-size: 24px; display: block; margin-bottom: 5px;">👩</span> 女性 FEMALE
+                            <span style="font-size: 24px; display: block; margin-bottom: 5px;">👩</span> Nữ giới FEMALE
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- 出身选择 -->
             <div class="creation-section">
-                <h3><span style="margin-right: 10px;">🏙️</span> 社会阶层 / ORIGIN</h3>
-                <div class="creation-subtitle" style="text-align: left; margin-bottom: 15px;">选择你的出身背景，这将决定你的初始属性和可用资源。</div>
+                <h3><span style="margin-right: 10px;">🏙️</span> Tầng lớp xã hội / ORIGIN</h3>
+                <div class="creation-subtitle" style="text-align: left; margin-bottom: 15px;">Chọn bối cảnh xuất thân, điều này quyết định thuộc tính khởi đầu và tài nguyên khả dụng của bạn.</div>
                 <div id="originGrid" class="origin-options">
-                    <!-- 出身卡片将通过JS动态生成 -->
-                </div>
+                    </div>
             </div>
 
-            <!-- 自定义设定 -->
             <div class="creation-section">
-                <h3><span style="margin-right: 10px;">💾</span> 额外数据 / CUSTOM DATA</h3>
-                <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 10px;">写入额外的背景数据或特殊设定（可选）</p>
-                <textarea id="customSettings" placeholder="例如：身怀隐秘代码、拥有黑客义体、被巨头公司通缉..."
+                <h3><span style="margin-right: 10px;">💾</span> Dữ liệu bổ sung / CUSTOM DATA</h3>
+                <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 10px;">Ghi thêm bối cảnh hoặc thiết lập đặc biệt (tùy chọn)</p>
+                <textarea id="customSettings" placeholder="Ví dụ: Mang trong mình mã nguồn ẩn, sở hữu cơ thể máy của hacker, bị tập đoàn khổng lồ truy nã..."
                           style="width: 100%; min-height: 100px;"></textarea>
             </div>
 
-            <!-- 天赋选择 -->
             <div class="creation-section">
-                <h3><span style="margin-right: 10px;">🧬</span> 基因天赋 / TALENTS</h3>
+                <h3><span style="margin-right: 10px;">🧬</span> Thiên phú di truyền / TALENTS</h3>
                 <div class="talent-grid" id="talentGrid">
-                    <!-- 天赋卡片将通过JS动态生成 -->
-                </div>
+                    </div>
             </div>
 
-            <!-- 六维属性 -->
             <div class="creation-section">
-                <h3><span style="margin-right: 10px;">📊</span> 属性分配 / ATTRIBUTES</h3>
-                <div class="creation-subtitle" style="text-align: left; margin-bottom: 15px;">分配你的核心属性点（每点消耗1点数）</div>
+                <h3><span style="margin-right: 10px;">📊</span> Phân bổ thuộc tính / ATTRIBUTES</h3>
+                <div class="creation-subtitle" style="text-align: left; margin-bottom: 15px;">Phân bổ các điểm thuộc tính cốt lõi (mỗi điểm tiêu tốn 1 điểm khởi tạo)</div>
                 <div id="attributesPanel">
                     <div class="attribute-row">
-                        <span class="attr-name">💪 体质<br><span style="font-size: 10px; opacity: 0.7;">PHYSIQUE</span></span>
+                        <span class="attr-name">💪 Thể chất<br><span style="font-size: 10px; opacity: 0.7;">PHYSIQUE</span></span>
                         <div class="attr-controls">
                             <button class="attr-btn" onclick="adjustAttribute('physique', -1)">-</button>
                             <span class="attr-value" id="physique-value">10</span>
@@ -1597,7 +1563,7 @@ function generateCharacterCreationHTML() {
                         </div>
                     </div>
                     <div class="attribute-row">
-                        <span class="attr-name">🍀 运气<br><span style="font-size: 10px; opacity: 0.7;">FORTUNE</span></span>
+                        <span class="attr-name">🍀 Vận khí<br><span style="font-size: 10px; opacity: 0.7;">FORTUNE</span></span>
                         <div class="attr-controls">
                             <button class="attr-btn" onclick="adjustAttribute('fortune', -1)">-</button>
                             <span class="attr-value" id="fortune-value">10</span>
@@ -1605,7 +1571,7 @@ function generateCharacterCreationHTML() {
                         </div>
                     </div>
                     <div class="attribute-row">
-                        <span class="attr-name">🧠 智力<br><span style="font-size: 10px; opacity: 0.7;">INTELLECT</span></span>
+                        <span class="attr-name">🧠 Căn cơ (Trí tuệ)<br><span style="font-size: 10px; opacity: 0.7;">INTELLECT</span></span>
                         <div class="attr-controls">
                             <button class="attr-btn" onclick="adjustAttribute('comprehension', -1)">-</button>
                             <span class="attr-value" id="comprehension-value">10</span>
@@ -1613,7 +1579,7 @@ function generateCharacterCreationHTML() {
                         </div>
                     </div>
                     <div class="attribute-row">
-                        <span class="attr-name">👁️ 精神<br><span style="font-size: 10px; opacity: 0.7;">SPIRIT</span></span>
+                        <span class="attr-name">👁️ Tinh thần<br><span style="font-size: 10px; opacity: 0.7;">SPIRIT</span></span>
                         <div class="attr-controls">
                             <button class="attr-btn" onclick="adjustAttribute('spirit', -1)">-</button>
                             <span class="attr-value" id="spirit-value">10</span>
@@ -1621,7 +1587,7 @@ function generateCharacterCreationHTML() {
                         </div>
                     </div>
                     <div class="attribute-row">
-                        <span class="attr-name">⚡ 潜力<br><span style="font-size: 10px; opacity: 0.7;">POTENTIAL</span></span>
+                        <span class="attr-name">⚡ Tiềm năng<br><span style="font-size: 10px; opacity: 0.7;">POTENTIAL</span></span>
                         <div class="attr-controls">
                             <button class="attr-btn" onclick="adjustAttribute('potential', -1)">-</button>
                             <span class="attr-value" id="potential-value">10</span>
@@ -1629,7 +1595,7 @@ function generateCharacterCreationHTML() {
                         </div>
                     </div>
                     <div class="attribute-row">
-                        <span class="attr-name">✨ 魅力<br><span style="font-size: 10px; opacity: 0.7;">CHARISMA</span></span>
+                        <span class="attr-name">✨ Mị lực<br><span style="font-size: 10px; opacity: 0.7;">CHARISMA</span></span>
                         <div class="attr-controls">
                             <button class="attr-btn" onclick="adjustAttribute('charisma', -1)">-</button>
                             <span class="attr-value" id="charisma-value">10</span>
@@ -1639,82 +1605,71 @@ function generateCharacterCreationHTML() {
                 </div>
             </div>
 
-            <!-- 确认按钮 -->
             <div style="text-align: center; margin-top: 40px;">
                 <button class="btn btn-primary glow-effect" onclick="confirmCharacterCreation()" style="font-size: 18px; padding: 18px 60px;">
-                    ✅ 启动神经链接 / START GAME
+                    ✅ Kích hoạt liên kết thần kinh / START GAME
                 </button>
             </div>
         </div>
     `;
 }
 
-// 导出现代游戏配置
+// Xuất cấu hình XiuxianGame
 const XiuxianGameConfig = {
-    gameName: '艾超尖塔',
-    fullSystemPrompt: fullSystemPrompt,                 // 完整的游戏系统提示词（基础）
-    defaultSystemPrompt: defaultSystemPrompt,           // 现代游戏规则（变量检查清单）
-    baseSystemPrompt: baseSystemPrompt,                 // 🆕 基础提示词（不含变量规则，异步模式主API使用）
-    getAsyncVariablePrompt: getAsyncVariablePrompt,     // 🆕 获取变量规则提示词函数（异步模式额外API使用）
-    defaultDynamicWorldPrompt: defaultDynamicWorldPrompt, // 默认动态世界提示词
-    systemPrompt: getSystemPrompt,                      // 获取系统提示词的函数
-    dynamicWorldPrompt: getDynamicWorldPrompt,          // 获取动态世界提示词的函数
+    gameName: 'Tòa tháp AC',
+    fullSystemPrompt: fullSystemPrompt,
+    defaultSystemPrompt: defaultSystemPrompt,
+    baseSystemPrompt: baseSystemPrompt,
+    getAsyncVariablePrompt: getAsyncVariablePrompt,
+    defaultDynamicWorldPrompt: defaultDynamicWorldPrompt,
+    systemPrompt: getSystemPrompt,
+    dynamicWorldPrompt: getDynamicWorldPrompt,
     characterCreation: window.characterCreation,
     origins: window.origins,
     renderStatus: renderStatusPanel,
-    generateStatusPanel: generateStatusPanelHTML,       // 生成状态面板HTML的函数
-    generateCharacterCreation: generateCharacterCreationHTML, // 生成角色创建界面HTML的函数
+    generateStatusPanel: generateStatusPanelHTML,
+    generateCharacterCreation: generateCharacterCreationHTML,
 
-    // 初始化回调
+    // Hàm gọi ngược khởi tạo
     onInit: function (framework) {
-        console.log('[acjtConfig] 艾超尖塔游戏配置已加载');
-        console.log('[acjtConfig] 🆕 异步变量功能已就绪');
+        console.log('[acjtConfig] Cấu hình trò chơi Tòa tháp AC đã tải');
+        console.log('[acjtConfig] 🆕 Chức năng biến số bất đồng bộ đã sẵn sàng');
 
-        // 设置全局变量供其他函数使用
         window.xiuxianConfig = this;
 
-        // 🆕 设置 ACJTConfig 全局变量（供异步变量功能使用）
         window.ACJTConfig = {
             baseSystemPrompt: baseSystemPrompt,
             getAsyncVariablePrompt: getAsyncVariablePrompt,
             defaultSystemPrompt: defaultSystemPrompt
         };
 
-        // 🔧 强制填充现代游戏提示词（覆盖任何现有值）
+        // Cưỡng ép điền nội dung gợi ý trò chơi hiện đại
         const systemPromptEl = document.getElementById('systemPrompt');
         const dynamicWorldPromptEl = document.getElementById('dynamicWorldPrompt');
 
         if (systemPromptEl) {
             systemPromptEl.value = fullSystemPrompt;
-            console.log('[XiuxianConfig] 🎮 强制设置系统提示词（游戏基础规则）');
-            console.log('[XiuxianConfig] 📏 系统提示词长度:', fullSystemPrompt.length);
+            console.log('[XiuxianConfig] 🎮 Đã thiết lập gợi ý hệ thống (Quy tắc cơ bản)');
         }
 
         if (dynamicWorldPromptEl) {
             dynamicWorldPromptEl.value = defaultDynamicWorldPrompt;
-            console.log('[XiuxianConfig] 🌍 强制设置动态世界提示词（现代世界观）');
-            console.log('[XiuxianConfig] 📏 动态世界提示词长度:', defaultDynamicWorldPrompt.length);
+            console.log('[XiuxianConfig] 🌍 Đã thiết lập gợi ý thế giới động (Thế giới quan hiện đại)');
         }
 
-        // 动态插入状态面板HTML
+        // Chèn động HTML bảng trạng thái
         const statusPanelContainer = document.getElementById('statusPanelContainer');
-        console.log('[XiuxianConfig] 查找 statusPanelContainer:', statusPanelContainer);
-
         if (statusPanelContainer) {
-            // 检查是否已经有实际的HTML元素（不只是注释）
             const hasRealContent = statusPanelContainer.children.length > 0;
-
             if (!hasRealContent) {
                 statusPanelContainer.innerHTML = generateStatusPanelHTML();
-                console.log('[XiuxianConfig] ✅ 状态面板HTML已插入');
-            } else {
-                console.log('[XiuxianConfig] ⚠️ statusPanelContainer 已有内容，跳过插入');
+                console.log('[XiuxianConfig] ✅ HTML bảng trạng thái đã được chèn');
             }
         } else {
-            console.error('[XiuxianConfig] ❌ 找不到 statusPanelContainer 元素！');
+            console.error('[XiuxianConfig] ❌ Không tìm thấy phần tử statusPanelContainer!');
         }
     }
 };
 
-// 导出到全局
+// Xuất ra toàn cục
 window.XiuxianGameConfig = XiuxianGameConfig;

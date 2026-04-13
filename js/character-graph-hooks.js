@@ -1,76 +1,75 @@
 /**
- * 人物图谱钩子函数
- * 拦截并修改AI消息构建过程，集成人物图谱
+ * Module Hàm Hook Sơ đồ nhân vật
+ * Chặn và sửa đổi quá trình xây dựng tin nhắn AI để tích hợp sơ đồ nhân vật.
  */
 
 /**
- * 增强变量状态，使用图谱匹配替代完整relationships
- * @param {Object} variables - 原始变量状态
- * @param {string} userMessage - 用户输入消息
- * @returns {Object} 增强后的变量状态
+ * Tăng cường trạng thái biến, sử dụng so khớp đồ thị thay thế cho toàn bộ danh sách relationships
+ * @param {Object} variables - Trạng thái biến gốc
+ * @param {string} userMessage - Tin nhắn nhập từ người dùng
+ * @returns {Object} Trạng thái biến đã được tăng cường
  */
 async function enhanceVariablesWithCharacterGraph(variables, userMessage) {
-    // 检查是否启用人物图谱
+    // Kiểm tra xem sơ đồ nhân vật có được bật không
     if (!window.characterGraphIntegration || !window.characterGraphIntegration.isEnabled) {
-        console.log('[人物图谱钩子] 未启用，返回原始变量');
+        console.log('[Hook Sơ đồ] Chưa bật, trả về biến gốc');
         return variables;
     }
 
     try {
-        console.log('[人物图谱钩子] 开始处理变量增强...');
+        console.log('[Hook Sơ đồ] Bắt đầu xử lý tăng cường biến...');
         
-        // 复制变量
+        // Sao chép biến
         const enhancedVariables = { ...variables };
         
-        // 🔍 从relationships提取人物到图谱（如果有的话）
+        // 🔍 Trích xuất nhân vật từ relationships vào sơ đồ (nếu có)
         if (variables.relationships && Array.isArray(variables.relationships)) {
-            console.log(`[人物图谱钩子] 发现 ${variables.relationships.length} 个人物，提取到图谱...`);
+            console.log(`[Hook Sơ đồ] Tìm thấy ${variables.relationships.length} nhân vật, đang trích xuất vào sơ đồ...`);
             await window.characterGraphIntegration.extractCharactersFromResponse(variables.relationships);
         }
         
-        // 🔍 匹配相关人物
+        // 🔍 Tìm kiếm các nhân vật liên quan
         const relevantCharacters = await window.characterGraphIntegration.matchRelevantCharacters(
             userMessage,
             variables
         );
         
         if (relevantCharacters.length > 0) {
-            console.log(`[人物图谱钩子] ✅ 匹配到 ${relevantCharacters.length} 个相关人物`);
+            console.log(`[Hook Sơ đồ] ✅ Khớp được ${relevantCharacters.length} nhân vật liên quan`);
             
-            // 替换relationships为匹配的人物（移除matchScore字段）
+            // Thay thế relationships bằng các nhân vật đã khớp (loại bỏ trường matchScore)
             enhancedVariables.relationships = relevantCharacters.map(char => {
                 const { matchScore, ...cleanChar } = char;
                 return cleanChar;
             });
             
-            console.log('[人物图谱钩子] 已替换relationships为匹配结果');
+            console.log('[Hook Sơ đồ] Đã thay thế relationships bằng kết quả khớp');
         } else {
-            console.log('[人物图谱钩子] 未匹配到相关人物，清空relationships');
+            console.log('[Hook Sơ đồ] Không khớp nhân vật nào liên quan, làm trống relationships');
             enhancedVariables.relationships = [];
         }
         
         return enhancedVariables;
         
     } catch (error) {
-        console.error('[人物图谱钩子] 处理失败:', error);
-        return variables; // 失败时返回原始变量
+        console.error('[Hook Sơ đồ] Xử lý thất bại:', error);
+        return variables; // Trả về biến gốc nếu lỗi
     }
 }
 
 /**
- * 构建人物上下文提示（用于系统消息）
- * @param {string} userMessage - 用户输入
- * @param {Object} variables - 变量状态
- * @returns {string} 人物上下文文本
+ * Xây dựng Prompt ngữ cảnh nhân vật (dùng cho tin nhắn hệ thống)
+ * @param {string} userMessage - Tin nhắn người dùng
+ * @param {Object} variables - Trạng thái biến
+ * @returns {string} Văn bản ngữ cảnh nhân vật
  */
 async function buildCharacterContextPrompt(userMessage, variables) {
-    // 检查是否启用人物图谱
     if (!window.characterGraphIntegration || !window.characterGraphIntegration.isEnabled) {
         return '';
     }
 
     try {
-        // 匹配相关人物
+        // Khớp nhân vật liên quan
         const relevantCharacters = await window.characterGraphIntegration.matchRelevantCharacters(
             userMessage,
             variables
@@ -80,10 +79,10 @@ async function buildCharacterContextPrompt(userMessage, variables) {
             return '';
         }
         
-        // 构建上下文
+        // Xây dựng ngữ cảnh
         let context = window.characterGraphIntegration.buildCharacterContext(relevantCharacters);
         
-        // 📱 检查是否启用私聊记录关联
+        // 📱 Kiểm tra xem có bật liên kết bản ghi chat riêng tư không
         const mobileSettings = window.mobilePhoneSettings || {};
         if (mobileSettings.integrateToMain && typeof getMobileChatHistoryForCharacter === 'function') {
             const chatHistoryLimit = mobileSettings.chatHistoryLimit || 50;
@@ -94,11 +93,11 @@ async function buildCharacterContextPrompt(userMessage, variables) {
                 const chatHistory = getMobileChatHistoryForCharacter(charName, chatHistoryLimit);
                 
                 if (chatHistory.length > 0) {
-                    console.log(`[人物图谱钩子] 📱 找到 ${charName} 的私聊记录: ${chatHistory.length} 条`);
+                    console.log(`[Hook Sơ đồ] 📱 Tìm thấy bản ghi chat riêng của ${charName}: ${chatHistory.length} câu`);
                     
-                    privateChatContext += `\n\n【与 ${charName} 的私聊记录】\n`;
+                    privateChatContext += `\n\n【Bản ghi chat riêng với ${charName}】\n`;
                     chatHistory.forEach(msg => {
-                        const dir = msg.direction === 'outgoing' ? '我' : msg.sender;
+                        const dir = msg.direction === 'outgoing' ? 'Tôi' : msg.sender;
                         privateChatContext += `${dir}: ${msg.content}\n`;
                     });
                 }
@@ -106,23 +105,21 @@ async function buildCharacterContextPrompt(userMessage, variables) {
             
             if (privateChatContext) {
                 context += '\n' + privateChatContext;
-                console.log('[人物图谱钩子] 📱 已添加私聊记录到上下文');
+                console.log('[Hook Sơ đồ] 📱 Đã thêm bản ghi chat riêng vào ngữ cảnh');
             }
         }
         
         return context;
         
     } catch (error) {
-        console.error('[人物图谱钩子] 构建上下文失败:', error);
+        console.error('[Hook Sơ đồ] Xây dựng ngữ cảnh thất bại:', error);
         return '';
     }
 }
 
 /**
- * 钩子：拦截AI响应处理
- * 在handleAIResponse之后调用，提取人物到图谱
- * @param {Object} parsedResponse - 解析后的AI响应
- * @param {Object} gameState - 游戏状态
+ * Hook: Chặn xử lý phản hồi AI
+ * Gọi sau handleAIResponse để trích xuất nhân vật vào sơ đồ
  */
 async function hookHandleAIResponse(parsedResponse, gameState) {
     if (!window.characterGraphIntegration || !window.characterGraphIntegration.isEnabled) {
@@ -130,82 +127,76 @@ async function hookHandleAIResponse(parsedResponse, gameState) {
     }
 
     try {
-        // 提取relationships到图谱
+        // Trích xuất relationships vào sơ đồ
         if (parsedResponse.variables && parsedResponse.variables.relationships) {
-            console.log('[人物图谱钩子] 从AI响应提取人物到图谱...');
+            console.log('[Hook Sơ đồ] Trích xuất nhân vật từ phản hồi AI vào sơ đồ...');
             await window.characterGraphIntegration.extractCharactersFromResponse(
                 parsedResponse.variables.relationships
             );
         }
 
-        // 如果使用v3.1格式，需要等待变量更新完成后再提取
+        // Nếu sử dụng định dạng v3.1, cần đợi biến cập nhật xong mới trích xuất
         if (parsedResponse.variableUpdate && gameState.variables.relationships) {
-            console.log('[人物图谱钩子] 从v3.1更新后的变量提取人物到图谱...');
+            console.log('[Hook Sơ đồ] Trích xuất nhân vật từ biến sau khi cập nhật v3.1...');
             await window.characterGraphIntegration.extractCharactersFromResponse(
                 gameState.variables.relationships
             );
         }
 
     } catch (error) {
-        console.error('[人物图谱钩子] AI响应处理失败:', error);
+        console.error('[Hook Sơ đồ] Xử lý phản hồi AI thất bại:', error);
     }
 }
 
 /**
- * 修改原有的buildAIMessages，集成人物图谱
- * 这个函数包装原有的buildAIMessages
+ * Sửa đổi hàm buildAIMessages gốc để tích hợp sơ đồ nhân vật
  */
 async function buildAIMessagesWithCharacterGraph(originalBuildFunction, userMessage, originalUserInput = null) {
-    // 如果人物图谱未启用，使用原函数
     if (!window.characterGraphIntegration || !window.characterGraphIntegration.isEnabled) {
         return await originalBuildFunction(userMessage, originalUserInput);
     }
 
-    console.log('[人物图谱钩子] 🔧 拦截buildAIMessages，集成人物图谱');
+    console.log('[Hook Sơ đồ] 🔧 Chặn buildAIMessages để tích hợp sơ đồ nhân vật');
 
-    // 调用原函数获取消息
     const messages = await originalBuildFunction(userMessage, originalUserInput);
 
     try {
-        // 🔍 查找变量状态消息并增强
+        // 🔍 Tìm tin nhắn trạng thái biến và tăng cường nó
         for (let i = 0; i < messages.length; i++) {
             const msg = messages[i];
             
-            // 找到包含"当前角色变量状态"的系统消息
+            // Tìm tin nhắn hệ thống chứa "当前角色变量状态" (Trạng thái biến nhân vật hiện tại)
             if (msg.role === 'system' && msg.content.includes('当前角色变量状态')) {
-                console.log('[人物图谱钩子] 找到变量状态消息，准备增强...');
+                console.log('[Hook Sơ đồ] Tìm thấy tin nhắn trạng thái biến, chuẩn bị tăng cường...');
                 
-                // 提取原始JSON
                 const jsonMatch = msg.content.match(/```json\n([\s\S]*?)\n```/);
                 if (jsonMatch) {
                     const originalVariables = JSON.parse(jsonMatch[1]);
                     
-                    // 增强变量（使用图谱匹配）
                     const enhancedVariables = await enhanceVariablesWithCharacterGraph(
                         originalVariables,
                         originalUserInput || userMessage
                     );
                     
-                    // 替换消息内容
-                    messages[i].content = '当前角色变量状态：\n```json\n' + 
+                    // Thay thế nội dung tin nhắn
+                    messages[i].content = 'Trạng thái biến nhân vật hiện tại:\n```json\n' + 
                         JSON.stringify(enhancedVariables, null, 2) + '\n```';
                     
-                    console.log('[人物图谱钩子] ✅ 变量状态已增强');
+                    console.log('[Hook Sơ đồ] ✅ Trạng thái biến đã được tăng cường');
                 }
                 break;
             }
         }
 
-        // 🔍 可选：添加人物上下文提示
+        // 🔍 Tùy chọn: Thêm Prompt ngữ cảnh nhân vật
         const characterContext = await buildCharacterContextPrompt(
             originalUserInput || userMessage,
             window.gameState?.variables
         );
         
         if (characterContext) {
-            // 在变量状态之后插入人物上下文
             const insertIndex = messages.findIndex(
-                m => m.role === 'system' && m.content.includes('当前角色变量状态')
+                m => m.role === 'system' && m.content.includes('Trạng thái biến nhân vật hiện tại')
             );
             
             if (insertIndex >= 0) {
@@ -213,26 +204,24 @@ async function buildAIMessagesWithCharacterGraph(originalBuildFunction, userMess
                     role: 'system',
                     content: characterContext
                 });
-                console.log('[人物图谱钩子] ✅ 已添加人物上下文提示');
+                console.log('[Hook Sơ đồ] ✅ Đã thêm prompt ngữ cảnh nhân vật');
             }
         }
 
     } catch (error) {
-        console.error('[人物图谱钩子] 消息增强失败:', error);
-        // 失败时返回原始消息
+        console.error('[Hook Sơ đồ] Tăng cường tin nhắn thất bại:', error);
     }
 
     return messages;
 }
 
 /**
- * 初始化钩子系统
- * 包装原有的buildAIMessages和handleAIResponse
+ * Khởi tạo hệ thống Hook
+ * Bao bọc các hàm buildAIMessages và handleAIResponse gốc
  */
 function initializeCharacterGraphHooks() {
-    // 保存原始函数
     if (typeof window.buildAIMessages === 'function' && !window._originalBuildAIMessages) {
-        console.log('[人物图谱钩子] 💉 注入buildAIMessages钩子');
+        console.log('[Hook Sơ đồ] 💉 Đang tiêm hook vào buildAIMessages');
         
         window._originalBuildAIMessages = window.buildAIMessages;
         
@@ -244,84 +233,75 @@ function initializeCharacterGraphHooks() {
             );
         };
         
-        console.log('[人物图谱钩子] ✅ buildAIMessages钩子已注入');
-    }
-
-    // 监听AI响应处理事件
-    if (window.gameState) {
-        console.log('[人物图谱钩子] 准备监听AI响应事件');
+        console.log('[Hook Sơ đồ] ✅ Hook buildAIMessages đã được tiêm');
     }
 }
 
-// 自动初始化（延迟执行，确保页面加载完成）
+// Tự động khởi tạo (trễ 1 giây để đảm bảo các script khác đã tải xong)
 if (typeof window !== 'undefined') {
     window.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
-            console.log('[人物图谱钩子] 开始自动初始化...');
+            console.log('[Hook Sơ đồ] Bắt đầu tự động khởi tạo...');
             initializeCharacterGraphHooks();
-        }, 1000); // 延迟1秒，确保其他脚本加载完成
+        }, 1000);
     });
 }
 
 /**
- * 全局删除人际关系函数（同时删除人物图谱）
- * 供 game.html, game-bhz.html, game-xiandai.html 等页面调用
- * @param {number} relIndex - 人际关系在数组中的索引
+ * Hàm xóa quan hệ nhân sự (đồng thời xóa trong sơ đồ nhân vật)
+ * @param {number} relIndex - Chỉ số của quan hệ trong mảng
  */
 function deleteRelationshipWithGraph(relIndex) {
-    // 检查gameState是否存在
     if (!window.gameState || !window.gameState.variables || !window.gameState.variables.relationships) {
-        console.warn('[人物图谱钩子] 游戏状态不存在，无法删除人际关系');
-        alert('游戏状态不存在，无法删除');
+        console.warn('[Hook Sơ đồ] Trạng thái game không tồn tại, không thể xóa quan hệ');
+        alert('Trạng thái game không tồn tại, không thể xóa');
         return;
     }
 
     const relationship = window.gameState.variables.relationships[relIndex];
     if (!relationship) {
-        alert('该人际关系不存在');
+        alert('Quan hệ này không tồn tại');
         return;
     }
 
-    // 确认删除
-    if (!confirm(`确定要删除与"${relationship.name}"的关系吗？\n\n关系：${relationship.relation}\n好感度：${relationship.favor}`)) {
+    // Xác nhận xóa
+    if (!confirm(`Bạn có chắc chắn muốn xóa quan hệ với "${relationship.name}" không?\n\nQuan hệ: ${relationship.relation}\nHảo cảm: ${relationship.favor}`)) {
         return;
     }
 
-    // 保存人物名称（用于删除人物图谱）
     const characterName = relationship.name;
 
-    // 从数组中删除
+    // Xóa khỏi mảng
     window.gameState.variables.relationships.splice(relIndex, 1);
 
-    // 同时删除对应的人物图谱
+    // Đồng thời xóa sơ đồ nhân vật tương ứng
     if (window.characterGraphManager && characterName) {
         window.characterGraphManager.deleteCharacter(characterName)
             .then(() => {
-                console.log(`[人物图谱钩子] 已同步删除人物图谱: ${characterName}`);
+                console.log(`[Hook Sơ đồ] Đã đồng bộ xóa sơ đồ nhân vật: ${characterName}`);
             })
             .catch(err => {
-                console.warn(`[人物图谱钩子] 删除人物图谱失败: ${characterName}`, err);
+                console.warn(`[Hook Sơ đồ] Xóa sơ đồ nhân vật thất bại: ${characterName}`, err);
             });
     }
 
-    // 更新UI
+    // Cập nhật giao diện
     if (typeof updateStatusPanel === 'function') {
         updateStatusPanel();
     }
 
-    // 保存游戏状态
+    // Lưu trạng thái game
     if (typeof saveGameHistory === 'function') {
-        saveGameHistory().catch(err => console.error('保存失败:', err));
+        saveGameHistory().catch(err => console.error('Lưu thất bại:', err));
     }
 
-    // 显示提示
-    alert(`已删除与"${characterName}"的关系！`);
+    alert(` Đã xóa quan hệ với "${characterName}"!`);
 }
 
-// 导出函数供手动调用
+// Xuất các hàm để gọi thủ công
 if (typeof window !== 'undefined') {
     window.initializeCharacterGraphHooks = initializeCharacterGraphHooks;
     window.hookHandleAIResponse = hookHandleAIResponse;
-    window.deleteRelationship = deleteRelationshipWithGraph; // 全局删除函数
-    console.log('[人物图谱钩子] 模块已加载');
+    window.deleteRelationship = deleteRelationshipWithGraph; 
+    console.log('[Hook Sơ đồ] Module đã được tải');
 }

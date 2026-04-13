@@ -1,21 +1,21 @@
 /**
- * 修仙游戏 - 完整回合制战斗系统
+ * Trò chơi Tu Tiên - Hệ thống chiến đấu theo lượt hoàn chỉnh
  */
 
-// combatState 已在 combat-system-part1.js 中定义，这里不再重复声明
+// combatState đã được định nghĩa trong combat-system-part1.js, ở đây không khai báo lại
 
 /**
- * 启动战斗
+ * Khởi động chiến đấu
  */
 function startCombat(enemyInfo) {
-    console.log('🎮 启动战斗:', enemyInfo);
+    console.log('🎮 Khởi động chiến đấu:', enemyInfo);
     
     combatState.combatStartInfo = enemyInfo;
     
-    // 初始化玩家数据
+    // Khởi tạo dữ liệu người chơi
     const playerData = {
-        name: gameState.variables.name || "玩家",
-        realm: gameState.variables.realm || "凡人",
+        name: gameState.variables.name || "Người chơi",
+        realm: gameState.variables.realm || "Phàm nhân",
         hp: gameState.variables.hp || 100,
         hpMax: gameState.variables.hpMax || 100,
         mp: gameState.variables.mp || 100,
@@ -29,7 +29,7 @@ function startCombat(enemyInfo) {
         effects: []
     };
     
-    // 生成敌人数据
+    // Tạo dữ liệu kẻ địch
     const realmConfig = REALM_CONFIG[enemyInfo.realmLevel] || REALM_CONFIG[1];
     const enemyHp = rollDice(realmConfig.hp.min, realmConfig.hp.max);
     const enemyMp = rollDice(realmConfig.mp.min, realmConfig.mp.max);
@@ -44,13 +44,13 @@ function startCombat(enemyInfo) {
         mpMax: enemyMp,
         attributes: enemyInfo.attributes,
         techniques: enemyInfo.techniques.length > 0 ? enemyInfo.techniques : 
-                   getRandomItems(TECHNIQUES[enemyInfo.realmLevel] || TECHNIQUES[1], 2),
+                    getRandomItems(TECHNIQUES[enemyInfo.realmLevel] || TECHNIQUES[1], 2),
         spells: enemyInfo.spells.length > 0 ? enemyInfo.spells : 
                 getRandomItems(SPELLS[enemyInfo.realmLevel] || SPELLS[1], 2),
         effects: []
     };
     
-    // 初始化战斗状态
+    // Khởi tạo trạng thái chiến đấu
     combatState.isActive = true;
     combatState.player = playerData;
     combatState.enemy = enemyData;
@@ -60,45 +60,45 @@ function startCombat(enemyInfo) {
     combatState.playerMomentum = 0;
     combatState.enemyMomentum = 0;
     
-    addCombatLog(`⚔️ 战斗开始！${playerData.name} VS ${enemyData.name}`);
+    addCombatLog(`⚔️ Trận chiến bắt đầu! ${playerData.name} VS ${enemyData.name}`);
     addCombatLog(`${enemyData.name}（${enemyData.realm}）- HP:${enemyData.hp}/${enemyData.hpMax} MP:${enemyData.mp}/${enemyData.mpMax}`);
     
     showCombatUI();
     
-    // 确保DOM完全创建后再渲染UI
+    // Đảm bảo DOM được tạo hoàn toàn trước khi render UI
     setTimeout(() => {
         renderCombatUI();
     }, 100);
 }
 
 /**
- * 显示战斗界面
+ * Hiển thị giao diện chiến đấu
  */
 function showCombatUI() {
     let combatModal = document.getElementById('combatModal');
     if (!combatModal) {
-        // 如果模态框不存在，创建它
+        // Nếu modal chưa tồn tại, tạo mới
         combatModal = document.createElement('div');
         combatModal.id = 'combatModal';
         combatModal.className = 'combat-modal';
         document.body.appendChild(combatModal);
     }
     
-    // 无论模态框是否已存在，都设置HTML内容
+    // Thiết lập nội dung HTML dù modal đã tồn tại hay chưa
     combatModal.innerHTML = `
         <div class="combat-container">
             <div class="combat-header">
-                <h2>⚔️ 回合制战斗</h2>
+                <h2>⚔️ Chiến đấu theo lượt</h2>
                 <div class="combat-header-controls">
-                    <span class="combat-turn">第 <span id="combatTurnNum">1</span> 回合</span>
-                    <button class="combat-restart-btn" onclick="restartCombat()" title="重新挑战">🔄</button>
-                    <button class="combat-close-btn" onclick="closeCombat()" title="关闭战斗">✖</button>
+                    <span class="combat-turn">Hiệp <span id="combatTurnNum">1</span></span>
+                    <button class="combat-restart-btn" onclick="restartCombat()" title="Thách thức lại">🔄</button>
+                    <button class="combat-close-btn" onclick="closeCombat()" title="Đóng chiến đấu">✖</button>
                 </div>
             </div>
             
             <div class="combat-battlefield">
                 <div class="combat-character player-side">
-                    <div class="character-name" id="playerName">玩家</div>
+                    <div class="character-name" id="playerName">Người chơi</div>
                     <div class="character-hp">
                         <div class="hp-bar-container">
                             <div class="hp-bar" id="playerHpBar" style="width: 100%"></div>
@@ -112,7 +112,7 @@ function showCombatUI() {
                         </div>
                     </div>
                     <div class="character-momentum">
-                        <span>💨 气势:</span>
+                        <span>💨 Khí thế:</span>
                         <div class="momentum-bar">
                             <div class="momentum-fill" id="playerMomentum" style="width: 0%"></div>
                         </div>
@@ -123,7 +123,7 @@ function showCombatUI() {
                 <div class="combat-vs">VS</div>
                 
                 <div class="combat-character enemy-side">
-                    <div class="character-name" id="enemyName">敌人</div>
+                    <div class="character-name" id="enemyName">Kẻ địch</div>
                     <div class="character-hp">
                         <div class="hp-bar-container">
                             <div class="hp-bar" id="enemyHpBar" style="width: 100%"></div>
@@ -137,7 +137,7 @@ function showCombatUI() {
                         </div>
                     </div>
                     <div class="character-momentum">
-                        <span>💨 气势:</span>
+                        <span>💨 Khí thế:</span>
                         <div class="momentum-bar">
                             <div class="momentum-fill" id="enemyMomentum" style="width: 0%"></div>
                         </div>
@@ -151,10 +151,10 @@ function showCombatUI() {
             </div>
             
             <div class="combat-skills" id="combatSkills">
-                <div class="skills-title">选择行动</div>
+                <div class="skills-title">Chọn hành động</div>
                 <div class="skills-tabs">
-                    <button class="skill-tab active" onclick="switchSkillTab('techniques')">功法</button>
-                    <button class="skill-tab" onclick="switchSkillTab('spells')">法术</button>
+                    <button class="skill-tab active" onclick="switchSkillTab('techniques')">Công pháp</button>
+                    <button class="skill-tab" onclick="switchSkillTab('spells')">Pháp thuật</button>
                 </div>
                 <div class="skills-list" id="skillsList"></div>
             </div>
@@ -165,7 +165,7 @@ function showCombatUI() {
 }
 
 /**
- * 隐藏战斗界面
+ * Ẩn giao diện chiến đấu
  */
 function hideCombatUI() {
     const combatModal = document.getElementById('combatModal');
@@ -175,33 +175,33 @@ function hideCombatUI() {
 }
 
 /**
- * 关闭战斗界面
+ * Đóng giao diện chiến đấu
  */
 function closeCombat() {
-    console.log('🚪 关闭战斗界面');
+    console.log('🚪 Đóng giao diện chiến đấu');
     hideCombatUI();
     
-    // 清除战斗状态
+    // Xóa trạng thái chiến đấu
     if (typeof combatState !== 'undefined') {
         combatState.isInCombat = false;
         combatState.currentEnemy = null;
     }
     
-    // 清除预存储的战斗信息
+    // Xóa thông tin chiến đấu lưu tạm
     if (window.pendingCombatInfo) {
         window.pendingCombatInfo = null;
     }
 }
 
 /**
- * 重新挑战
+ * Thách thức lại
  */
 function restartCombat() {
-    console.log('🔄 重新挑战');
+    console.log('🔄 Thách thức lại');
     
-    // 检查是否有当前敌人
+    // Kiểm tra có kẻ địch hiện tại không
     if (typeof combatState !== 'undefined' && combatState.currentEnemy) {
-        // 重置战斗状态
+        // Đặt lại trạng thái chiến đấu
         combatState.turn = 1;
         combatState.playerHp = combatState.playerMaxHp;
         combatState.playerMp = combatState.playerMaxMp;
@@ -212,7 +212,7 @@ function restartCombat() {
         combatState.playerEffects = [];
         combatState.enemyEffects = [];
         
-        // 重置技能冷却
+        // Đặt lại thời gian hồi chiêu
         if (combatState.playerTechniques) {
             combatState.playerTechniques.forEach(tech => tech.currentCooldown = 0);
         }
@@ -226,29 +226,29 @@ function restartCombat() {
             combatState.enemySpells.forEach(spell => spell.currentCooldown = 0);
         }
         
-        // 重新渲染界面
+        // Render lại giao diện
         renderCombatUI();
         
-        // 添加重新开始日志
-        addCombatLog('🔄 战斗重新开始！');
+        // Thêm nhật ký bắt đầu lại
+        addCombatLog('🔄 Trận chiến bắt đầu lại!');
     } else {
-        console.warn('⚠️ 没有找到当前敌人，无法重新挑战');
-        alert('没有找到可重新挑战的敌人');
+        console.warn('⚠️ Không tìm thấy kẻ địch hiện tại, không thể thách thức lại');
+        alert('Không tìm thấy kẻ địch có thể thách thức lại');
     }
 }
 
 /**
- * 渲染战斗界面
+ * Render giao diện chiến đấu
  */
 function renderCombatUI() {
-    // 检查战斗界面是否存在
+    // Kiểm tra giao diện chiến đấu có tồn tại không
     const combatModal = document.getElementById('combatModal');
     if (!combatModal) {
-        console.error('❌ 战斗模态框不存在，无法渲染UI');
+        console.error('❌ Modal chiến đấu không tồn tại, không thể render UI');
         return;
     }
     
-    // 安全地更新元素，添加存在性检查
+    // Cập nhật các phần tử một cách an toàn
     const turnNum = document.getElementById('combatTurnNum');
     if (turnNum) turnNum.textContent = combatState.turnCount;
     
@@ -271,7 +271,7 @@ function renderCombatUI() {
 }
 
 /**
- * 更新血条
+ * Cập nhật thanh máu (HP)
  */
 function updateHPBar(side, hp, hpMax) {
     const percentage = Math.max(0, Math.min(100, (hp / hpMax) * 100));
@@ -295,7 +295,7 @@ function updateHPBar(side, hp, hpMax) {
 }
 
 /**
- * 更新法力条
+ * Cập nhật thanh năng lượng (MP)
  */
 function updateMPBar(side, mp, mpMax) {
     const percentage = Math.max(0, Math.min(100, (mp / mpMax) * 100));
@@ -307,7 +307,7 @@ function updateMPBar(side, mp, mpMax) {
 }
 
 /**
- * 更新气势
+ * Cập nhật khí thế (Momentum)
  */
 function updateMomentum(side, momentum) {
     const momentumBar = document.getElementById(`${side}Momentum`);
@@ -317,7 +317,7 @@ function updateMomentum(side, momentum) {
 }
 
 /**
- * 更新状态效果
+ * Cập nhật hiệu ứng trạng thái
  */
 function updateEffects(side) {
     const effectsContainer = document.getElementById(`${side}Effects`);
@@ -331,15 +331,15 @@ function updateEffects(side) {
 }
 
 /**
- * 切换技能标签
+ * Chuyển đổi tab kỹ năng
  */
 function switchSkillTab(tab) {
     const tabs = document.querySelectorAll('.skill-tab');
     tabs.forEach(t => t.classList.remove('active'));
     
     const activeTab = Array.from(tabs).find(t => 
-        (tab === 'techniques' && t.textContent.includes('功法')) ||
-        (tab === 'spells' && t.textContent.includes('法术'))
+        (tab === 'techniques' && t.textContent.includes('Công pháp')) ||
+        (tab === 'spells' && t.textContent.includes('Pháp thuật'))
     );
     if (activeTab) activeTab.classList.add('active');
     
@@ -347,7 +347,7 @@ function switchSkillTab(tab) {
 }
 
 /**
- * 渲染技能列表
+ * Render danh sách kỹ năng
  */
 function renderSkills(type) {
     const skillsList = document.getElementById('skillsList');
@@ -356,25 +356,25 @@ function renderSkills(type) {
     skillsList.innerHTML = '';
     let skills = type === 'techniques' ? combatState.player.techniques : combatState.player.spells;
     
-    // 如果没有技能，自动添加"殴打"技能
+    // Nếu không có kỹ năng, tự động thêm kỹ năng "Đánh đấm"
     if (!skills || skills.length === 0) {
         const punchSkill = {
-            name: "殴打",
+            name: "Đánh đấm",
             power: 15,
             mpCost: 0,
             cooldown: 0,
             currentCooldown: 0,
-            description: "基础的物理攻击"
+            description: "Tấn công vật lý cơ bản"
         };
         
-        // 创建临时技能数组
+        // Tạo mảng kỹ năng tạm thời
         skills = [punchSkill];
         
-        // 如果是功法且没有功法，添加到玩家数据中
+        // Nếu là công pháp và không có công pháp, thêm vào dữ liệu người chơi
         if (type === 'techniques' && !combatState.player.techniques) {
             combatState.player.techniques = [punchSkill];
         }
-        // 如果是法术且没有法术，添加到玩家数据中
+        // Nếu là pháp thuật và không có pháp thuật, thêm vào dữ liệu người chơi
         else if (type === 'spells' && !combatState.player.spells) {
             combatState.player.spells = [punchSkill];
         }
@@ -407,12 +407,12 @@ function renderSkills(type) {
 }
 
 /**
- * 使用技能
+ * Sử dụng kỹ năng
  */
 function useSkill(type, skill) {
     if (combatState.currentTurn !== 'player') return;
     
-    combatState.combatLog.push(`\n--- 第 ${combatState.turnCount} 回合：玩家行动 ---`);
+    combatState.combatLog.push(`\n--- Hiệp ${combatState.turnCount}: Người chơi hành động ---`);
     combatState.player.mp -= skill.mpCost;
     
     let damage = skill.power;
@@ -428,9 +428,9 @@ function useSkill(type, skill) {
     
     if (isCrit) {
         damage = Math.floor(damage * 1.8);
-        combatState.combatLog.push(`💥 暴击！${combatState.player.name}使用${skill.name}造成${damage}点伤害！`);
+        combatState.combatLog.push(`💥 Bạo kích! ${combatState.player.name} sử dụng ${skill.name} gây ra ${damage} điểm sát thương!`);
     } else {
-        combatState.combatLog.push(`⚔️ ${combatState.player.name}使用${skill.name}造成${damage}点伤害`);
+        combatState.combatLog.push(`⚔️ ${combatState.player.name} sử dụng ${skill.name} gây ra ${damage} điểm sát thương`);
     }
     
     combatState.enemy.hp -= damage;
@@ -452,10 +452,10 @@ function useSkill(type, skill) {
 }
 
 /**
- * 敌人回合
+ * Lượt của kẻ địch
  */
 function enemyTurn() {
-    combatState.combatLog.push(`\n--- 第 ${combatState.turnCount} 回合：敌人行动 ---`);
+    combatState.combatLog.push(`\n--- Hiệp ${combatState.turnCount}: Kẻ địch hành động ---`);
     
     const allSkills = [...combatState.enemy.techniques, ...combatState.enemy.spells];
     const available = allSkills.filter(s => 
@@ -466,7 +466,7 @@ function enemyTurn() {
     if (available.length > 0) {
         skill = available[Math.floor(Math.random() * available.length)];
     } else {
-        skill = { name: "普通攻击", power: 10, mpCost: 0, effects: [] };
+        skill = { name: "Tấn công thường", power: 10, mpCost: 0, effects: [] };
     }
     
     combatState.enemy.mp -= skill.mpCost;
@@ -484,9 +484,9 @@ function enemyTurn() {
     
     if (isCrit) {
         damage = Math.floor(damage * 1.8);
-        combatState.combatLog.push(`💥 暴击！${combatState.enemy.name}使用${skill.name}造成${damage}点伤害！`);
+        combatState.combatLog.push(`💥 Bạo kích! ${combatState.enemy.name} sử dụng ${skill.name} gây ra ${damage} điểm sát thương!`);
     } else {
-        combatState.combatLog.push(`⚔️ ${combatState.enemy.name}使用${skill.name}造成${damage}点伤害`);
+        combatState.combatLog.push(`⚔️ ${combatState.enemy.name} sử dụng ${skill.name} gây ra ${damage} điểm sát thương`);
     }
     
     combatState.player.hp -= damage;
@@ -509,16 +509,16 @@ function enemyTurn() {
 }
 
 /**
- * 结束战斗
+ * Kết thúc chiến đấu
  */
 function endCombat(result) {
     combatState.isActive = false;
     
     if (result === 'victory') {
-        combatState.combatLog.push(`\n🎉 战斗胜利！${combatState.enemy.name}被击败！`);
+        combatState.combatLog.push(`\n🎉 Chiến thắng! ${combatState.enemy.name} đã bị đánh bại!`);
         showCombatResult('victory');
     } else {
-        combatState.combatLog.push(`\n💀 战斗失败！${combatState.player.name}被击败...`);
+        combatState.combatLog.push(`\n💀 Thất bại! ${combatState.player.name} đã bị đánh bại...`);
         showCombatResult('defeat');
     }
     
@@ -526,7 +526,7 @@ function endCombat(result) {
 }
 
 /**
- * 显示战斗结果
+ * Hiển thị kết quả chiến đấu
  */
 function showCombatResult(result) {
     const container = document.getElementById('combatSkills');
@@ -535,32 +535,32 @@ function showCombatResult(result) {
     if (result === 'victory') {
         container.innerHTML = `
             <div class="combat-result">
-                <h3>🎉 战斗胜利！</h3>
-                <p>你击败了 ${combatState.enemy.name}（${combatState.enemy.realm}）</p>
+                <h3>🎉 Chiến thắng!</h3>
+                <p>Bạn đã đánh bại ${combatState.enemy.name}（${combatState.enemy.realm}）</p>
                 <div class="result-options">
-                    <button class="result-btn" onclick="finishCombat('kill')">⚔️ 处决</button>
-                    <button class="result-btn" onclick="finishCombat('release')">🕊️ 放走</button>
-                    <button class="result-btn" onclick="finishCombat('rape')">🔞 强奸</button>
-                    <button class="result-btn" onclick="finishCombat('custom')">✏️ 自定义</button>
+                    <button class="result-btn" onclick="finishCombat('kill')">⚔️ Xử quyết</button>
+                    <button class="result-btn" onclick="finishCombat('release')">🕊️ Thả đi</button>
+                    <button class="result-btn" onclick="finishCombat('rape')">🔞 Cường bạo</button>
+                    <button class="result-btn" onclick="finishCombat('custom')">✏️ Tùy chỉnh</button>
                 </div>
             </div>
         `;
     } else {
         container.innerHTML = `
             <div class="combat-result">
-                <h3>💀 战斗失败...</h3>
-                <p>${combatState.player.name}被${combatState.enemy.name}击败</p>
+                <h3>💀 Thất bại...</h3>
+                <p>${combatState.player.name} bị ${combatState.enemy.name} đánh bại</p>
                 <div class="result-options">
-                    <button class="result-btn" onclick="finishCombat('defeat')">💔 默认结局</button>
-                    <button class="result-btn" onclick="finishCombat('beg')">🙏 求饶</button>
-                    <button class="result-btn" onclick="finishCombat('escape')">🏃 逃跑</button>
-                    <button class="result-btn" onclick="finishCombat('seduce')">💋 出卖色相</button>
-                    <button class="result-btn" onclick="showCustomDefeatInput()">✏️ 自定义</button>
+                    <button class="result-btn" onclick="finishCombat('defeat')">💔 Kết cục mặc định</button>
+                    <button class="result-btn" onclick="finishCombat('beg')">🙏 Cầu xin tha mạng</button>
+                    <button class="result-btn" onclick="finishCombat('escape')">🏃 Bỏ chạy</button>
+                    <button class="result-btn" onclick="finishCombat('seduce')">💋 Dùng sắc dụ dỗ</button>
+                    <button class="result-btn" onclick="showCustomDefeatInput()">✏️ Tùy chỉnh</button>
                 </div>
                 <div id="custom-defeat-input" style="display: none; margin-top: 15px;">
-                    <textarea id="defeat-custom-text" placeholder="描述你的失败后续..." rows="3" style="width: 100%; margin-bottom: 10px;"></textarea>
-                    <button class="result-btn" onclick="submitCustomDefeat()">提交</button>
-                    <button class="result-btn" onclick="hideCustomDefeatInput()">取消</button>
+                    <textarea id="defeat-custom-text" placeholder="Mô tả diễn biến sau khi thất bại..." rows="3" style="width: 100%; margin-bottom: 10px;"></textarea>
+                    <button class="result-btn" onclick="submitCustomDefeat()">Gửi</button>
+                    <button class="result-btn" onclick="hideCustomDefeatInput()">Hủy</button>
                 </div>
             </div>
         `;
@@ -568,7 +568,7 @@ function showCombatResult(result) {
 }
 
 /**
- * 显示自定义输入
+ * Hiển thị nhập tùy chỉnh
  */
 function showCustomInput() {
     const container = document.getElementById('combatSkills');
@@ -576,36 +576,36 @@ function showCustomInput() {
     
     container.innerHTML = `
         <div class="combat-result">
-            <h3>✏️ 自定义处理方式</h3>
-            <textarea id="customActionText" placeholder="请输入你想要对${combatState.enemy.name}做的具体事情..." rows="4" cols="50"></textarea>
+            <h3>✏️ Cách xử lý tùy chỉnh</h3>
+            <textarea id="customActionText" placeholder="Hãy nhập những gì bạn muốn làm với ${combatState.enemy.name}..." rows="4" cols="50"></textarea>
             <div class="result-options">
-                <button class="result-btn" onclick="finishCombatWithCustom()">确认</button>
-                <button class="result-btn" onclick="showCombatResult('victory')">返回</button>
+                <button class="result-btn" onclick="finishCombatWithCustom()">Xác nhận</button>
+                <button class="result-btn" onclick="showCombatResult('victory')">Quay lại</button>
             </div>
         </div>
     `;
 }
 
 /**
- * 使用自定义方式完成战斗
+ * Hoàn tất chiến đấu với tùy chỉnh
  */
 function finishCombatWithCustom() {
     const customText = document.getElementById('customActionText').value;
     if (customText && customText.trim()) {
         finishCombat('custom', customText);
     } else {
-        alert('请输入自定义处理方式');
+        alert('Vui lòng nhập cách xử lý tùy chỉnh');
     }
 }
 
 /**
- * 显示失败自定义输入
+ * Hiển thị nhập tùy chỉnh khi thất bại
  */
 function showCustomDefeatInput() {
     const inputDiv = document.getElementById('custom-defeat-input');
     if (inputDiv) {
         inputDiv.style.display = 'block';
-        // 聚焦到文本框
+        // Focus vào khung văn bản
         setTimeout(() => {
             const textarea = document.getElementById('defeat-custom-text');
             if (textarea) {
@@ -616,7 +616,7 @@ function showCustomDefeatInput() {
 }
 
 /**
- * 隐藏失败自定义输入
+ * Ẩn nhập tùy chỉnh khi thất bại
  */
 function hideCustomDefeatInput() {
     const inputDiv = document.getElementById('custom-defeat-input');
@@ -630,7 +630,7 @@ function hideCustomDefeatInput() {
 }
 
 /**
- * 提交自定义失败处理
+ * Gửi xử lý thất bại tùy chỉnh
  */
 function submitCustomDefeat() {
     const textarea = document.getElementById('defeat-custom-text');
@@ -638,7 +638,7 @@ function submitCustomDefeat() {
     
     const customText = textarea.value.trim();
     if (!customText) {
-        alert('请输入失败后续描述');
+        alert('Vui lòng nhập mô tả diễn biến sau thất bại');
         return;
     }
     
@@ -646,55 +646,55 @@ function submitCustomDefeat() {
 }
 
 /**
- * 完成战斗
+ * Hoàn tất chiến đấu
  */
 async function finishCombat(action, customText = '') {
-    let report = `\n【战斗报告】\n`;
-    report += `对战：${combatState.player.name} VS ${combatState.enemy.name}（${combatState.enemy.realm}）\n`;
-    report += `结果：`;
+    let report = `\n【Báo cáo chiến đấu】\n`;
+    report += `Đối đầu: ${combatState.player.name} VS ${combatState.enemy.name}（${combatState.enemy.realm}）\n`;
+    report += `Kết quả: `;
     
     if (action === 'defeat') {
-        report += `战败\n`;
+        report += `Bại trận\n`;
     } else if (action === 'beg') {
-        report += `战败后向${combatState.enemy.name}求饶\n`;
+        report += `Sau khi bại trận đã cầu xin ${combatState.enemy.name} tha mạng\n`;
     } else if (action === 'escape') {
-        report += `战败后尝试逃跑\n`;
+        report += `Sau khi bại trận đã cố gắng bỏ chạy\n`;
     } else if (action === 'seduce') {
-        report += `战败后试图出卖色相求生\n`;
+        report += `Sau khi bại trận đã tìm cách dùng sắc dụ dỗ để cầu sinh\n`;
     } else if (action === 'custom-defeat') {
-        report += `战败后${customText}\n`;
+        report += `Sau khi bại trận đã ${customText}\n`;
     } else {
-        report += `胜利\n`;
-        report += `处理方式：`;
+        report += `Chiến thắng\n`;
+        report += `Cách xử lý: `;
         
         switch(action) {
             case 'kill':
-                report += `处决了${combatState.enemy.name}`;
+                report += `Đã xử quyết ${combatState.enemy.name}`;
                 break;
             case 'release':
-                report += `放走了${combatState.enemy.name}`;
+                report += `Đã thả ${combatState.enemy.name} đi`;
                 break;
             case 'rape':
-                report += `强奸了${combatState.enemy.name}`;
+                report += `Đã cưỡng bức ${combatState.enemy.name}`;
                 break;
             case 'custom':
-                report += `对${combatState.enemy.name}${customText}`;
+                report += `Đã thực hiện với ${combatState.enemy.name}: ${customText}`;
                 break;
         }
     }
-    report += `\n战斗日志：\n${combatState.combatLog.slice(-10).join('\n')}`;
+    report += `\nNhật ký chiến đấu:\n${combatState.combatLog.slice(-10).join('\n')}`;
     
-    // 更新玩家状态
+    // Cập nhật trạng thái người chơi
     gameState.variables.hp = Math.max(1, combatState.player.hp);
     gameState.variables.mp = Math.max(0, combatState.player.mp);
     
     hideCombatUI();
     
-    // 清除已使用的战斗信息
+    // Xóa thông tin chiến đấu đã sử dụng
     window.pendingCombatInfo = null;
-    console.log('🧹 战斗结束，已清除战斗信息');
+    console.log('🧹 Chiến đấu kết thúc, đã dọn dẹp thông tin chiến đấu');
     
-    // 发送战斗报告给AI
+    // Gửi báo cáo chiến đấu cho AI
     if (!gameState.isProcessing) {
         gameState.isProcessing = true;
         
@@ -705,7 +705,7 @@ async function finishCombat(action, customText = '') {
         const historyDiv = document.getElementById('gameHistory');
         const loadingDiv = document.createElement('div');
         loadingDiv.className = 'message ai-message';
-        loadingDiv.innerHTML = '<div class="message-content"><span class="loading"></span> AI思考中...</div>';
+        loadingDiv.innerHTML = '<div class="message-content"><span class="loading"></span> AI đang suy nghĩ...</div>';
         loadingDiv.id = 'loading-message';
         historyDiv.appendChild(loadingDiv);
         
@@ -714,11 +714,11 @@ async function finishCombat(action, customText = '') {
             const loading = document.getElementById('loading-message');
             if (loading) loading.remove();
             handleAIResponse(response);
-            generateDynamicWorld().catch(err => console.error('[动态世界] 生成异常:', err));
+            generateDynamicWorld().catch(err => console.error('[Thế giới động] Lỗi tạo:', err));
         } catch (error) {
             const loading = document.getElementById('loading-message');
             if (loading) loading.remove();
-            displayErrorMessageWithRetry('AI响应失败：' + error.message, () => {
+            displayErrorMessageWithRetry('AI phản hồi thất bại: ' + error.message, () => {
                 document.getElementById('error-message-with-retry')?.remove();
                 finishCombat(action, customText);
             });
@@ -728,4 +728,4 @@ async function finishCombat(action, customText = '') {
     }
 }
 
-console.log('✅ 战斗系统加载完成！startCombat函数已定义。');
+console.log('✅ Hệ thống chiến đấu tải hoàn tất! Hàm startCombat đã được định nghĩa.');

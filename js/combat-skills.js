@@ -1,23 +1,23 @@
 /**
- * 修仙游戏 - 战斗技能配置
- * 包含功法和法术的完整配置，按境界分类
+ * Trò chơi Tu Tiên - Cấu hình kỹ năng chiến đấu
+ * Bao gồm cấu hình đầy đủ của công pháp và pháp thuật, phân loại theo cảnh giới
  */
 
-// 境界配置：定义每个境界的数值范围
+// Cấu hình cảnh giới: Định nghĩa phạm vi chỉ số cho mỗi cảnh giới
 const REALM_CONFIG = {
-    0: { // 凡人
-        name: "凡人",
+    0: { // Phàm nhân
+        name: "Phàm nhân",
         hp: { min: 50, max: 100 },
         mp: { min: 0, max: 50 },
-        physique: { min: 3, max: 8 },
-        comprehension: { min: 3, max: 8 },
-        spirituality: { min: 3, max: 8 },
-        luck: { min: 3, max: 8 },
-        charm: { min: 3, max: 8 },
-        willpower: { min: 3, max: 8 }
+        physique: { min: 3, max: 8 },      // Căn cốt
+        comprehension: { min: 3, max: 8 }, // Ngộ tính
+        spirituality: { min: 3, max: 8 },  // Thần thức
+        luck: { min: 3, max: 8 },         // Khí vận
+        charm: { min: 3, max: 8 },        // Mị lực
+        willpower: { min: 3, max: 8 }     // Ý chí
     },
-    1: { // 练气期
-        name: "练气期",
+    1: { // Luyện Khí Kỳ
+        name: "Luyện Khí Kỳ",
         hp: { min: 100, max: 200 },
         mp: { min: 80, max: 150 },
         physique: { min: 8, max: 15 },
@@ -27,8 +27,8 @@ const REALM_CONFIG = {
         charm: { min: 8, max: 15 },
         willpower: { min: 8, max: 15 }
     },
-    2: { // 筑基期
-        name: "筑基期",
+    2: { // Trúc Cơ Kỳ
+        name: "Trúc Cơ Kỳ",
         hp: { min: 200, max: 400 },
         mp: { min: 150, max: 300 },
         physique: { min: 15, max: 25 },
@@ -38,8 +38,8 @@ const REALM_CONFIG = {
         charm: { min: 15, max: 25 },
         willpower: { min: 15, max: 25 }
     },
-    3: { // 金丹期
-        name: "金丹期",
+    3: { // Kim Đan Kỳ
+        name: "Kim Đan Kỳ",
         hp: { min: 400, max: 800 },
         mp: { min: 300, max: 600 },
         physique: { min: 25, max: 40 },
@@ -49,8 +49,8 @@ const REALM_CONFIG = {
         charm: { min: 25, max: 40 },
         willpower: { min: 25, max: 40 }
     },
-    4: { // 元婴期
-        name: "元婴期",
+    4: { // Nguyên Anh Kỳ
+        name: "Nguyên Anh Kỳ",
         hp: { min: 800, max: 1500 },
         mp: { min: 600, max: 1200 },
         physique: { min: 40, max: 60 },
@@ -60,8 +60,8 @@ const REALM_CONFIG = {
         charm: { min: 40, max: 60 },
         willpower: { min: 40, max: 60 }
     },
-    5: { // 化神期
-        name: "化神期",
+    5: { // Hóa Thần Kỳ
+        name: "Hóa Thần Kỳ",
         hp: { min: 1500, max: 3000 },
         mp: { min: 1200, max: 2400 },
         physique: { min: 60, max: 80 },
@@ -73,438 +73,438 @@ const REALM_CONFIG = {
     }
 };
 
-// 功法库 - 按境界分类
+// Kho Công Pháp - Phân loại theo cảnh giới
 const TECHNIQUES = {
-    // 凡人 & 练气期
+    // Phàm nhân & Luyện Khí Kỳ
     0: [
         {
-            name: "基础炼体功",
+            name: "Cơ Bản Luyện Thể Công",
             power: 20,
             mpCost: 10,
             cooldown: 0,
             effects: [],
-            description: "最基础的炼体法门，强化肉身"
+            description: "Pháp môn luyện thể cơ bản nhất, cường hóa nhục thân"
         },
         {
-            name: "纳气诀",
+            name: "Nạp Khí Quyết",
             power: 25,
             mpCost: 15,
             cooldown: 1,
             effects: [{type: "heal", value: 10, duration: 0}],
-            description: "吸收天地灵气，恢复少量生命"
+            description: "Hấp thụ linh khí thiên địa, hồi phục một lượng nhỏ sinh mệnh"
         },
         {
-            name: "玄元劲",
+            name: "Huyền Nguyên Kình",
             power: 30,
             mpCost: 20,
             cooldown: 2,
             effects: [],
-            description: "凝聚玄元之力，形成强劲攻击"
+            description: "Ngưng tụ sức mạnh Huyền Nguyên, tạo ra đòn tấn công mạnh mẽ"
         }
     ],
     1: [
         {
-            name: "青云心法",
+            name: "Thanh Vân Tâm Pháp",
             power: 45,
             mpCost: 30,
             cooldown: 1,
             effects: [],
-            description: "青云宗基础心法，气息绵长"
+            description: "Tâm pháp cơ bản của Thanh Vân Tông, khí tức kéo dài"
         },
         {
-            name: "太素养元功",
+            name: "Thái Tố Dưỡng Nguyên Công",
             power: 40,
             mpCost: 25,
             cooldown: 0,
             effects: [{type: "heal", value: 20, duration: 0}],
-            description: "养元固本，恢复气血"
+            description: "Dưỡng nguyên cố bản, hồi phục khí huyết"
         },
         {
-            name: "玄冥真劲",
+            name: "Huyền Minh Chân Kình",
             power: 55,
             mpCost: 40,
             cooldown: 2,
             effects: [{type: "weaken", value: 0.8, duration: 2}],
-            description: "玄冥之力侵蚀敌人，降低其攻击力"
+            description: "Sức mạnh Huyền Minh ăn mòn kẻ địch, giảm sức tấn công của chúng"
         },
         {
-            name: "紫霄真元诀",
+            name: "Tử Tiêu Chân Nguyên Quyết",
             power: 60,
             mpCost: 45,
             cooldown: 3,
             effects: [],
-            description: "凝练紫霄真元，爆发强劲力量"
+            description: "Ngưng luyện Tử Tiêu chân nguyên, bùng nổ sức mạnh cường đại"
         }
     ],
-    // 筑基期
+    // Trúc Cơ Kỳ
     2: [
         {
-            name: "太上清静经",
+            name: "Thái Thượng Thanh Tĩnh Kinh",
             power: 80,
             mpCost: 50,
             cooldown: 1,
             effects: [{type: "heal", value: 30, duration: 0}],
-            description: "道家上乘心法，清静养元"
+            description: "Tâm pháp thượng thừa của Đạo gia, thanh tĩnh dưỡng nguyên"
         },
         {
-            name: "九转玄功",
+            name: "Cửu Chuyển Huyền Công",
             power: 95,
             mpCost: 65,
             cooldown: 2,
             effects: [{type: "shield", value: 40, duration: 2}],
-            description: "九转练体，凝聚护体真元"
+            description: "Cửu chuyển luyện thể, ngưng tụ hộ thể chân nguyên"
         },
         {
-            name: "天罡北斗诀",
+            name: "Thiên Cang Bắc Đẩu Quyết",
             power: 110,
             mpCost: 75,
             cooldown: 3,
             effects: [{type: "stun", value: 1, duration: 1}],
-            description: "引动天罡之力，有概率眩晕敌人"
+            description: "Dẫn động sức mạnh Thiên Cang, có xác suất làm choáng kẻ địch"
         },
         {
-            name: "五行造化功",
+            name: "Ngũ Hành Tạo Hóa Công",
             power: 100,
             mpCost: 70,
             cooldown: 2,
             effects: [],
-            description: "五行之力循环，威力巨大"
+            description: "Ngũ hành lực tuần hoàn, uy lực to lớn"
         }
     ],
-    // 金丹期
+    // Kim Đan Kỳ
     3: [
         {
-            name: "太乙玄元金丹诀",
+            name: "Thái Ất Huyền Nguyên Kim Đan Quyết",
             power: 150,
             mpCost: 100,
             cooldown: 2,
             effects: [{type: "shield", value: 60, duration: 2}],
-            description: "金丹期至高心法，护体金光"
+            description: "Chí cao tâm pháp Kim Đan kỳ, hộ thể kim quang"
         },
         {
-            name: "九天应元雷声诀",
+            name: "Cửu Thiên Ứng Nguyên Lôi Thanh Quyết",
             power: 180,
             mpCost: 120,
             cooldown: 3,
             effects: [{type: "burn", value: 20, duration: 3}],
-            description: "引动九天雷霆，灼烧敌人"
+            description: "Dẫn động Cửu Thiên lôi đình, thiêu đốt kẻ địch"
         },
         {
-            name: "混元一气功",
+            name: "Hỗn Nguyên Nhất Khí Công",
             power: 160,
             mpCost: 105,
             cooldown: 2,
             effects: [{type: "heal", value: 50, duration: 0}],
-            description: "混元归一，恢复大量气血"
+            description: "Hỗn nguyên quy nhất, hồi phục lượng lớn khí huyết"
         },
         {
-            name: "北冥神功吞噬诀",
+            name: "Bắc Minh Thần Công Thôn Phệ Quyết",
             power: 170,
             mpCost: 115,
             cooldown: 4,
             effects: [{type: "absorb", value: 0.3, duration: 0}],
-            description: "吞噬敌人真元，转化为己用"
+            description: "Thôn phệ chân nguyên kẻ địch, chuyển hóa thành của mình"
         }
     ],
-    // 元婴期
+    // Nguyên Anh Kỳ
     4: [
         {
-            name: "紫霄神雷灭世经",
+            name: "Tử Tiêu Thần Lôi Diệt Thế Kinh",
             power: 240,
             mpCost: 160,
             cooldown: 3,
             effects: [{type: "burn", value: 35, duration: 3}],
-            description: "紫霄神雷降世，灼烧万物"
+            description: "Tử Tiêu thần lôi giáng thế, thiêu rụi vạn vật"
         },
         {
-            name: "太上洞玄元婴诀",
+            name: "Thái Thượng Động Huyền Nguyên Anh Quyết",
             power: 220,
             mpCost: 145,
             cooldown: 2,
             effects: [{type: "shield", value: 80, duration: 3}],
-            description: "元婴护体，固若金汤"
+            description: "Nguyên anh hộ thể, kiên cố như bàn thạch"
         },
         {
-            name: "九转还丹造化功",
+            name: "Cửu Chuyển Hoàn Đan Tạo Hóa Công",
             power: 210,
             mpCost: 140,
             cooldown: 3,
             effects: [{type: "heal", value: 80, duration: 0}],
-            description: "九转还丹，生生不息"
+            description: "Cửu chuyển hoàn đan, sinh sinh bất tức"
         },
         {
-            name: "天地大衍真元诀",
+            name: "Thiên Địa Đại Diễn Chân Nguyên Quyết",
             power: 260,
             mpCost: 175,
             cooldown: 4,
             effects: [{type: "weaken", value: 0.6, duration: 3}],
-            description: "以天地之力压制敌人"
+            description: "Dùng sức mạnh thiên địa áp chế kẻ địch"
         }
     ],
-    // 化神期
+    // Hóa Thần Kỳ
     5: [
         {
-            name: "太古混沌神魔诀",
+            name: "Thái Cổ Hỗn Độn Thần Ma Quyết",
             power: 350,
             mpCost: 230,
             cooldown: 3,
             effects: [{type: "burn", value: 50, duration: 3}],
-            description: "混沌之力，焚烧一切"
+            description: "Sức mạnh hỗn độn, thiêu rụi mọi thứ"
         },
         {
-            name: "九天玄女元神经",
+            name: "Cửu Thiên Huyền Nữ Nguyên Thần Kinh",
             power: 320,
             mpCost: 210,
             cooldown: 2,
             effects: [{type: "shield", value: 120, duration: 3}],
-            description: "元神护体，万法不侵"
+            description: "Nguyên thần hộ thể, vạn pháp bất xâm"
         },
         {
-            name: "先天造化生死轮",
+            name: "Tiên Thiên Tạo Hóa Sinh Tử Luân",
             power: 330,
             mpCost: 220,
             cooldown: 4,
             effects: [{type: "absorb", value: 0.4, duration: 0}],
-            description: "生死轮转，夺取敌人生命"
+            description: "Sinh tử luân chuyển, tước đoạt sinh mệnh kẻ địch"
         },
         {
-            name: "紫微星辰万法归宗",
+            name: "Tử Vi Tinh Thần Vạn Pháp Quy Tông",
             power: 380,
             mpCost: 250,
             cooldown: 5,
             effects: [{type: "stun", value: 1, duration: 1}, {type: "weaken", value: 0.5, duration: 3}],
-            description: "紫微星光照耀，镇压一切"
+            description: "Ánh sao Tử Vi chiếu rọi, trấn áp tất cả"
         }
     ]
 };
 
-// 法术库 - 按境界分类
+// Kho Pháp Thuật - Phân loại theo cảnh giới
 const SPELLS = {
-    // 凡人 & 练气期
+    // Phàm nhân & Luyện Khí Kỳ
     0: [
         {
-            name: "火球术",
+            name: "Hỏa Cầu Thuật",
             power: 15,
             mpCost: 8,
             cooldown: 0,
             effects: [],
-            description: "凝聚火焰，投掷向敌人"
+            description: "Ngưng tụ hỏa diễm, ném về phía kẻ địch"
         },
         {
-            name: "冰锥术",
+            name: "Băng Chùy Thuật",
             power: 18,
             mpCost: 10,
             cooldown: 1,
             effects: [{type: "slow", value: 0.8, duration: 1}],
-            description: "冰锥刺骨，减缓敌人速度"
+            description: "Băng chùy thấu xương, làm chậm tốc độ kẻ địch"
         },
         {
-            name: "疾风斩",
+            name: "Tật Phong Trảm",
             power: 22,
             mpCost: 12,
             cooldown: 1,
             effects: [],
-            description: "风刃切割，迅捷如风"
+            description: "Lưỡi đao gió cắt ngang, nhanh tựa gió lốc"
         }
     ],
     1: [
         {
-            name: "烈焰焚空咒",
+            name: "Liệt Diễm Phần Không Chú",
             power: 35,
             mpCost: 22,
             cooldown: 1,
             effects: [{type: "burn", value: 5, duration: 3}],
-            description: "烈焰焚烧，持续伤害"
+            description: "Lửa cháy bừng bừng, gây sát thương liên tục"
         },
         {
-            name: "玄冰封印",
+            name: "Huyền Băng Phong Ấn",
             power: 40,
             mpCost: 28,
             cooldown: 2,
             effects: [{type: "freeze", value: 1, duration: 1}],
-            description: "冰封敌人，使其无法行动"
+            description: "Băng phong kẻ địch, khiến chúng không thể hành động"
         },
         {
-            name: "雷霆万钧",
+            name: "Lôi Đình Vạn Quân",
             power: 50,
             mpCost: 35,
             cooldown: 2,
             effects: [],
-            description: "雷霆轰击，威力强大"
+            description: "Lôi đình oanh kích, uy lực mạnh mẽ"
         },
         {
-            name: "风刃乱舞",
+            name: "Phong Nhẫn Loạn Vũ",
             power: 45,
             mpCost: 30,
             cooldown: 1,
             effects: [],
-            description: "风刃乱舞，连续攻击"
+            description: "Đao gió múa loạn, tấn công liên tiếp"
         }
     ],
-    // 筑基期
+    // Trúc Cơ Kỳ
     2: [
         {
-            name: "碧落黄泉摄魂术",
+            name: "Bích Lạc Hoàng Tuyền Nhiếp Hồn Thuật",
             power: 70,
             mpCost: 45,
             cooldown: 2,
             effects: [{type: "weaken", value: 0.75, duration: 2}],
-            description: "摄取神魂，削弱敌人"
+            description: "Nhiếp lấy thần hồn, làm suy yếu kẻ địch"
         },
         {
-            name: "九天玄火煞神咒",
+            name: "Cửu Thiên Huyền Hỏa Sát Thần Chú",
             power: 85,
             mpCost: 55,
             cooldown: 2,
             effects: [{type: "burn", value: 12, duration: 3}],
-            description: "玄火煞气，焚烧不息"
+            description: "Sát khí huyền hỏa, thiêu đốt không ngừng"
         },
         {
-            name: "寒冰极光冻结术",
+            name: "Hàn Băng Cực Quang Đông Kết Thuật",
             power: 75,
             mpCost: 50,
             cooldown: 3,
             effects: [{type: "freeze", value: 1, duration: 1}],
-            description: "极寒之光，冻结万物"
+            description: "Ánh sáng cực hàn, đóng băng vạn vật"
         },
         {
-            name: "紫霄神雷降临",
+            name: "Tử Tiêu Thần Lôi Giáng Lâm",
             power: 95,
             mpCost: 65,
             cooldown: 3,
             effects: [{type: "stun", value: 1, duration: 1}],
-            description: "神雷降世，震慑敌人"
+            description: "Thần lôi giáng thế, uy hiếp kẻ địch"
         }
     ],
-    // 金丹期
+    // Kim Đan Kỳ
     3: [
         {
-            name: "天地玄黄灭魂咒",
+            name: "Thiên Địa Huyền Hoàng Diệt Hồn Chú",
             power: 130,
             mpCost: 85,
             cooldown: 3,
             effects: [{type: "weaken", value: 0.6, duration: 3}],
-            description: "玄黄之力，灭杀神魂"
+            description: "Sức mạnh Huyền Hoàng, diệt sát thần hồn"
         },
         {
-            name: "三昧真火焚天术",
+            name: "Tam Muội Chân Hỏa Phần Thiên Thuật",
             power: 155,
             mpCost: 100,
             cooldown: 3,
             effects: [{type: "burn", value: 25, duration: 3}],
-            description: "三昧真火，焚烧诸天"
+            description: "Tam Muội Chân Hỏa, thiêu cháy chư thiên"
         },
         {
-            name: "九幽冰魄绝灭阵",
+            name: "Cửu U Băng Phách Tuyệt Diệt Trận",
             power: 140,
             mpCost: 90,
             cooldown: 4,
             effects: [{type: "freeze", value: 1, duration: 2}],
-            description: "九幽冰魄，冰封一切"
+            description: "Cửu U băng phách, đóng băng tất cả"
         },
         {
-            name: "五雷正法轰天决",
+            name: "Ngũ Lôi Chính Pháp Oanh Thiên Quyết",
             power: 165,
             mpCost: 110,
             cooldown: 4,
             effects: [{type: "stun", value: 1, duration: 1}, {type: "burn", value: 15, duration: 2}],
-            description: "五雷轰顶，天罚降临"
+            description: "Ngũ lôi oanh đỉnh, thiên phạt giáng lâm"
         }
     ],
-    // 元婴期
+    // Nguyên Anh Kỳ
     4: [
         {
-            name: "太乙天罡雷劫咒",
+            name: "Thái Ất Thiên Cang Lôi Kiếp Chú",
             power: 210,
             mpCost: 140,
             cooldown: 3,
             effects: [{type: "burn", value: 30, duration: 3}],
-            description: "天罡雷劫，毁灭一切"
+            description: "Thiên Cang lôi kiếp, hủy diệt mọi thứ"
         },
         {
-            name: "九天应元普化雷声",
+            name: "Cửu Thiên Ứng Nguyên Phổ Hóa Lôi Thanh",
             power: 230,
             mpCost: 155,
             cooldown: 4,
             effects: [{type: "stun", value: 1, duration: 1}, {type: "weaken", value: 0.65, duration: 3}],
-            description: "雷声普化，震慑群敌"
+            description: "Lôi thanh phổ hóa, răn đe quần địch"
         },
         {
-            name: "大荒天炎焚世术",
+            name: "Đại Hoang Thiên Viêm Phần Thế Thuật",
             power: 245,
             mpCost: 165,
             cooldown: 4,
             effects: [{type: "burn", value: 40, duration: 4}],
-            description: "天炎焚世，无物不焚"
+            description: "Thiên viêm phần thế, không gì không cháy"
         },
         {
-            name: "万法归宗玄元诀",
+            name: "Vạn Pháp Quy Tông Huyền Nguyên Quyết",
             power: 200,
             mpCost: 130,
             cooldown: 3,
             effects: [{type: "absorb", value: 0.25, duration: 0}],
-            description: "万法归宗，吸收敌人力量"
+            description: "Vạn pháp quy tông, hấp thụ sức mạnh kẻ địch"
         }
     ],
-    // 化神期
+    // Hóa Thần Kỳ
     5: [
         {
-            name: "混沌神雷开天决",
+            name: "Hỗn Độn Thần Lôi Khai Thiên Quyết",
             power: 320,
             mpCost: 210,
             cooldown: 4,
             effects: [{type: "burn", value: 45, duration: 4}, {type: "stun", value: 1, duration: 1}],
-            description: "混沌雷霆，开天辟地"
+            description: "Hỗn Độn lôi đình, khai thiên lập địa"
         },
         {
-            name: "太古星辰陨落术",
+            name: "Thái Cổ Tinh Thần Vân Lạc Thuật",
             power: 340,
             mpCost: 225,
             cooldown: 5,
             effects: [{type: "weaken", value: 0.5, duration: 4}],
-            description: "星辰陨落，镇压万物"
+            description: "Tinh tú rơi xuống, trấn áp vạn vật"
         },
         {
-            name: "九天玄女幽冥咒",
+            name: "Cửu Thiên Huyền Nữ U Minh Chú",
             power: 310,
             mpCost: 205,
             cooldown: 4,
             effects: [{type: "poison", value: 35, duration: 4}],
-            description: "幽冥诅咒，侵蚀生命"
+            description: "Lời nguyền u minh, ăn mòn sinh mệnh"
         },
         {
-            name: "先天五行灭世阵",
+            name: "Tiên Thiên Ngũ Hành Diệt Thế Trận",
             power: 360,
             mpCost: 240,
             cooldown: 6,
             effects: [{type: "burn", value: 50, duration: 4}, {type: "weaken", value: 0.55, duration: 3}],
-            description: "五行之力，灭世大阵"
+            description: "Sức mạnh Ngũ Hành, đại trận diệt thế"
         }
     ]
 };
 
-// 状态效果描述
+// Mô tả hiệu ứng trạng thái
 const EFFECT_DESCRIPTIONS = {
-    burn: "🔥 灼烧",
-    poison: "☠️ 中毒",
-    freeze: "❄️ 冰封",
-    stun: "💫 眩晕",
-    slow: "🐌 减速",
-    weaken: "⬇️ 虚弱",
-    shield: "🛡️ 护盾",
-    heal: "💚 治疗",
-    absorb: "🌀 吸收"
+    burn: "🔥 Thiêu đốt",
+    poison: "☠️ Trúng độc",
+    freeze: "❄️ Đóng băng",
+    stun: "💫 Choáng váng",
+    slow: "🐌 Giảm tốc",
+    weaken: "⬇️ Suy yếu",
+    shield: "🛡️ Hộ thuẫn",
+    heal: "💚 Trị thương",
+    absorb: "🌀 Hấp thụ"
 };
 
-// 根据境界随机生成敌人数据
-function generateEnemyByRealm(realmLevel, name = "敌人") {
+// Tạo dữ liệu kẻ địch ngẫu nhiên dựa trên cảnh giới
+function generateEnemyByRealm(realmLevel, name = "Kẻ địch") {
     const config = REALM_CONFIG[realmLevel] || REALM_CONFIG[1];
     
-    // Roll点生成基础属性
+    // Gieo xúc xắc tạo thuộc tính cơ bản
     const hp = rollDice(config.hp.min, config.hp.max);
     const mp = rollDice(config.mp.min, config.mp.max);
     
-    // 生成六维属性
+    // Tạo thuộc tính lục vị
     const attributes = {
         physique: rollDice(config.physique.min, config.physique.max),
         comprehension: rollDice(config.comprehension.min, config.comprehension.max),
@@ -514,12 +514,12 @@ function generateEnemyByRealm(realmLevel, name = "敌人") {
         willpower: rollDice(config.willpower.min, config.willpower.max)
     };
     
-    // 随机选择功法（2-3个）
+    // Chọn ngẫu nhiên công pháp (2-3 cái)
     const techniqueCount = rollDice(2, 3);
     const availableTechniques = TECHNIQUES[realmLevel] || TECHNIQUES[1];
     const techniques = getRandomItems(availableTechniques, techniqueCount);
     
-    // 随机选择法术（2-3个）
+    // Chọn ngẫu nhiên pháp thuật (2-3 cái)
     const spellCount = rollDice(2, 3);
     const availableSpells = SPELLS[realmLevel] || SPELLS[1];
     const spells = getRandomItems(availableSpells, spellCount);
@@ -535,22 +535,22 @@ function generateEnemyByRealm(realmLevel, name = "敌人") {
         attributes: attributes,
         techniques: techniques,
         spells: spells,
-        effects: [] // 当前生效的状态
+        effects: [] // Trạng thái đang có hiệu lực
     };
 }
 
-// 随机数生成
+// Tạo số ngẫu nhiên
 function rollDice(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-// 从数组中随机选择N个不重复的元素
+// Lấy N phần tử không trùng lặp ngẫu nhiên từ mảng
 function getRandomItems(array, count) {
     const shuffled = [...array].sort(() => 0.5 - Math.random());
     return shuffled.slice(0, Math.min(count, array.length));
 }
 
-// 导出配置
+// Xuất cấu hình
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         REALM_CONFIG,

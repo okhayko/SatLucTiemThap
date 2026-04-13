@@ -1,20 +1,20 @@
-// 编辑用户消息
+// Chỉnh sửa tin nhắn người dùng
 let editDebounceTimer = null;
 let isEditing = false;
 
 function editUserMessage(messageIndex) {
-    // 防止重复点击
+    // Ngăn chặn nhấp chuột lặp lại
     if (isEditing) {
-        console.log('[编辑] 正在编辑中，忽略重复点击');
+        console.log('[Chỉnh sửa] Đang trong quá trình chỉnh sửa, bỏ qua nhấp chuột lặp lại');
         return;
     }
 
-    // 清除之前的防抖定时器
+    // Xóa bộ hẹn giờ chống rung trước đó
     if (editDebounceTimer) {
         clearTimeout(editDebounceTimer);
     }
 
-    // 设置防抖
+    // Thiết lập chống rung (debounce)
     editDebounceTimer = setTimeout(() => {
         performEdit(messageIndex);
         editDebounceTimer = null;
@@ -25,7 +25,7 @@ function performEdit(messageIndex) {
     if (isEditing) return;
     isEditing = true;
 
-    // 🔧 保护用户输入框，防止被编辑操作影响
+    // 🔧 Bảo vệ khung nhập liệu của người dùng, ngăn chặn bị ảnh hưởng bởi thao tác chỉnh sửa
     const userInput = document.getElementById('userInput');
     const originalInputValue = userInput ? userInput.value : '';
 
@@ -42,48 +42,48 @@ function performEdit(messageIndex) {
         const contentDiv = messageDiv.querySelector('.message-content');
         const originalText = contentDiv.getAttribute('data-original-text') || contentDiv.textContent;
 
-        // 检查是否已经在编辑模式
+        // Kiểm tra xem đã ở chế độ chỉnh sửa chưa
         if (contentDiv.classList.contains('edit-mode')) {
-            console.log('[编辑] 消息已经在编辑模式中');
+            console.log('[Chỉnh sửa] Tin nhắn đã ở trong chế độ chỉnh sửa');
             isEditing = false;
             return;
         }
 
-        // 保存原始内容div的父元素引用
+        // Lưu tham chiếu phần tử cha của div nội dung gốc
         const parentElement = contentDiv.parentNode;
 
-        // 创建编辑区域
+        // Tạo khu vực chỉnh sửa
         const textarea = document.createElement('textarea');
         textarea.style.cssText = 'width: 100%; min-height: 100px; padding: 10px; border: 2px solid #667eea; border-radius: 8px; font-size: 14px;resize: vertical;';
         textarea.value = originalText;
 
-        // 创建按钮容器
+        // Tạo container chứa nút
         const btnContainer = document.createElement('div');
         btnContainer.style.cssText = 'display: flex; gap: 10px; margin-top: 10px;';
 
-        // 创建编辑容器
+        // Tạo container chỉnh sửa
         const editContainer = document.createElement('div');
         editContainer.className = 'message-content edit-mode';
         editContainer.appendChild(textarea);
         editContainer.appendChild(btnContainer);
 
-        // 保存按钮
+        // Nút lưu
         const saveBtn = document.createElement('button');
         saveBtn.className = 'btn btn-success';
         saveBtn.style.cssText = 'padding: 8px 16px; font-size: 13px;';
-        saveBtn.innerHTML = '💾 保存';
+        saveBtn.innerHTML = '💾 Lưu';
         saveBtn.onclick = () => {
             const newText = textarea.value.trim();
             if (!newText) {
-                alert('内容不能为空！');
+                alert('Nội dung không được để trống!');
                 return;
             }
 
-            // 更新显示
+            // Cập nhật hiển thị
             contentDiv.textContent = newText;
             contentDiv.setAttribute('data-original-text', newText);
 
-            // 更新历史记录中的内容
+            // Cập nhật nội dung trong hồ sơ lịch sử
             let historyIndex = 0;
             for (let i = 0; i <= messageIndex; i++) {
                 if (messages[i].classList.contains('user-message') || messages[i].classList.contains('ai-message')) {
@@ -94,34 +94,34 @@ function performEdit(messageIndex) {
 
             if (historyIndex < gameState.conversationHistory.length) {
                 gameState.conversationHistory[historyIndex].content = newText;
-                // 保存到数据库
-                saveGameHistory().catch(err => console.error('保存失败:', err));
+                // Lưu vào cơ sở dữ liệu
+                saveGameHistory().catch(err => console.error('Lưu thất bại:', err));
             }
 
-            // 恢复原始显示
+            // Khôi phục hiển thị ban đầu
             parentElement.replaceChild(contentDiv, editContainer);
 
-            // 🔧 检查并恢复用户输入框
+            // 🔧 Kiểm tra và khôi phục khung nhập liệu của người dùng
             if (userInput && userInput.value !== originalInputValue) {
-                console.warn('[编辑] 检测到输入框被意外修改，正在恢复...');
+                console.warn('[Chỉnh sửa] Phát hiện khung nhập liệu bị thay đổi ngoài ý muốn, đang khôi phục...');
                 userInput.value = originalInputValue;
             }
 
             isEditing = false;
         };
 
-        // 取消按钮
+        // Nút hủy
         const cancelBtn = document.createElement('button');
         cancelBtn.className = 'btn btn-secondary';
         cancelBtn.style.cssText = 'padding: 8px 16px; font-size: 13px;';
-        cancelBtn.innerHTML = '❌ 取消';
+        cancelBtn.innerHTML = '❌ Hủy';
         cancelBtn.onclick = () => {
-            // 恢复原始显示
+            // Khôi phục hiển thị ban đầu
             parentElement.replaceChild(contentDiv, editContainer);
 
-            // 🔧 检查并恢复用户输入框
+            // 🔧 Kiểm tra và khôi phục khung nhập liệu của người dùng
             if (userInput && userInput.value !== originalInputValue) {
-                console.warn('[编辑] 检测到输入框被意外修改，正在恢复...');
+                console.warn('[Chỉnh sửa] Phát hiện khung nhập liệu bị thay đổi ngoài ý muốn, đang khôi phục...');
                 userInput.value = originalInputValue;
             }
 
@@ -131,16 +131,16 @@ function performEdit(messageIndex) {
         btnContainer.appendChild(saveBtn);
         btnContainer.appendChild(cancelBtn);
 
-        // 替换内容区域
+        // Thay thế khu vực nội dung
         parentElement.replaceChild(editContainer, contentDiv);
         textarea.focus();
 
     } catch (error) {
-        console.error('[编辑] 编辑消息时出错:', error);
+        console.error('[Chỉnh sửa] Có lỗi khi chỉnh sửa tin nhắn:', error);
 
-        // 🔧 出错时也要恢复用户输入框
+        // 🔧 Khôi phục khung nhập liệu người dùng ngay cả khi có lỗi
         if (userInput && userInput.value !== originalInputValue) {
-            console.warn('[编辑] 出错时恢复输入框内容...');
+            console.warn('[Chỉnh sửa] Khôi phục nội dung khung nhập liệu khi có lỗi...');
             userInput.value = originalInputValue;
         }
 
@@ -148,7 +148,7 @@ function performEdit(messageIndex) {
     }
 }
 
-// 重新发送用户消息
+// Gửi lại tin nhắn người dùng
 async function resendUserMessage(messageIndex) {
     if (gameState.isProcessing) return;
 
@@ -162,27 +162,27 @@ async function resendUserMessage(messageIndex) {
     const messageText = contentDiv.getAttribute('data-original-text') || contentDiv.textContent;
 
     if (!messageText.trim()) {
-        alert('消息内容为空！');
+        alert('Nội dung tin nhắn trống!');
         return;
     }
 
-    // 找到这条消息之后的所有消息并删除
+    // Tìm tất cả các tin nhắn sau tin nhắn này và xóa chúng
     const messagesToDelete = [];
     for (let i = messageIndex + 1; i < messages.length; i++) {
         messagesToDelete.push(messages[i]);
     }
 
-    // 确认删除（如果有后续消息）
+    // Xác nhận xóa (nếu có tin nhắn kế tiếp)
     if (messagesToDelete.length > 0) {
-        if (!confirm(`重新发送将删除这条消息之后的 ${messagesToDelete.length} 条消息，确定继续吗？`)) {
+        if (!confirm(`Gửi lại sẽ xóa ${messagesToDelete.length} tin nhắn sau tin nhắn này, xác định tiếp tục không?`)) {
             return;
         }
 
-        // 删除UI中的消息
+        // Xóa tin nhắn trong UI
         messagesToDelete.forEach(msg => msg.remove());
     }
 
-    // 计算历史记录中的索引
+    // Tính toán chỉ số trong hồ sơ lịch sử
     let historyIndex = 0;
     for (let i = 0; i <= messageIndex; i++) {
         if (messages[i] && (messages[i].classList.contains('user-message') || messages[i].classList.contains('ai-message'))) {
@@ -191,58 +191,58 @@ async function resendUserMessage(messageIndex) {
         }
     }
 
-    // 删除历史记录中对应的消息（这条用户消息之后的所有消息）
+    // Xóa tin nhắn tương ứng trong hồ sơ lịch sử (tất cả tin nhắn sau tin nhắn người dùng này)
     const deleteCount = messagesToDelete.length;
     if (deleteCount > 0 && historyIndex + 1 < gameState.conversationHistory.length) {
         gameState.conversationHistory.splice(historyIndex + 1, deleteCount);
         gameState.variableSnapshots.splice(historyIndex + 1, deleteCount);
     }
 
-    // 🌍 保存动态世界的独立数据（在回滚前保存）
+    // 🌍 Lưu dữ liệu độc lập của thế giới động (lưu trước khi quay lui)
     const dynamicWorldBackup = {
         history: JSON.parse(JSON.stringify(gameState.dynamicWorld.history || [])),
         floor: gameState.dynamicWorld.floor || 0
     };
 
-    // 回滚变量到这条用户消息发送之前的状态
+    // Quay lui biến về trạng thái trước khi tin nhắn người dùng này được gửi
     if (historyIndex > 0 && historyIndex - 1 < gameState.variableSnapshots.length) {
-        // 回滚到这条用户消息之前的AI回复的状态
+        // Quay lui về trạng thái phản hồi AI trước tin nhắn người dùng này
         gameState.variables = JSON.parse(JSON.stringify(gameState.variableSnapshots[historyIndex - 1]));
         updateStatusPanel();
     } else if (historyIndex === 0) {
-        // 🔧 从第0楼重新发送时，清空 history 数组（因为这是第一条消息之前没有历史）
-        console.log('[重新发送] 从第0楼重新发送，清空history数组');
+        // 🔧 Khi gửi lại từ tầng 0, làm trống mảng history (vì đây là tin nhắn đầu tiên không có lịch sử trước đó)
+        console.log('[Gửi lại] Gửi lại từ tầng 0, làm trống mảng history');
         gameState.variables.history = [];
         updateStatusPanel();
     }
 
-    // 🌍 恢复动态世界的独立数据（回滚后恢复）
+    // 🌍 Khôi phục dữ liệu độc lập của thế giới động (khôi phục sau khi quay lui)
     gameState.dynamicWorld.history = dynamicWorldBackup.history;
     gameState.dynamicWorld.floor = dynamicWorldBackup.floor;
-    console.log('[重新发送] 已保护动态世界数据不被回滚');
+    console.log('[Gửi lại] Đã bảo vệ dữ liệu thế giới động không bị quay lui');
 
-    // 🆕 从向量库中删除对应轮次的条目
+    // 🆕 Xóa các mục tương ứng khỏi thư viện vector
     if (deleteCount > 0 && window.contextVectorManager) {
-        // 计算需要删除的轮次范围
+        // Tính toán phạm vi lượt hội thoại cần xóa
         const startTurn = Math.floor(historyIndex / 2) + 1;
         const endTurn = Math.floor((historyIndex + deleteCount) / 2) + 1;
 
-        // 删除conversationEmbeddings中对应轮次的条目
+        // Xóa các mục tương ứng trong conversationEmbeddings
         const conversationIndicesToRemove = [];
         window.contextVectorManager.conversationEmbeddings.forEach((conv, index) => {
             if (conv.turnIndex >= startTurn && conv.turnIndex <= endTurn) {
                 conversationIndicesToRemove.push(index);
             }
         });
-        // 从后往前删除
+        // Xóa từ dưới lên trên
         for (let i = conversationIndicesToRemove.length - 1; i >= 0; i--) {
             window.contextVectorManager.conversationEmbeddings.splice(conversationIndicesToRemove[i], 1);
         }
         if (conversationIndicesToRemove.length > 0) {
-            console.log(`[向量库] 已删除第${startTurn}-${endTurn}轮的${conversationIndicesToRemove.length}条对话向量（重新发送）`);
+            console.log(`[Thư viện vector] Đã xóa ${conversationIndicesToRemove.length} vector hội thoại của lượt ${startTurn}-${endTurn} (Gửi lại)`);
         }
 
-        // 删除historyEmbeddings中对应轮次的条目
+        // Xóa các mục tương ứng trong historyEmbeddings
         if (window.contextVectorManager.historyEmbeddings) {
             const historyIndicesToRemove = [];
             window.contextVectorManager.historyEmbeddings.forEach((entry, index) => {
@@ -250,22 +250,22 @@ async function resendUserMessage(messageIndex) {
                     historyIndicesToRemove.push(index);
                 }
             });
-            // 从后往前删除
+            // Xóa từ dưới lên trên
             for (let i = historyIndicesToRemove.length - 1; i >= 0; i--) {
                 window.contextVectorManager.historyEmbeddings.splice(historyIndicesToRemove[i], 1);
             }
             if (historyIndicesToRemove.length > 0) {
-                console.log(`[History向量库] 已删除第${startTurn}-${endTurn}轮的${historyIndicesToRemove.length}条history向量（重新发送）`);
+                console.log(`[Thư viện vector History] Đã xóa ${historyIndicesToRemove.length} vector history của lượt ${startTurn}-${endTurn} (Gửi lại)`);
             }
         }
 
-        // 保存到IndexedDB
+        // Lưu vào IndexedDB
         window.contextVectorManager.saveToIndexedDB().catch(err =>
-            console.warn('[向量库] 保存失败:', err)
+            console.warn('[Thư viện vector] Lưu thất bại:', err)
         );
     }
 
-    // 🆕 从人物图谱中删除对应轮次添加的人物
+    // 🆕 Xóa nhân vật được thêm vào trong các lượt tương ứng khỏi đồ thị nhân vật
     if (window.characterGraphManager && typeof window.characterGraphManager.deleteCharactersByTurnRange === 'function') {
         const startTurn = Math.floor(historyIndex / 2) + 1;
         const endTurn = Math.floor((historyIndex + deleteCount) / 2) + 1;
@@ -273,27 +273,27 @@ async function resendUserMessage(messageIndex) {
         window.characterGraphManager.deleteCharactersByTurnRange(startTurn, endTurn)
             .then(deletedNames => {
                 if (deletedNames.length > 0) {
-                    console.log(`[重新发送] 人物图谱回滚删除了 ${deletedNames.length} 个人物`);
+                    console.log(`[Gửi lại] Quay lui đồ thị nhân vật đã xóa ${deletedNames.length} nhân vật`);
                 }
             })
-            .catch(err => console.warn('[重新发送] 人物图谱回滚失败:', err));
+            .catch(err => console.warn('[Gửi lại] Quay lui đồ thị nhân vật thất bại:', err));
     }
 
-    // 🧠 从GraphRAG语义网络中删除对应轮次的实体和关系
+    // 🧠 Xóa các thực thể và quan hệ trong các lượt tương ứng khỏi mạng ngữ nghĩa GraphRAG
     if (window.graphRAGLite && typeof window.graphRAGLite.deleteByTurnIndex === 'function') {
         const startTurn = Math.floor(historyIndex / 2) + 1;
         window.graphRAGLite.deleteByTurnIndex(startTurn)
             .then(result => {
                 if (result.deletedEntities > 0 || result.deletedRelations > 0) {
-                    console.log(`[重新发送] GraphRAG回滚删除了 ${result.deletedEntities} 个实体, ${result.deletedRelations} 条关系`);
+                    console.log(`[Gửi lại] Quay lui GraphRAG đã xóa ${result.deletedEntities} thực thể, ${result.deletedRelations} quan hệ`);
                 }
             })
-            .catch(err => console.warn('[重新发送] GraphRAG回滚失败:', err));
+            .catch(err => console.warn('[Gửi lại] Quay lui GraphRAG thất bại:', err));
     }
 
-    // 📚 删除对应数量的剧情规划存档（基于删除的AI消息数量）
+    // 📚 Xóa số lượng tương ứng các bản lưu trữ kế hoạch cốt truyện (dựa trên số lượng tin nhắn AI đã xóa)
     if (deleteCount > 0 && window.plotArchiveManager && typeof window.plotArchiveManager.deleteLastN === 'function') {
-        // 统计被删除的消息中有多少条是AI消息
+        // Thống kê có bao nhiêu tin nhắn AI trong số tin nhắn bị xóa
         let aiMessageCount = 0;
         messagesToDelete.forEach(msg => {
             if (msg.classList.contains('ai-message')) {
@@ -303,19 +303,19 @@ async function resendUserMessage(messageIndex) {
 
         if (aiMessageCount > 0) {
             const actualDeleted = window.plotArchiveManager.deleteLastN(aiMessageCount);
-            console.log(`[重新发送] 删除了 ${aiMessageCount} 条AI消息，对应删除 ${actualDeleted} 条剧情规划存档`);
+            console.log(`[Gửi lại] Đã xóa ${aiMessageCount} tin nhắn AI, xóa tương ứng ${actualDeleted} bản lưu trữ kế hoạch cốt truyện`);
         }
     }
 
-    // 🆕 删除对应轮次的历史矩阵数据
+    // 🆕 Xóa dữ liệu ma trận lịch sử của các lượt tương ứng
     if (deleteCount > 0 && window.matrixManager && window.matrixManager.historyMatrix) {
         const startTurn = Math.floor(historyIndex / 2) + 1;
         const endTurn = Math.floor((historyIndex + deleteCount) / 2) + 1;
         window.matrixManager.historyMatrix.deleteByTurnRange(startTurn, endTurn);
-        console.log(`[重新发送] 已删除第${startTurn}-${endTurn}轮的历史矩阵数据`);
+        console.log(`[Gửi lại] Đã xóa dữ liệu ma trận lịch sử lượt ${startTurn}-${endTurn}`);
     }
 
-    // 删除历史记录中的这条用户消息（准备重新发送）
+    // Xóa tin nhắn người dùng này khỏi hồ sơ lịch sử (chuẩn bị gửi lại)
     if (historyIndex < gameState.conversationHistory.length) {
         gameState.conversationHistory.splice(historyIndex, 1);
         gameState.variableSnapshots.splice(historyIndex, 1);
@@ -323,97 +323,97 @@ async function resendUserMessage(messageIndex) {
 
     gameState.isProcessing = true;
 
-    // 删除UI中的这条用户消息
+    // Xóa tin nhắn người dùng này trong UI
     messageDiv.remove();
 
-    // 重新显示用户消息
+    // Hiển thị lại tin nhắn người dùng
     displayUserMessage(messageText);
 
-    // 添加到历史记录
+    // Thêm vào hồ sơ lịch sử
     gameState.conversationHistory.push({
         role: 'user',
         content: messageText
     });
 
-    // 保存当前变量快照
+    // Lưu ảnh chụp biến hiện tại
     gameState.variableSnapshots.push(JSON.parse(JSON.stringify(gameState.variables)));
 
-    // 显示加载提示（在用户消息之后）
+    // Hiển thị gợi ý đang tải (sau tin nhắn người dùng)
     const loadingDiv = document.createElement('div');
     loadingDiv.className = 'message ai-message';
-    loadingDiv.innerHTML = '<div class="message-content"><span class="loading"></span> 用户输入分析中...</div>';
+    loadingDiv.innerHTML = '<div class="message-content"><span class="loading"></span> Đang phân tích dữ liệu nhập người dùng...</div>';
     loadingDiv.id = 'loading-message';
     historyDiv.appendChild(loadingDiv);
 
     try {
-        console.log('🔄 [重新发送] 原始用户消息:', messageText);
+        console.log('🔄 [Gửi lại] Tin nhắn người dùng gốc:', messageText);
 
-        // 🎭 用户画像分析（重新发送时也要分析）
+        // 🎭 Phân tích chân dung người dùng (cũng cần phân tích khi gửi lại)
         let analysisEnhancement = '';
         if (window.userProfileAnalyzer && window.userProfileAnalyzer.isEnabled()) {
             try {
-                console.log('[🎭用户画像] 重新发送：开始分析用户输入...');
+                console.log('[🎭Chân dung người dùng] Gửi lại: Bắt đầu phân tích dữ liệu nhập người dùng...');
                 const gameContext = {
-                    currentLocation: gameState.variables.location || '未知',
-                    characterName: gameState.variables.name || '未知',
-                    realm: gameState.variables.realm || '凡人'
+                    currentLocation: gameState.variables.location || 'Không rõ',
+                    characterName: gameState.variables.name || 'Không rõ',
+                    realm: gameState.variables.realm || 'Phàm nhân'
                 };
                 const analysisResult = await window.userProfileAnalyzer.analyzeUserInput(messageText, gameContext);
                 if (analysisResult) {
-                    console.log('[🎭用户画像] 重新发送：分析完成', analysisResult);
-                    // 🔧 修复：使用getEnhancedPrompt生成完整的增强提示词
+                    console.log('[🎭Chân dung người dùng] Gửi lại: Phân tích hoàn tất', analysisResult);
+                    // 🔧 Sửa lỗi: Sử dụng getEnhancedPrompt để tạo từ khóa gợi ý tăng cường hoàn chỉnh
                     analysisEnhancement = window.userProfileAnalyzer.getEnhancedPrompt(analysisResult);
                     if (analysisEnhancement) {
-                        console.log('[🎭用户画像] 重新发送：增强提示词已生成');
+                        console.log('[🎭Chân dung người dùng] Gửi lại: Từ khóa gợi ý tăng cường đã được tạo');
                     }
                 }
             } catch (analysisErr) {
-                console.warn('[🎭用户画像] 重新发送：分析失败', analysisErr);
+                console.warn('[🎭Chân dung người dùng] Gửi lại: Phân tích thất bại', analysisErr);
             }
         }
 
-        // 更新加载提示
-        loadingDiv.innerHTML = '<div class="message-content"><span class="loading"></span> AI思考中...</div>';
+        // Cập nhật gợi ý đang tải
+        loadingDiv.innerHTML = '<div class="message-content"><span class="loading"></span> AI đang suy nghĩ...</div>';
 
-        // 🎯 使用统一函数构建增强提示
+        // 🎯 Sử dụng hàm thống nhất để xây dựng gợi ý tăng cường
         let enhancedMessage = buildEnhancedPrompt(messageText);
 
-        // 🎭 附加用户画像分析结果
+        // 🎭 Đính kèm kết quả phân tích chân dung người dùng
         if (analysisEnhancement) {
             enhancedMessage = analysisEnhancement + '\n\n---\n\n' + enhancedMessage;
         }
 
-        console.log('🔄 [重新发送] 增强后的Prompt:', enhancedMessage);
+        console.log('🔄 [Gửi lại] Prompt sau khi tăng cường:', enhancedMessage);
 
-        // 🔧 传入完整的增强提示词用于向量检索
+        // 🔧 Truyền vào từ khóa gợi ý tăng cường hoàn chỉnh để truy xuất vector
         const response = await callAI(enhancedMessage, false, enhancedMessage);
 
-        // 移除加载提示
+        // Loại bỏ gợi ý đang tải
         const loading = document.getElementById('loading-message');
         if (loading) loading.remove();
 
         handleAIResponse(response);
 
-        // 触发动态世界生成（异步，不阻塞主流程）
-        generateDynamicWorld().catch(err => console.error('[动态世界] 生成异常:', err));
+        // Kích hoạt tạo thế giới động (bất đồng bộ, không làm tắc nghẽn quy trình chính)
+        generateDynamicWorld().catch(err => console.error('[Thế giới động] Tạo bất thường:', err));
 
-        // 触发好友自动消息（异步，不阻塞主流程）
+        // Kích hoạt tin nhắn tự động từ bạn bè (bất đồng bộ, không làm tắc nghẽn quy trình chính)
         if (typeof window.generateAutoFriendMessage === 'function') {
-            window.generateAutoFriendMessage().catch(err => console.error('[好友自动消息] 生成异常:', err));
+            window.generateAutoFriendMessage().catch(err => console.error('[Tin nhắn tự động bạn bè] Tạo bất thường:', err));
         }
 
     } catch (error) {
-        // 移除加载提示
+        // Loại bỏ gợi ý đang tải
         const loading = document.getElementById('loading-message');
         if (loading) loading.remove();
 
-        // 不要移除用户消息！显示错误和重试按钮
-        displayErrorMessageWithRetry('重新发送失败：' + error.message, async () => {
-            // 移除错误消息
+        // Đừng xóa tin nhắn người dùng! Hiển thị lỗi và nút thử lại
+        displayErrorMessageWithRetry('Gửi lại thất bại: ' + error.message, async () => {
+            // Loại bỏ tin nhắn lỗi
             const errorDiv = document.getElementById('error-message-with-retry');
             if (errorDiv) errorDiv.remove();
 
-            // 再次重试
+            // Thử lại lần nữa
             await resendUserMessage(messageIndex);
         });
     }
@@ -421,55 +421,55 @@ async function resendUserMessage(messageIndex) {
     gameState.isProcessing = false;
 }
 
-// 重新生成最后的响应
+// Tạo lại phản hồi cuối cùng
 async function regenerateLastResponse() {
     if (gameState.isProcessing) return;
     if (gameState.conversationHistory.length < 2) return;
 
-    // 🔧 防止重复点击：立即设置处理标志
+    // 🔧 Ngăn chặn nhấp chuột lặp lại: Thiết lập cờ xử lý ngay lập tức
     gameState.isProcessing = true;
 
-    // 🔧 启动全局输入框保护
+    // 🔧 Kích hoạt bảo vệ khung nhập liệu toàn cục
     userInputProtection.start();
 
-    // 🔧 保存被删除的内容，以便失败时恢复
+    // 🔧 Lưu nội dung bị xóa để khôi phục khi thất bại
     let removedAIMessage = null;
     let removedSnapshot = null;
     let removedAIMessageDOM = null;
     let previousVariablesBackup = null;
 
-    // 🆕 检查最后一条消息是否是AI消息
+    // 🆕 Kiểm tra xem tin nhắn cuối cùng có phải là tin nhắn AI không
     const lastMessageIsAI = gameState.conversationHistory.length > 0 &&
         gameState.conversationHistory[gameState.conversationHistory.length - 1].role === 'assistant';
 
-    // 删除最后一条AI响应（只有当最后一条确实是AI消息时才删除）
+    // Xóa phản hồi AI cuối cùng (chỉ xóa khi tin nhắn cuối cùng thực sự là tin nhắn AI)
     if (lastMessageIsAI) {
 
-        // 🔧 保存当前变量状态（用于失败恢复）
+        // 🔧 Lưu trạng thái biến hiện tại (dùng để khôi phục khi thất bại)
         previousVariablesBackup = JSON.parse(JSON.stringify(gameState.variables));
 
-        // 删除AI消息和快照
+        // Xóa tin nhắn AI và ảnh chụp nhanh
         removedAIMessage = gameState.conversationHistory.pop();
         if (gameState.variableSnapshots.length > 0) {
             removedSnapshot = gameState.variableSnapshots.pop();
         }
 
-        // 🆕 从向量库中删除对应的条目
+        // 🆕 Xóa mục tương ứng khỏi thư viện vector
         if (window.contextVectorManager) {
-            // 计算当前轮次（删除AI消息后的轮数）
+            // Tính toán lượt hiện tại (số lượt sau khi xóa tin nhắn AI)
             const currentTurn = Math.floor(gameState.conversationHistory.length / 2);
 
-            // 删除向量库中的这一轮
+            // Xóa lượt này trong thư viện vector
             const vectorIndex = window.contextVectorManager.conversationEmbeddings.findIndex(
                 conv => conv.turnIndex === currentTurn + 1
             );
 
             if (vectorIndex !== -1) {
                 window.contextVectorManager.conversationEmbeddings.splice(vectorIndex, 1);
-                console.log(`[向量库] 已删除第${currentTurn + 1}轮的向量记录（重新生成）`);
+                console.log(`[Thư viện vector] Đã xóa hồ sơ vector lượt thứ ${currentTurn + 1} (Tạo lại)`);
             }
 
-            // 🆕 同时删除history向量库中对应轮次的条目
+            // 🆕 Đồng thời xóa mục tương ứng trong thư viện vector history
             if (window.contextVectorManager.historyEmbeddings) {
                 const historyIndicesToRemove = [];
                 window.contextVectorManager.historyEmbeddings.forEach((entry, index) => {
@@ -478,100 +478,100 @@ async function regenerateLastResponse() {
                     }
                 });
 
-                // 从后往前删除，避免索引偏移问题
+                // Xóa từ dưới lên trên để tránh vấn đề lệch chỉ số
                 for (let i = historyIndicesToRemove.length - 1; i >= 0; i--) {
                     window.contextVectorManager.historyEmbeddings.splice(historyIndicesToRemove[i], 1);
                 }
 
                 if (historyIndicesToRemove.length > 0) {
-                    console.log(`[History向量库] 已删除第${currentTurn + 1}轮的${historyIndicesToRemove.length}条history记录（重新生成）`);
+                    console.log(`[Thư viện vector History] Đã xóa ${historyIndicesToRemove.length} hồ sơ history lượt ${currentTurn + 1} (Tạo lại)`);
 
-                    // 🔧 修复：直接用 deleteByTurnIndex 删除对应轮次的矩阵数据
-                    // 而不是清空后重建，这样更精确
+                    // 🔧 Sửa lỗi: Sử dụng trực tiếp deleteByTurnIndex để xóa dữ liệu ma trận của lượt tương ứng
+                    // Thay vì xóa sạch rồi xây dựng lại, điều này sẽ chính xác hơn
                     if (window.matrixManager && window.matrixManager.historyMatrix) {
                         window.matrixManager.historyMatrix.deleteByTurnIndex(currentTurn + 1);
-                        console.log(`[History矩阵] 已删除第${currentTurn + 1}轮的矩阵数据`);
+                        console.log(`[Ma trận History] Đã xóa dữ liệu ma trận lượt ${currentTurn + 1}`);
                     }
                 }
             }
 
-            // 保存到IndexedDB（异步，不阻塞）
+            // Lưu vào IndexedDB (bất đồng bộ, không gây tắc nghẽn)
             window.contextVectorManager.saveToIndexedDB().catch(err =>
-                console.warn('[向量库] 保存失败:', err)
+                console.warn('[Thư viện vector] Lưu thất bại:', err)
             );
         }
 
-        // 🌍 保存动态世界的独立数据（在回滚前保存）
+        // 🌍 Lưu dữ liệu độc lập của thế giới động (lưu trước khi quay lui)
         const dynamicWorldBackup = {
             history: JSON.parse(JSON.stringify(gameState.dynamicWorld.history || [])),
             floor: gameState.dynamicWorld.floor || 0,
             messageCounter: gameState.dynamicWorld.messageCounter || 0
         };
 
-        // ✅ 回滚变量到用户消息发送时的状态（这是关键！）
-        // 用户消息的快照在倒数第二个位置
+        // ✅ Quay lui biến về trạng thái khi tin nhắn người dùng được gửi (đây là điểm mấu chốt!)
+        // Ảnh chụp nhanh của tin nhắn người dùng nằm ở vị trí áp chót
         if (gameState.variableSnapshots.length > 0) {
             gameState.variables = JSON.parse(JSON.stringify(
                 gameState.variableSnapshots[gameState.variableSnapshots.length - 1]
             ));
-            console.log('[重新生成] 已回滚变量到用户消息发送时的状态');
-            updateStatusPanel(); // 立即更新UI显示回滚后的状态
+            console.log('[Tạo lại] Đã quay lui biến về trạng thái khi tin nhắn người dùng được gửi');
+            updateStatusPanel(); // Cập nhật ngay giao diện hiển thị trạng thái sau khi quay lui
         }
 
-        // 🌍 恢复动态世界的独立数据（回滚后恢复）
+        // 🌍 Khôi phục dữ liệu độc lập của thế giới động (khôi phục sau khi quay lui)
         gameState.dynamicWorld.history = dynamicWorldBackup.history;
         gameState.dynamicWorld.floor = dynamicWorldBackup.floor;
         gameState.dynamicWorld.messageCounter = dynamicWorldBackup.messageCounter;
-        console.log('[重新生成] 已保护动态世界数据不被回滚');
+        console.log('[Tạo lại] Đã bảo vệ dữ liệu thế giới động không bị quay lui');
 
-        // 🆕 从人物图谱中删除当前轮次添加的人物
+        // 🆕 Xóa nhân vật được thêm vào trong lượt hiện tại khỏi đồ thị nhân vật
         if (window.characterGraphManager && typeof window.characterGraphManager.deleteCharactersByTurnRange === 'function') {
             const currentTurn = Math.floor(gameState.conversationHistory.length / 2);
 
             window.characterGraphManager.deleteCharactersByTurnRange(currentTurn, currentTurn)
                 .then(deletedNames => {
                     if (deletedNames.length > 0) {
-                        console.log(`[重新生成] 人物图谱回滚删除了 ${deletedNames.length} 个人物`);
+                        console.log(`[Tạo lại] Quay lui đồ thị nhân vật đã xóa ${deletedNames.length} nhân vật`);
                     }
                 })
-                .catch(err => console.warn('[重新生成] 人物图谱回滚失败:', err));
+                .catch(err => console.warn('[Tạo lại] Quay lui đồ thị nhân vật thất bại:', err));
         }
 
-        // 🧠 从GraphRAG语义网络中删除当前轮次的实体和关系
+        // 🧠 Xóa thực thể và quan hệ của lượt hiện tại khỏi mạng ngữ nghĩa GraphRAG
         if (window.graphRAGLite && typeof window.graphRAGLite.deleteByTurnIndex === 'function') {
             const currentTurn = Math.floor(gameState.conversationHistory.length / 2) + 1;
             window.graphRAGLite.deleteByTurnIndex(currentTurn)
                 .then(result => {
                     if (result.deletedEntities > 0 || result.deletedRelations > 0) {
-                        console.log(`[重新生成] GraphRAG回滚删除了 ${result.deletedEntities} 个实体, ${result.deletedRelations} 条关系`);
+                        console.log(`[Tạo lại] Quay lui GraphRAG đã xóa ${result.deletedEntities} thực thể, ${result.deletedRelations} quan hệ`);
                     }
                 })
-                .catch(err => console.warn('[重新生成] GraphRAG回滚失败:', err));
+                .catch(err => console.warn('[Tạo lại] Quay lui GraphRAG thất bại:', err));
         }
 
-        // 📚 删除最后一条剧情规划存档（与当前轮次对应）
+        // 📚 Xóa bản lưu trữ kế hoạch cốt truyện cuối cùng (tương ứng với lượt hiện tại)
         if (window.plotArchiveManager && typeof window.plotArchiveManager.deleteLastN === 'function') {
             window.plotArchiveManager.deleteLastN(1);
-            console.log('[重新生成] 已删除最后一条剧情规划存档');
+            console.log('[Tạo lại] Đã xóa bản lưu trữ kế hoạch cốt truyện cuối cùng');
         }
 
-        // 🆕 只有当确实有AI消息时，才删除UI中的AI消息
-        // 删除UI中最后一条AI消息（排除动态世界消息和加载提示）
+        // 🆕 Chỉ xóa tin nhắn AI trong UI khi thực sự có tin nhắn AI
+        // Xóa tin nhắn AI cuối cùng trong UI (loại trừ tin nhắn thế giới động và gợi ý đang tải)
         const historyDiv = document.getElementById('gameHistory');
         const allAIMessages = historyDiv.querySelectorAll('.ai-message');
 
-        // 过滤出真正的AI回复消息（排除动态世界消息和加载提示）
+        // Lọc ra các tin nhắn phản hồi thực sự của AI (loại trừ tin nhắn thế giới động và gợi ý đang tải)
         const aiResponseMessages = Array.from(allAIMessages).filter(msg => {
-            // 排除加载提示
+            // Loại trừ gợi ý đang tải
             if (msg.id === 'loading-message' || msg.id === 'dynamic-world-loading') {
                 return false;
             }
-            // 排除动态世界消息（检查header中是否包含"动态世界"文本）
+            // Loại trừ tin nhắn thế giới động (kiểm tra xem header có chứa văn bản "Thế giới động" không)
             const header = msg.querySelector('.message-header');
-            if (header && header.textContent.includes('动态世界')) {
+            if (header && header.textContent.includes('Thế giới động')) {
                 return false;
             }
-            // 排除错误消息
+            // Loại trừ tin nhắn lỗi
             if (msg.id === 'error-message-with-retry') {
                 return false;
             }
@@ -581,156 +581,156 @@ async function regenerateLastResponse() {
         if (aiResponseMessages.length > 0) {
             removedAIMessageDOM = aiResponseMessages[aiResponseMessages.length - 1];
             removedAIMessageDOM.remove();
-            console.log('[重新生成] 已删除UI中的AI消息');
+            console.log('[Tạo lại] Đã xóa tin nhắn AI trong UI');
         }
     } else {
-        // 🆕 如果最后一条不是AI消息（说明之前AI响应失败了），不需要删除任何东西
-        console.log('[重新生成] 最后一条消息不是AI消息，无需删除');
+        // 🆕 Nếu tin nhắn cuối cùng không phải AI (nghĩa là phản hồi AI trước đó đã thất bại), không cần xóa gì cả
+        console.log('[Tạo lại] Tin nhắn cuối cùng không phải tin nhắn AI, không cần xóa');
     }
 
-    // 获取最后一条用户消息
+    // Lấy tin nhắn người dùng cuối cùng
     const lastUserMessage = gameState.conversationHistory[gameState.conversationHistory.length - 1].content;
 
-    // 🆕 在控制台显示重新生成的提示
-    console.log('🔄 [重新生成] 原始用户消息:', lastUserMessage);
+    // 🆕 Hiển thị gợi ý tạo lại trong console
+    console.log('🔄 [Tạo lại] Tin nhắn người dùng gốc:', lastUserMessage);
 
-    // 显示加载提示
+    // Hiển thị gợi ý đang tải
     const historyDiv = document.getElementById('gameHistory');
     const loadingDiv = document.createElement('div');
     loadingDiv.className = 'message ai-message';
-    loadingDiv.innerHTML = '<div class="message-content"><span class="loading"></span> 用户输入分析中...</div>';
+    loadingDiv.innerHTML = '<div class="message-content"><span class="loading"></span> Đang phân tích dữ liệu nhập người dùng...</div>';
     loadingDiv.id = 'loading-message';
     historyDiv.appendChild(loadingDiv);
 
-    // 🎭 用户画像分析（重新生成时也要分析）
+    // 🎭 Phân tích chân dung người dùng (cũng cần phân tích khi tạo lại)
     let analysisEnhancement = '';
     if (window.userProfileAnalyzer && window.userProfileAnalyzer.isEnabled()) {
         try {
-            console.log('[🎭用户画像] 重新生成：开始分析用户输入...');
+            console.log('[🎭Chân dung người dùng] Tạo lại: Bắt đầu phân tích dữ liệu nhập người dùng...');
             const gameContext = {
-                currentLocation: gameState.variables.location || '未知',
-                characterName: gameState.variables.name || '未知',
-                realm: gameState.variables.realm || '凡人'
+                currentLocation: gameState.variables.location || 'Không rõ',
+                characterName: gameState.variables.name || 'Không rõ',
+                realm: gameState.variables.realm || 'Phàm nhân'
             };
             const analysisResult = await window.userProfileAnalyzer.analyzeUserInput(lastUserMessage, gameContext);
             if (analysisResult) {
-                console.log('[🎭用户画像] 重新生成：分析完成', analysisResult);
-                // 🔧 修复：使用getEnhancedPrompt生成完整的增强提示词
+                console.log('[🎭Chân dung người dùng] Tạo lại: Phân tích hoàn tất', analysisResult);
+                // 🔧 Sửa lỗi: Sử dụng getEnhancedPrompt để tạo từ khóa gợi ý tăng cường hoàn chỉnh
                 analysisEnhancement = window.userProfileAnalyzer.getEnhancedPrompt(analysisResult);
                 if (analysisEnhancement) {
-                    console.log('[🎭用户画像] 重新生成：增强提示词已生成');
+                    console.log('[🎭Chân dung người dùng] Tạo lại: Từ khóa gợi ý tăng cường đã được tạo');
                 }
             }
         } catch (analysisErr) {
-            console.warn('[🎭用户画像] 重新生成：分析失败', analysisErr);
+            console.warn('[🎭Chân dung người dùng] Tạo lại: Phân tích thất bại', analysisErr);
         }
     }
 
-    // 更新加载提示
-    loadingDiv.innerHTML = '<div class="message-content"><span class="loading"></span> AI重新思考中...</div>';
+    // Cập nhật gợi ý đang tải
+    loadingDiv.innerHTML = '<div class="message-content"><span class="loading"></span> AI đang suy nghĩ lại...</div>';
 
-    // 🎯 使用统一函数构建增强提示
+    // 🎯 Sử dụng hàm thống nhất để xây dựng gợi ý tăng cường
     let enhancedMessage = buildEnhancedPrompt(lastUserMessage);
 
-    // 🎭 附加用户画像分析结果
+    // 🎭 Đính kèm kết quả phân tích chân dung người dùng
     if (analysisEnhancement) {
         enhancedMessage = analysisEnhancement + '\n\n---\n\n' + enhancedMessage;
     }
 
-    console.log('🔄 [重新生成] 增强后的Prompt:', enhancedMessage);
+    console.log('🔄 [Tạo lại] Prompt sau khi tăng cường:', enhancedMessage);
 
     try {
-        // 从历史记录中临时移除用户消息，避免在buildAIMessages中重复
-        // 因为callAI会在buildAIMessages中将用户消息添加到临时的messages数组末尾
+        // Tạm thời xóa tin nhắn người dùng khỏi hồ sơ lịch sử để tránh trùng lặp trong buildAIMessages
+        // Vì callAI sẽ thêm tin nhắn người dùng vào cuối mảng tin nhắn tạm thời trong buildAIMessages
         const userMessageObj = gameState.conversationHistory.pop();
 
-        // 🆕 在控制台显示发送给AI的完整Prompt
-        console.log('🤖 [重新生成-发送给AI的完整Prompt]', enhancedMessage);
+        // 🆕 Hiển thị Prompt hoàn chỉnh được gửi cho AI trong console
+        console.log('🤖 [Tạo lại - Prompt hoàn chỉnh gửi cho AI]', enhancedMessage);
 
-        // 🔧 传入完整的增强提示词用于向量检索
+        // 🔧 Truyền vào từ khóa gợi ý tăng cường hoàn chỉnh để truy xuất vector
         const response = await callAI(enhancedMessage, false, enhancedMessage);
 
-        // 重新添加用户消息到历史记录，保持历史记录完整
+        // Thêm lại tin nhắn người dùng vào hồ sơ lịch sử, giữ cho hồ sơ lịch sử hoàn chỉnh
         gameState.conversationHistory.push(userMessageObj);
 
-        // 移除加载提示
+        // Loại bỏ gợi ý đang tải
         const loading = document.getElementById('loading-message');
         if (loading) loading.remove();
 
         handleAIResponse(response);
 
-        // 触发动态世界生成（异步，不阻塞主流程）
-        generateDynamicWorld().catch(err => console.error('[动态世界] 生成异常:', err));
+        // Kích hoạt tạo thế giới động (bất đồng bộ, không làm tắc nghẽn quy trình chính)
+        generateDynamicWorld().catch(err => console.error('[Thế giới động] Tạo bất thường:', err));
 
-        // 📨 触发好友自动消息（异步，不阻塞主流程）
+        // 📨 Kích hoạt tin nhắn tự động từ bạn bè (bất đồng bộ, không làm tắc nghẽn quy trình chính)
         if (typeof window.generateAutoFriendMessage === 'function') {
-            window.generateAutoFriendMessage().catch(err => console.error('[📨好友自动消息] 生成异常:', err));
+            window.generateAutoFriendMessage().catch(err => console.error('[📨Tin nhắn tự động bạn bè] Tạo bất thường:', err));
         }
 
     } catch (error) {
-        // 移除加载提示
+        // Loại bỏ gợi ý đang tải
         const loading = document.getElementById('loading-message');
         if (loading) loading.remove();
 
-        // 🔧 恢复被删除的AI消息和变量快照
+        // 🔧 Khôi phục tin nhắn AI và ảnh chụp biến bị xóa
         if (removedAIMessage) {
             gameState.conversationHistory.push(removedAIMessage);
-            console.log('[重试恢复] 已恢复AI消息到历史记录');
+            console.log('[Khôi phục thử lại] Đã khôi phục tin nhắn AI vào hồ sơ lịch sử');
         }
         if (removedSnapshot) {
             gameState.variableSnapshots.push(removedSnapshot);
-            console.log('[重试恢复] 已恢复变量快照');
+            console.log('[Khôi phục thử lại] Đã khôi phục ảnh chụp biến');
         }
 
-        // 🔧 恢复变量状态（如果有备份）
+        // 🔧 Khôi phục trạng thái biến (nếu có bản sao lưu)
         if (previousVariablesBackup) {
             gameState.variables = previousVariablesBackup;
             updateStatusPanel();
-            console.log('[重试恢复] 已恢复变量状态');
+            console.log('[Khôi phục thử lại] Đã khôi phục trạng thái biến');
         }
 
-        // 🔧 恢复AI消息的DOM
+        // 🔧 Khôi phục DOM của tin nhắn AI
         if (removedAIMessageDOM) {
             historyDiv.appendChild(removedAIMessageDOM);
-            console.log('[重试恢复] 已恢复AI消息DOM');
+            console.log('[Khôi phục thử lại] Đã khôi phục DOM tin nhắn AI');
         }
 
-        // 错误时也要恢复用户消息（如果已经被pop了）
+        // Khôi phục tin nhắn người dùng khi có lỗi (nếu nó đã bị pop)
         if (gameState.conversationHistory.length === 0 ||
             gameState.conversationHistory[gameState.conversationHistory.length - 1].role !== 'user') {
-            // 如果最后一条不是用户消息，需要重新添加
+            // Nếu tin nhắn cuối cùng không phải người dùng, cần thêm lại
             gameState.conversationHistory.push({
                 role: 'user',
                 content: lastUserMessage
             });
-            console.log('[重试恢复] 已恢复用户消息到历史记录');
+            console.log('[Khôi phục thử lại] Đã khôi phục tin nhắn người dùng vào hồ sơ lịch sử');
         }
 
-        // 显示错误和重试按钮
-        displayErrorMessageWithRetry('重新生成失败：' + error.message, async () => {
-            // 移除错误消息
+        // Hiển thị lỗi và nút thử lại
+        displayErrorMessageWithRetry('Tạo lại thất bại: ' + error.message, async () => {
+            // Loại bỏ tin nhắn lỗi
             const errorDiv = document.getElementById('error-message-with-retry');
             if (errorDiv) errorDiv.remove();
 
-            // 再次重试
+            // Thử lại lần nữa
             await regenerateLastResponse();
         });
     }
 
-    // 🔧 停止全局输入框保护
+    // 🔧 Ngừng bảo vệ khung nhập liệu toàn cục
     userInputProtection.stop();
 
     gameState.isProcessing = false;
 }
 
-// 🔧 防抖动的重新生成函数，防止快速多次点击
+// 🔧 Hàm tạo lại có chống rung, ngăn chặn nhấp chuột nhanh nhiều lần
 let regenerateDebounceTimer = null;
 function regenerateLastResponseDebounced() {
     if (regenerateDebounceTimer) {
         clearTimeout(regenerateDebounceTimer);
     }
 
-    // 禁用按钮防止重复点击
+    // Vô hiệu hóa nút để ngăn chặn nhấp chuột lặp lại
     const regenerateBtns = document.querySelectorAll('.regenerate-btn');
     regenerateBtns.forEach(btn => {
         btn.disabled = true;
@@ -742,7 +742,7 @@ function regenerateLastResponseDebounced() {
         try {
             await regenerateLastResponse();
         } finally {
-            // 重新启用按钮
+            // Kích hoạt lại nút
             const regenerateBtns = document.querySelectorAll('.regenerate-btn');
             regenerateBtns.forEach(btn => {
                 btn.disabled = false;
@@ -751,10 +751,10 @@ function regenerateLastResponseDebounced() {
             });
             regenerateDebounceTimer = null;
         }
-    }, 300); // 300ms 防抖延迟
+    }, 300); // Độ trễ chống rung 300ms
 }
 
-// 🔧 全局保护用户输入框，防止被意外修改
+// 🔧 Bảo vệ khung nhập liệu người dùng toàn cục, ngăn chặn bị sửa đổi ngoài ý muốn
 let userInputProtection = {
     isActive: false,
     originalValue: '',
@@ -767,12 +767,12 @@ let userInputProtection = {
             this.protectedElement = userInput;
             this.isActive = true;
 
-            // 监听值变化，如果被意外修改则立即恢复
+            // Theo dõi sự thay đổi giá trị, khôi phục ngay lập tức nếu bị sửa đổi ngoài ý muốn
             this.observer = new MutationObserver((mutations) => {
                 mutations.forEach((mutation) => {
                     if (mutation.type === 'attributes' && mutation.attributeName === 'value') {
                         if (this.protectedElement.value !== this.originalValue) {
-                            console.warn('[输入框保护] 检测到输入框被意外修改，正在恢复...');
+                            console.warn('[Bảo vệ khung nhập] Phát hiện khung nhập liệu bị thay đổi ngoài ý muốn, đang khôi phục...');
                             this.protectedElement.value = this.originalValue;
                         }
                     }

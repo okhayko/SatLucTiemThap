@@ -1,79 +1,79 @@
 /**
- * 游戏核心系统模块
- * 包含：数据持久化、存档管理、AI交互、游戏设置等
- * 从 game.html 中提取的核心功能模块
+ * Module hệ thống cốt lõi của trò chơi
+ * Bao gồm: Lưu trữ dữ liệu lâu dài, quản lý lưu trữ (save), tương tác AI, cài đặt trò chơi, v.v.
+ * Trích xuất từ các module chức năng cốt lõi trong game.html
  */
 
-// ==================== 全局变量声明 ====================
-// 这些变量在 game.html 中已定义，这里仅作声明
+// ==================== Khai báo biến toàn cục ====================
+// Những biến này đã được định nghĩa trong game.html, ở đây chỉ khai báo
 // window.gameState
 // window.apiConfig
 // window.extraApiConfig
 // window.contextVectorManager
 
-// ==================== IndexedDB 数据库配置 ====================
-// 根据游戏配置使用不同的数据库名称
-// game-bhz.html 使用 BHZ_CONFIG, game.html 使用 GAME_CONFIG
+// ==================== Cấu hình cơ sở dữ liệu IndexedDB ====================
+// Sử dụng tên cơ sở dữ liệu khác nhau dựa trên cấu hình trò chơi
+// game-bhz.html sử dụng BHZ_CONFIG, game.html sử dụng GAME_CONFIG
 const gameConfig = window.BHZ_CONFIG || window.GAME_CONFIG || {};
 const DB_NAME = gameConfig.DB_NAME ? gameConfig.DB_NAME.replace('_dlc_db', '_game_db') : 'xiuxian_game_db';
 const DB_VERSION = 2;
 const STORE_NAME = 'game_saves';
 const AUTO_SAVE_NAME = 'game_history';
 let db = null;
-console.log('[GameCore] 使用数据库:', DB_NAME);
+console.log('[GameCore] Sử dụng cơ sở dữ liệu:', DB_NAME);
 
-// ==================== 数据持久化系统 ====================
+// ==================== Hệ thống lưu trữ dữ liệu lâu dài ====================
 
 /**
- * 📱 获取手机聊天数据（用于存档）
+ * 📱 Lấy dữ liệu trò chuyện điện thoại (dùng để lưu trữ)
  */
 function getMobileChatDataForSave() {
-    // 尝试从 iframe 获取（需要单独 try-catch 因为跨域检查会抛异常）
+    // Thử lấy từ iframe (cần try-catch riêng vì kiểm tra chéo tên miền sẽ quăng ngoại lệ)
     try {
         const mobileFrame = document.getElementById('mobileFrame');
         if (mobileFrame && mobileFrame.contentWindow) {
-            // 单独 try-catch 跨域访问
+            // try-catch riêng cho truy cập chéo tên miền (cross-origin)
             try {
                 const getMobileSaveData = mobileFrame.contentWindow.getMobileSaveData;
                 if (typeof getMobileSaveData === 'function') {
                     return getMobileSaveData();
                 }
             } catch (crossOriginError) {
-                // 跨域错误，静默忽略，尝试 localStorage
+                // Lỗi chéo tên miền, lặng lẽ bỏ qua, thử dùng localStorage
             }
         }
     } catch (e) {
-        // iframe 不存在或其他错误
+        // iframe không tồn tại hoặc lỗi khác
     }
 
-    // 尝试从 localStorage 获取
+    // Thử lấy từ localStorage
     try {
         const saved = localStorage.getItem('mobileChatData');
         if (saved) {
             return JSON.parse(saved);
         }
     } catch (e) {
-        console.warn('[存档] 从 localStorage 获取手机聊天数据失败:', e);
+        console.warn('[Lưu trữ] Lấy dữ liệu trò chuyện điện thoại từ localStorage thất bại:', e);
     }
     return null;
 }
 
 /**
- * 📱 恢复手机聊天数据（从存档加载）
- * @param {Object|null} data - 手机聊天数据，如果为空则清除现有数据
+ * 📱 Phục hồi dữ liệu trò chuyện điện thoại (tải từ bản lưu)
+ * @param {Object|null} data - Dữ liệu trò chuyện điện thoại, nếu trống thì xóa dữ liệu hiện có
  */
 function restoreMobileChatData(data) {
     try {
         if (!data) {
-            // 如果存档没有手机数据，清除现有的手机聊天
+            // Nếu bản lưu không có dữ liệu điện thoại, xóa trò chuyện điện thoại hiện có
             clearMobileChatData();
             return;
         }
 
-        // 保存到 localStorage（供 iframe 加载）
+        // Lưu vào localStorage (để iframe tải)
         localStorage.setItem('mobileChatData', JSON.stringify(data));
 
-        // 尝试直接通知 iframe（单独 try-catch 处理跨域）
+        // Thử thông báo trực tiếp cho iframe (try-catch riêng xử lý chéo tên miền)
         try {
             const mobileFrame = document.getElementById('mobileFrame');
             if (mobileFrame && mobileFrame.contentWindow) {
@@ -83,26 +83,26 @@ function restoreMobileChatData(data) {
                 }
             }
         } catch (crossOriginError) {
-            // 跨域错误，静默忽略，数据已保存到 localStorage
+            // Lỗi chéo tên miền, lặng lẽ bỏ qua, dữ liệu đã được lưu vào localStorage
         }
-        console.log('[存档] 手机聊天数据已恢复');
+        console.log('[Lưu trữ] Dữ liệu trò chuyện điện thoại đã được phục hồi');
     } catch (e) {
-        console.warn('[存档] 恢复手机聊天数据失败:', e);
+        console.warn('[Lưu trữ] Phục hồi dữ liệu trò chuyện điện thoại thất bại:', e);
     }
 }
 
 /**
- * 📱 获取指定人物的私聊记录（用于主API人物图谱关联）
- * @param {string} characterName - 人物名称
- * @param {number} limit - 最大条数限制
- * @returns {Array} - 私聊记录数组
+ * 📱 Lấy nhật ký trò chuyện riêng của nhân vật chỉ định (dùng cho liên kết Sơ đồ nhân vật của API chính)
+ * @param {string} characterName - Tên nhân vật
+ * @param {number} limit - Giới hạn số lượng tin nhắn tối đa
+ * @returns {Array} - Mảng nhật ký trò chuyện riêng
  */
 function getMobileChatHistoryForCharacter(characterName, limit = 50) {
     try {
-        // 获取手机聊天数据
+        // Lấy dữ liệu trò chuyện điện thoại
         let mobileChatData = null;
 
-        // 尝试从 iframe 获取（单独 try-catch 处理跨域）
+        // Thử lấy từ iframe (try-catch riêng xử lý chéo tên miền)
         try {
             const mobileFrame = document.getElementById('mobileFrame');
             if (mobileFrame && mobileFrame.contentWindow) {
@@ -112,10 +112,10 @@ function getMobileChatHistoryForCharacter(characterName, limit = 50) {
                 }
             }
         } catch (crossOriginError) {
-            // 跨域错误，静默忽略
+            // Lỗi chéo tên miền, lặng lẽ bỏ qua
         }
 
-        // 如果 iframe 获取失败，尝试 localStorage
+        // Nếu lấy từ iframe thất bại, thử localStorage
         if (!mobileChatData) {
             const saved = localStorage.getItem('mobileChatData');
             if (saved) mobileChatData = JSON.parse(saved);
@@ -125,23 +125,23 @@ function getMobileChatHistoryForCharacter(characterName, limit = 50) {
             return [];
         }
 
-        // 查找匹配的聊天记录
+        // Tìm kiếm nhật ký trò chuyện khớp
         const chatStorage = mobileChatData.chatStorage;
         for (const chatId of Object.keys(chatStorage)) {
             const chat = chatStorage[chatId];
-            // 检查聊天名称是否包含人物名称（模糊匹配）
+            // Kiểm tra tên trò chuyện có chứa tên nhân vật không (khớp mờ)
             if (chat.info && chat.info.name && chat.info.type === 'private') {
                 const chatName = chat.info.name;
-                // 模糊匹配：聊天名称包含人物名，或人物名包含聊天名称
+                // Khớp mờ: tên trò chuyện chứa tên nhân vật, hoặc tên nhân vật chứa tên trò chuyện
                 if (chatName.includes(characterName) || characterName.includes(chatName)) {
                     const messages = chat.messages || [];
-                    // 取最近的 limit 条
+                    // Lấy limit tin nhắn gần nhất
                     const recentMsgs = messages.slice(-limit);
-                    console.log(`[📱私聊关联] 找到 ${chatName} 的私聊记录: ${recentMsgs.length} 条`);
+                    console.log(`[📱Liên kết chat riêng] Tìm thấy nhật ký chat riêng của ${chatName}: ${recentMsgs.length} tin`);
                     return recentMsgs.map(msg => ({
                         direction: msg.direction,
                         content: msg.content,
-                        sender: msg.sender?.name || (msg.direction === 'outgoing' ? '我' : chatName),
+                        sender: msg.sender?.name || (msg.direction === 'outgoing' ? 'Tôi' : chatName),
                         timestamp: msg.timestamp
                     }));
                 }
@@ -150,23 +150,23 @@ function getMobileChatHistoryForCharacter(characterName, limit = 50) {
 
         return [];
     } catch (e) {
-        console.warn('[📱私聊关联] 获取私聊记录失败:', e);
+        console.warn('[📱Liên kết chat riêng] Lấy nhật ký chat riêng thất bại:', e);
         return [];
     }
 }
 
 /**
- * 📱 获取最近活跃的手机聊天记录（用于记忆调度器模式）
- * @param {number} chatCount - 获取多少个聊天（默认3个）
- * @param {number} messageLimit - 每个聊天取多少条消息（默认50条）
- * @returns {Array} - 最近活跃聊天的数组，按最后消息时间排序
+ * 📱 Lấy các nhật ký trò chuyện điện thoại hoạt động gần đây (dùng cho chế độ Điều phối ký ức)
+ * @param {number} chatCount - Số lượng cuộc trò chuyện cần lấy (mặc định 3)
+ * @param {number} messageLimit - Mỗi cuộc trò chuyện lấy bao nhiêu tin nhắn (mặc định 50)
+ * @returns {Array} - Mảng các cuộc trò chuyện hoạt động gần đây, sắp xếp theo thời gian tin nhắn cuối
  */
 function getRecentActiveMobileChats(chatCount = 3, messageLimit = 50) {
     try {
-        // 获取手机聊天数据
+        // Lấy dữ liệu trò chuyện điện thoại
         let mobileChatData = null;
 
-        // 尝试从 iframe 获取
+        // Thử lấy từ iframe
         try {
             const mobileFrame = document.getElementById('mobileFrame');
             if (mobileFrame && mobileFrame.contentWindow) {
@@ -176,37 +176,37 @@ function getRecentActiveMobileChats(chatCount = 3, messageLimit = 50) {
                 }
             }
         } catch (crossOriginError) {
-            // 跨域错误，静默忽略
+            // Lỗi chéo tên miền, lặng lẽ bỏ qua
         }
 
-        // 如果 iframe 获取失败，尝试 localStorage
+        // Nếu lấy từ iframe thất bại, thử localStorage
         if (!mobileChatData) {
             const saved = localStorage.getItem('mobileChatData');
             if (saved) mobileChatData = JSON.parse(saved);
         }
 
         if (!mobileChatData || !mobileChatData.chatStorage) {
-            console.log('[📱最近聊天] 没有手机聊天数据');
+            console.log('[📱Chat gần đây] Không có dữ liệu trò chuyện điện thoại');
             return [];
         }
 
         const chatStorage = mobileChatData.chatStorage;
         const chatList = [];
 
-        // 遍历所有聊天，提取信息和最后消息时间
+        // Duyệt qua tất cả cuộc trò chuyện, trích xuất thông tin và thời gian tin nhắn cuối
         for (const chatId of Object.keys(chatStorage)) {
             const chat = chatStorage[chatId];
             const messages = chat.messages || [];
 
             if (messages.length === 0) continue;
 
-            // 获取最后一条消息的时间戳
+            // Lấy dấu thời gian của tin nhắn cuối cùng
             const lastMessage = messages[messages.length - 1];
             const lastTimestamp = lastMessage.timestamp || 0;
 
             chatList.push({
                 chatId: chatId,
-                name: chat.info?.name || '未知聊天',
+                name: chat.info?.name || 'Trò chuyện không tên',
                 type: chat.info?.type || 'private',
                 lastTimestamp: lastTimestamp,
                 messageCount: messages.length,
@@ -214,52 +214,52 @@ function getRecentActiveMobileChats(chatCount = 3, messageLimit = 50) {
             });
         }
 
-        // 按最后消息时间排序（最近的在前）
+        // Sắp xếp theo thời gian tin nhắn cuối (gần nhất ở trên đầu)
         chatList.sort((a, b) => b.lastTimestamp - a.lastTimestamp);
 
-        // 取前 chatCount 个聊天
+        // Lấy chatCount cuộc trò chuyện đầu tiên
         const recentChats = chatList.slice(0, chatCount);
 
-        // 构建返回结果
+        // Xây dựng kết quả trả về
         const result = recentChats.map(chat => {
-            // 取最近 messageLimit 条消息
+            // Lấy messageLimit tin nhắn gần nhất
             const recentMessages = chat.messages.slice(-messageLimit);
 
             return {
                 chatId: chat.chatId,
                 name: chat.name,
-                type: chat.type,  // 'private' 或 'group'
+                type: chat.type,  // 'private' hoặc 'group'
                 messageCount: recentMessages.length,
                 totalMessages: chat.messageCount,
                 messages: recentMessages.map(msg => ({
                     direction: msg.direction,
                     content: msg.content,
-                    sender: msg.sender?.name || (msg.direction === 'outgoing' ? '我' : chat.name),
+                    sender: msg.sender?.name || (msg.direction === 'outgoing' ? 'Tôi' : chat.name),
                     timestamp: msg.timestamp
                 }))
             };
         });
 
-        console.log(`[📱最近聊天] 获取到 ${result.length} 个最近活跃聊天：${result.map(c => c.name).join(', ')}`);
+        console.log(`[📱Chat gần đây] Đã lấy được ${result.length} cuộc trò chuyện hoạt động gần đây: ${result.map(c => c.name).join(', ')}`);
         return result;
 
     } catch (e) {
-        console.warn('[📱最近聊天] 获取最近聊天记录失败:', e);
+        console.warn('[📱Chat gần đây] Lấy nhật ký trò chuyện gần đây thất bại:', e);
         return [];
     }
 }
 
-// 暴露到全局
+// Công khai ra toàn cục
 window.getRecentActiveMobileChats = getRecentActiveMobileChats;
 
 /**
- * 🃏 获取 ACJT 卡牌系统数据（用于存档）
+ * 🃏 Lấy dữ liệu hệ thống thẻ bài ACJT (dùng để lưu trữ)
  */
 function getACJTDataForSave() {
     try {
         const data = {};
 
-        // 保存卡组（保存完整卡牌数据，包括升级状态）
+        // Lưu bộ bài (lưu dữ liệu thẻ bài đầy đủ, bao gồm trạng thái nâng cấp)
         if (typeof CardDeckManager !== 'undefined' && CardDeckManager.deck) {
             data.deck = CardDeckManager.getDeckData ? CardDeckManager.getDeckData() : CardDeckManager.deck.map(card => ({
                 id: card.id,
@@ -272,7 +272,7 @@ function getACJTDataForSave() {
             }));
         }
 
-        // 保存玩家状态
+        // Lưu trạng thái người chơi
         if (typeof PlayerState !== 'undefined') {
             data.playerState = {
                 professionId: PlayerState.profession?.id,
@@ -290,75 +290,75 @@ function getACJTDataForSave() {
             };
         }
 
-        // 保存特殊状态
+        // Lưu trạng thái đặc biệt
         if (typeof SpecialStatusManager !== 'undefined') {
             data.specialStatuses = { ...SpecialStatusManager.statuses };
         }
 
-        // 保存当前层数
+        // Lưu tầng hiện tại
         if (typeof ACJTGame !== 'undefined') {
             data.currentFloor = ACJTGame.currentFloor;
             data.isGameStarted = ACJTGame.isGameStarted;
 
-            // 🔧 保存角色创建数据（包含开局特殊状态、身体属性等）
+            // 🔧 Lưu dữ liệu tạo nhân vật (bao gồm trạng thái đặc biệt ban đầu, thuộc tính cơ thể, v.v.)
             if (ACJTGame.charData) {
                 data.charData = JSON.parse(JSON.stringify(ACJTGame.charData));
             }
         }
 
-        console.log('[存档] ACJT 数据已收集:', Object.keys(data));
+        console.log('[Lưu trữ] Dữ liệu ACJT đã được thu thập:', Object.keys(data));
         return data;
     } catch (e) {
-        console.warn('[存档] 获取 ACJT 数据失败:', e);
+        console.warn('[Lưu trữ] Lấy dữ liệu ACJT thất bại:', e);
         return null;
     }
 }
 
 /**
- * 🃏 恢复 ACJT 卡牌系统数据（从存档加载）
+ * 🃏 Phục hồi dữ liệu hệ thống thẻ bài ACJT (tải từ bản lưu)
  */
 function restoreACJTData(data) {
     if (!data) return;
 
     try {
-        // 恢复卡组
+        // Phục hồi bộ bài
         if (data.deck && typeof CardDeckManager !== 'undefined') {
-            // 支持新格式（完整卡牌对象）和旧格式（只有ID）
+            // Hỗ trợ định dạng mới (đối tượng thẻ bài đầy đủ) và định dạng cũ (chỉ có ID)
             if (data.deck.length > 0 && typeof data.deck[0] === 'object') {
-                // 新格式：完整卡牌对象
+                // Định dạng mới: đối tượng thẻ bài đầy đủ
                 CardDeckManager.deck = data.deck.filter(c => c && c.id);
             } else if (typeof CardLibrary !== 'undefined') {
-                // 旧格式：只有ID，从 CardLibrary 查找
+                // Định dạng cũ: chỉ có ID, tìm kiếm từ CardLibrary
                 CardDeckManager.deck = data.deck.map(cardId => {
                     const card = CardLibrary.find(c => c.id === cardId);
                     return card ? { ...card } : null;
                 }).filter(c => c);
             }
 
-            // 更新显示
+            // Cập nhật hiển thị
             if (CardDeckManager.renderDeck) {
                 CardDeckManager.renderDeck();
             }
-            console.log('[存档] 卡组已恢复:', CardDeckManager.deck.length, '张卡');
+            console.log('[Lưu trữ] Bộ bài đã được phục hồi:', CardDeckManager.deck.length, 'thẻ');
         }
 
-        // 恢复玩家状态
+        // Phục hồi trạng thái người chơi
         if (data.playerState && typeof PlayerState !== 'undefined') {
             const ps = data.playerState;
             if (ps.professionId && typeof ProfessionConfig !== 'undefined') {
                 PlayerState.profession = ProfessionConfig[ps.professionId];
             }
-            // 🔧 优先使用主游戏的 variables.name（确保两个系统名字同步）
+            // 🔧 Ưu tiên sử dụng gameState.variables.name của trò chơi chính (đảm bảo tên hai hệ thống đồng bộ)
             const mainGameName = (typeof gameState !== 'undefined' && gameState.variables?.name) ? gameState.variables.name : null;
-            PlayerState.name = mainGameName || ps.name || '旅行者';
+            PlayerState.name = mainGameName || ps.name || 'Người lữ hành';
 
-            // 🔧 根据主游戏的 variables.job（职业名称）同步职业配置
+            // 🔧 Đồng bộ cấu hình nghề nghiệp dựa trên gameState.variables.job (tên nghề nghiệp) của trò chơi chính
             if (typeof gameState !== 'undefined' && gameState.variables?.job && typeof ProfessionConfig !== 'undefined') {
                 const jobName = gameState.variables.job;
                 for (const key in ProfessionConfig) {
                     if (ProfessionConfig[key].name === jobName) {
                         PlayerState.profession = ProfessionConfig[key];
-                        console.log('[存档] 职业同步自主游戏:', jobName, '→', key);
+                        console.log('[Lưu trữ] Nghề nghiệp đã đồng bộ từ trò chơi chính:', jobName, '→', key);
                         break;
                     }
                 }
@@ -374,23 +374,23 @@ function restoreACJTData(data) {
             PlayerState.corruption = ps.corruption || 0;
             PlayerState.floor = ps.floor || 0;
 
-            // 恢复圣遗物（relics是ID字符串数组）
+            // Phục hồi thánh di vật (relics là mảng chuỗi ID)
             if (ps.relics) {
                 PlayerState.relics = [...ps.relics];
             }
 
             PlayerState.updateDisplay();
-            console.log('[存档] 玩家状态已恢复，名字:', PlayerState.name, '职业:', PlayerState.profession?.name);
+            console.log('[Lưu trữ] Trạng thái người chơi đã được phục hồi, tên:', PlayerState.name, 'nghề nghiệp:', PlayerState.profession?.name);
         }
 
-        // 恢复特殊状态
+        // Phục hồi trạng thái đặc biệt
         if (data.specialStatuses && typeof SpecialStatusManager !== 'undefined') {
             SpecialStatusManager.statuses = { ...data.specialStatuses };
             SpecialStatusManager.updateDisplay();
-            console.log('[存档] 特殊状态已恢复');
+            console.log('[Lưu trữ] Trạng thái đặc biệt đã được phục hồi');
         }
 
-        // 恢复层数和角色创建数据
+        // Phục hồi số tầng và dữ liệu tạo nhân vật
         if (typeof ACJTGame !== 'undefined') {
             if (data.currentFloor !== undefined) {
                 ACJTGame.currentFloor = data.currentFloor;
@@ -399,32 +399,32 @@ function restoreACJTData(data) {
                 ACJTGame.isGameStarted = data.isGameStarted;
             }
 
-            // 🔧 恢复角色创建数据（包含开局特殊状态、身体属性等）
+            // 🔧 Phục hồi dữ liệu tạo nhân vật (bao gồm trạng thái đặc biệt ban đầu, thuộc tính cơ thể, v.v.)
             if (data.charData) {
                 ACJTGame.charData = JSON.parse(JSON.stringify(data.charData));
-                console.log('[存档] 角色创建数据已恢复:', Object.keys(ACJTGame.charData));
+                console.log('[Lưu trữ] Dữ liệu tạo nhân vật đã được phục hồi:', Object.keys(ACJTGame.charData));
             }
         }
 
-        console.log('[存档] ACJT 数据恢复完成');
+        console.log('[Lưu trữ] Phục hồi dữ liệu ACJT hoàn tất');
     } catch (e) {
-        console.warn('[存档] 恢复 ACJT 数据失败:', e);
+        console.warn('[Lưu trữ] Phục hồi dữ liệu ACJT thất bại:', e);
     }
 }
 
 /**
- * 初始化 IndexedDB
+ * Khởi tạo IndexedDB
  */
 function initDB() {
     return new Promise((resolve, reject) => {
         const request = indexedDB.open(DB_NAME, DB_VERSION);
         request.onerror = () => {
-            console.error('IndexedDB 打开失败:', request.error);
+            console.error('Mở IndexedDB thất bại:', request.error);
             reject(request.error);
         };
         request.onsuccess = () => {
             db = request.result;
-            console.log('IndexedDB 打开成功');
+            console.log('Mở IndexedDB thành công');
             resolve(db);
         };
         request.onupgradeneeded = (event) => {
@@ -436,7 +436,7 @@ function initDB() {
                 const objectStore = db.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
                 objectStore.createIndex('saveName', 'saveName', { unique: false });
                 objectStore.createIndex('timestamp', 'timestamp', { unique: false });
-                console.log('IndexedDB 对象存储创建成功');
+                console.log('Tạo IndexedDB object store thành công');
             }
         };
     });
@@ -451,7 +451,7 @@ async function saveGameToSlot(saveName, saveData = null) {
         try {
             await initDB();
         } catch (error) {
-            console.error('无法初始化数据库:', error);
+            console.error('Không thể khởi tạo cơ sở dữ liệu:', error);
             return;
         }
     }
@@ -459,7 +459,7 @@ async function saveGameToSlot(saveName, saveData = null) {
         const transaction = db.transaction([STORE_NAME], 'readwrite');
         const store = transaction.objectStore(STORE_NAME);
 
-        // 🔧 支持直接传入存档数据（用于导入备份）
+        // 🔧 Hỗ trợ truyền trực tiếp dữ liệu bản lưu (dùng cho nhập bản sao lưu)
         const gameData = saveData ? {
             ...saveData,
             saveName: saveName,
@@ -474,28 +474,28 @@ async function saveGameToSlot(saveName, saveData = null) {
             characterInfo: gameState.characterInfo,
             vectorEmbeddings: window.contextVectorManager ?
                 JSON.parse(JSON.stringify(window.contextVectorManager.conversationEmbeddings)) : [],
-            // 🆕 保存history向量库
+            // 🆕 Lưu kho vector history
             historyEmbeddings: window.contextVectorManager ?
                 JSON.parse(JSON.stringify(window.contextVectorManager.historyEmbeddings)) : [],
-            // 🆕 保存矩阵数据
+            // 🆕 Lưu dữ liệu ma trận
             matrixData: window.matrixManager ? window.matrixManager.export() : null,
-            // 🆕 保存人物图谱数据
+            // 🆕 Lưu dữ liệu Sơ đồ nhân vật
             characterGraphData: window.characterGraphManager ? {
                 characters: Array.from(window.characterGraphManager.characters.entries()),
                 stats: window.characterGraphManager.stats
             } : null,
-            // 📱 保存手机聊天数据
+            // 📱 Lưu dữ liệu trò chuyện điện thoại
             mobileChatData: getMobileChatDataForSave(),
-            // 📰 保存手机论坛数据
+            // 📰 Lưu dữ liệu diễn đàn điện thoại
             mobileForumData: getMobileForumDataForSave(),
             dynamicWorld: JSON.parse(JSON.stringify(gameState.dynamicWorld)),
-            // 🃏 保存 ACJT 卡牌系统数据
+            // 🃏 Lưu dữ liệu hệ thống thẻ bài ACJT
             acjtData: getACJTDataForSave(),
-            // 🆕 保存异步变量开关状态
+            // 🆕 Lưu trạng thái công tắc biến không đồng bộ
             asyncVariableEnabled: window.asyncVariableEnabled || false,
-            // 📚 保存剧情规划存档数据
+            // 📚 Lưu dữ liệu bản lưu quy hoạch cốt truyện
             plotArchiveData: window.plotArchiveManager ? window.plotArchiveManager.exportArchive() : null,
-            // 🧠 保存GraphRAG语义网络数据
+            // 🧠 Lưu dữ liệu mạng ngữ nghĩa GraphRAG
             graphRAGData: window.graphRAGLite ? window.graphRAGLite.exportData() : null
         };
         const index = store.index('saveName');
@@ -506,27 +506,27 @@ async function saveGameToSlot(saveName, saveData = null) {
                 gameData.id = existingSave.id;
                 const updateRequest = store.put(gameData);
                 updateRequest.onsuccess = () => {
-                    console.log('存档已更新:', saveName);
+                    console.log('Bản lưu đã được cập nhật:', saveName);
                     resolve();
                 };
                 updateRequest.onerror = () => {
-                    console.error('更新存档失败:', updateRequest.error);
+                    console.error('Cập nhật bản lưu thất bại:', updateRequest.error);
                     reject(updateRequest.error);
                 };
             } else {
                 const addRequest = store.add(gameData);
                 addRequest.onsuccess = () => {
-                    console.log('新存档已保存:', saveName);
+                    console.log('Bản lưu mới đã được lưu:', saveName);
                     resolve();
                 };
                 addRequest.onerror = () => {
-                    console.error('保存存档失败:', addRequest.error);
+                    console.error('Lưu bản lưu thất bại:', addRequest.error);
                     reject(addRequest.error);
                 };
             }
         };
         getRequest.onerror = () => {
-            console.error('查询存档失败:', getRequest.error);
+            console.error('Truy vấn bản lưu thất bại:', getRequest.error);
             reject(getRequest.error);
         };
     });
@@ -541,7 +541,7 @@ async function loadGameFromSlot(saveName) {
         try {
             await initDB();
         } catch (error) {
-            console.error('无法初始化数据库:', error);
+            console.error('Không thể khởi tạo cơ sở dữ liệu:', error);
             return null;
         }
     }
@@ -553,14 +553,14 @@ async function loadGameFromSlot(saveName) {
         request.onsuccess = () => {
             const data = request.result;
             if (data) {
-                console.log('从 IndexedDB 加载存档:', saveName);
+                console.log('Tải bản lưu từ IndexedDB:', saveName);
                 resolve(data);
             } else {
                 resolve(null);
             }
         };
         request.onerror = () => {
-            console.error('加载存档失败:', request.error);
+            console.error('Tải bản lưu thất bại:', request.error);
             reject(request.error);
         };
     });
@@ -571,7 +571,7 @@ async function getAllSaves() {
         try {
             await initDB();
         } catch (error) {
-            console.error('无法初始化数据库:', error);
+            console.error('Không thể khởi tạo cơ sở dữ liệu:', error);
             return [];
         }
     }
@@ -584,7 +584,7 @@ async function getAllSaves() {
             resolve(saves);
         };
         request.onerror = () => {
-            console.error('获取存档列表失败:', request.error);
+            console.error('Lấy danh sách bản lưu thất bại:', request.error);
             reject(request.error);
         };
     });
@@ -595,7 +595,7 @@ async function deleteSave(saveId) {
         try {
             await initDB();
         } catch (error) {
-            console.error('无法初始化数据库:', error);
+            console.error('Không thể khởi tạo cơ sở dữ liệu:', error);
             return;
         }
     }
@@ -604,11 +604,11 @@ async function deleteSave(saveId) {
         const store = transaction.objectStore(STORE_NAME);
         const request = store.delete(saveId);
         request.onsuccess = () => {
-            console.log('存档已删除');
+            console.log('Bản lưu đã được xóa');
             resolve();
         };
         request.onerror = () => {
-            console.error('删除存档失败:', request.error);
+            console.error('Xóa bản lưu thất bại:', request.error);
             reject(request.error);
         };
     });
@@ -619,7 +619,7 @@ async function clearGameHistory() {
         try {
             await initDB();
         } catch (error) {
-            console.error('无法初始化数据库:', error);
+            console.error('Không thể khởi tạo cơ sở dữ liệu:', error);
             return;
         }
     }
@@ -628,43 +628,43 @@ async function clearGameHistory() {
         const store = transaction.objectStore(STORE_NAME);
         const request = store.clear();
         request.onsuccess = () => {
-            console.log('游戏历史已清除');
-            // 📱 同时清除手机聊天数据
+            console.log('Lịch sử trò chơi đã được xóa');
+            // 📱 Đồng thời xóa dữ liệu trò chuyện điện thoại
             clearMobileChatData();
-            // 📰 同时清除手机论坛数据
+            // 📰 Đồng thời xóa dữ liệu diễn đàn điện thoại
             clearMobileForumData();
-            // 🧠 同时清除GraphRAG语义网络
+            // 🧠 Đồng thời xóa mạng ngữ nghĩa GraphRAG
             if (window.graphRAGLite && typeof window.graphRAGLite.clearAll === 'function') {
-                window.graphRAGLite.clearAll().catch(e => console.warn('清除GraphRAG失败:', e));
+                window.graphRAGLite.clearAll().catch(e => console.warn('Xóa GraphRAG thất bại:', e));
             }
             resolve();
         };
         request.onerror = () => {
-            console.error('清除游戏历史失败:', request.error);
+            console.error('Xóa lịch sử trò chơi thất bại:', request.error);
             reject(request.error);
         };
     });
 }
 
 /**
- * 📱 清除手机聊天数据
+ * 📱 Xóa dữ liệu trò chuyện điện thoại
  */
 function clearMobileChatData() {
     try {
-        // 清除 localStorage 中的手机聊天数据
+        // Xóa dữ liệu trò chuyện điện thoại trong localStorage
         localStorage.removeItem('mobileChatData');
 
-        // 🔧 同时清除不带前缀的键（因为iframe可能没有数据隔离）
-        // 获取原始localStorage方法（绕过数据隔离）
+        // 🔧 Đồng thời xóa khóa không có tiền tố (vì iframe có thể không có cô lập dữ liệu)
+        // Lấy phương thức removeItem gốc của localStorage (vượt qua cô lập dữ liệu)
         const originalRemoveItem = Storage.prototype.removeItem.bind(localStorage);
         try {
-            // 直接清除不带前缀的键
+            // Trực tiếp xóa khóa không có tiền tố
             originalRemoveItem('mobileChatData');
         } catch (e) {
-            // 如果没有数据隔离，直接调用即可
+            // Nếu không có cô lập dữ liệu, chỉ cần gọi trực tiếp là được
         }
 
-        // 尝试通知 iframe 清除数据（方式1：直接调用）
+        // Thử thông báo cho iframe xóa dữ liệu (Cách 1: gọi trực tiếp)
         try {
             const mobileFrame = document.getElementById('mobileFrame');
             if (mobileFrame && mobileFrame.contentWindow) {
@@ -674,33 +674,33 @@ function clearMobileChatData() {
                 }
             }
         } catch (crossOriginError) {
-            // 跨域错误，静默忽略
+            // Lỗi chéo tên miền, lặng lẽ bỏ qua
         }
 
-        // 🔧 方式2：通过 postMessage 通知 iframe 清除数据
+        // 🔧 Cách 2: Thông qua postMessage để thông báo iframe xóa dữ liệu
         try {
             const mobileFrame = document.getElementById('mobileFrame');
             if (mobileFrame && mobileFrame.contentWindow) {
                 mobileFrame.contentWindow.postMessage({
                     type: 'MOBILE_CLEAR_DATA'
                 }, '*');
-                console.log('[存档] 已通过postMessage通知iframe清除数据');
+                console.log('[Lưu trữ] Đã thông báo iframe xóa dữ liệu qua postMessage');
             }
         } catch (e) {
-            // 静默忽略
+            // Lặng lẽ bỏ qua
         }
 
-        console.log('[存档] 手机聊天数据已清除');
+        console.log('[Lưu trữ] Dữ liệu trò chuyện điện thoại đã được xóa');
     } catch (e) {
-        console.warn('[存档] 清除手机聊天数据失败:', e);
+        console.warn('[Lưu trữ] Xóa dữ liệu trò chuyện điện thoại thất bại:', e);
     }
 }
 
 /**
- * 📰 获取手机论坛数据（用于存档）
+ * 📰 Lấy dữ liệu diễn đàn điện thoại (dùng để lưu trữ)
  */
 function getMobileForumDataForSave() {
-    // 尝试从 iframe 获取
+    // Thử lấy từ iframe
     try {
         const mobileFrame = document.getElementById('mobileFrame');
         if (mobileFrame && mobileFrame.contentWindow) {
@@ -710,40 +710,40 @@ function getMobileForumDataForSave() {
                     return forumApi.exportSaveData();
                 }
             } catch (crossOriginError) {
-                // 跨域错误，静默忽略
+                // Lỗi chéo tên miền, lặng lẽ bỏ qua
             }
         }
     } catch (e) {
-        // iframe 不存在或其他错误
+        // iframe không tồn tại hoặc lỗi khác
     }
 
-    // 尝试从 localStorage 获取
+    // Thử lấy từ localStorage
     try {
         const saved = localStorage.getItem('mobileForumData');
         if (saved) {
             return JSON.parse(saved);
         }
     } catch (e) {
-        console.warn('[存档] 从 localStorage 获取手机论坛数据失败:', e);
+        console.warn('[Lưu trữ] Lấy dữ liệu diễn đàn điện thoại từ localStorage thất bại:', e);
     }
     return null;
 }
 
 /**
- * 📰 恢复手机论坛数据（从存档加载）
+ * 📰 Phục hồi dữ liệu diễn đàn điện thoại (tải từ bản lưu)
  */
 function restoreMobileForumData(data) {
     try {
         if (!data) {
-            // 如果存档没有论坛数据，清除现有的论坛数据
+            // Nếu bản lưu không có dữ liệu diễn đàn, xóa dữ liệu diễn đàn hiện có
             clearMobileForumData();
             return;
         }
 
-        // 保存到 localStorage（供 iframe 加载）
+        // Lưu vào localStorage (để iframe tải)
         localStorage.setItem('mobileForumData', JSON.stringify(data));
 
-        // 尝试直接通知 iframe
+        // Thử thông báo trực tiếp cho iframe
         try {
             const mobileFrame = document.getElementById('mobileFrame');
             if (mobileFrame && mobileFrame.contentWindow) {
@@ -753,16 +753,16 @@ function restoreMobileForumData(data) {
                 }
             }
         } catch (crossOriginError) {
-            // 跨域错误，静默忽略
+            // Lỗi chéo tên miền, lặng lẽ bỏ qua
         }
-        console.log('[存档] 手机论坛数据已恢复');
+        console.log('[Lưu trữ] Dữ liệu diễn đàn điện thoại đã được phục hồi');
     } catch (e) {
-        console.warn('[存档] 恢复手机论坛数据失败:', e);
+        console.warn('[Lưu trữ] Phục hồi dữ liệu diễn đàn điện thoại thất bại:', e);
     }
 }
 
 /**
- * 📰 清除手机论坛数据
+ * 📰 Xóa dữ liệu diễn đàn điện thoại
  */
 function clearMobileForumData() {
     try {
@@ -771,17 +771,17 @@ function clearMobileForumData() {
         try {
             const mobileFrame = document.getElementById('mobileFrame');
             if (mobileFrame && mobileFrame.contentWindow) {
-                // 方法1：发送消息通知论坛清除数据
+                // Cách 1: Gửi tin nhắn thông báo diễn đàn xóa dữ liệu
                 mobileFrame.contentWindow.postMessage({
                     type: 'MOBILE_FORUM_CLEAR'
                 }, '*');
 
-                // 方法2：直接调用论坛的清空函数
+                // Cách 2: Trực tiếp gọi hàm xóa của diễn đàn
                 const forumApi = mobileFrame.contentWindow.forumApi;
                 if (forumApi && forumApi.clearAll) {
                     forumApi.clearAll();
                 } else if (forumApi) {
-                    // 备用：直接清空属性
+                    // Dự phòng: Trực tiếp làm trống các thuộc tính
                     forumApi.forumStorage = {
                         myPosts: [],
                         myComments: [],
@@ -795,18 +795,18 @@ function clearMobileForumData() {
                     forumApi.currentPost = null;
                     forumApi.currentTag = null;
                 }
-                console.log('[存档] 已清空论坛内存缓存');
+                console.log('[Lưu trữ] Đã xóa sạch cache bộ nhớ của diễn đàn');
             }
         } catch (crossOriginError) {
-            // 跨域错误，静默忽略
+            // Lỗi chéo tên miền, lặng lẽ bỏ qua
         }
-        console.log('[存档] 手机论坛数据已清除');
+        console.log('[Lưu trữ] Dữ liệu diễn đàn điện thoại đã được xóa');
     } catch (e) {
-        console.warn('[存档] 清除手机论坛数据失败:', e);
+        console.warn('[Lưu trữ] Xóa dữ liệu diễn đàn điện thoại thất bại:', e);
     }
 }
 
-// ==================== 存档管理系统 ====================
+// ==================== Hệ thống quản lý bản lưu ====================
 
 function exportSaveToFile(saveData, fileName) {
     const dataStr = JSON.stringify(saveData, null, 2);
@@ -814,7 +814,7 @@ function exportSaveToFile(saveData, fileName) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = fileName || `修仙存档_${new Date().toLocaleString('zh-CN').replace(/[/:]/g, '-')}.json`;
+    a.download = fileName || `Save_TuTien_${new Date().toLocaleString('zh-CN').replace(/[/:]/g, '-')}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -822,10 +822,10 @@ function exportSaveToFile(saveData, fileName) {
 }
 
 async function exportCurrentGame() {
-    const saveName = prompt('请为导出的存档命名：', gameState.variables.name || '我的存档');
+    const saveName = prompt('Vui lòng đặt tên cho bản lưu xuất ra:', gameState.variables.name || 'Bản lưu của tôi');
     if (!saveName) return;
 
-    // 🎭 提前获取画像数据（异步函数）
+    // 🎭 Lấy trước dữ liệu chân dung người dùng (hàm bất đồng bộ)
     const userProfileData = window.userProfileAnalyzer ? await window.userProfileAnalyzer.exportProfile() : null;
 
     const saveData = {
@@ -838,75 +838,75 @@ async function exportCurrentGame() {
         characterInfo: gameState.characterInfo,
         vectorEmbeddings: window.contextVectorManager ?
             JSON.parse(JSON.stringify(window.contextVectorManager.conversationEmbeddings)) : [],
-        // 🆕 导出history向量库
+        // 🆕 Xuất kho vector history
         historyEmbeddings: window.contextVectorManager ?
             JSON.parse(JSON.stringify(window.contextVectorManager.historyEmbeddings)) : [],
-        // 🆕 导出矩阵数据
+        // 🆕 Xuất dữ liệu ma trận
         matrixData: window.matrixManager ? window.matrixManager.export() : null,
-        // 🆕 导出人物图谱数据
+        // 🆕 Xuất dữ liệu Sơ đồ nhân vật
         characterGraphData: window.characterGraphManager ? {
             characters: Array.from(window.characterGraphManager.characters.entries()),
             stats: window.characterGraphManager.stats
         } : null,
         dynamicWorld: JSON.parse(JSON.stringify(gameState.dynamicWorld)),
-        // 📱 导出手机聊天数据
+        // 📱 Xuất dữ liệu trò chuyện điện thoại
         mobileChatData: getMobileChatDataForSave(),
-        // 📰 导出手机论坛数据
+        // 📰 Xuất dữ liệu diễn đàn điện thoại
         mobileForumData: getMobileForumDataForSave(),
-        // 🎭 导出用户画像数据（已预先获取）
+        // 🎭 Xuất dữ liệu chân dung người dùng (đã lấy trước)
         userProfileData: userProfileData,
-        // 🃏 导出ACJT卡牌系统数据（卡组、圣遗物等）
+        // 🃏 Xuất dữ liệu hệ thống thẻ bài ACJT (bộ bài, thánh di vật, v.v.)
         acjtData: getACJTDataForSave(),
-        // 🆕 导出异步变量开关状态
+        // 🆕 Xuất trạng thái công tắc biến không đồng bộ
         asyncVariableEnabled: window.asyncVariableEnabled || false,
-        // 📖 导出剧情规划存档数据
+        // 📖 Xuất dữ liệu bản lưu quy hoạch cốt truyện
         plotArchiveData: window.plotArchiveManager ? window.plotArchiveManager.exportArchive() : null,
-        // 🧠 导出GraphRAG语义网络数据
+        // 🧠 Xuất dữ liệu mạng ngữ nghĩa GraphRAG
         graphRAGData: window.graphRAGLite ? window.graphRAGLite.exportData() : null
     };
     exportSaveToFile(saveData, `${saveName}.json`);
 
-    // 统计导出内容
+    // Thống kê nội dung xuất ra
     const vectorCount = saveData.vectorEmbeddings.length;
     const historyCount = saveData.historyEmbeddings.length;
     const matrixLayers = saveData.matrixData ?
         (saveData.matrixData.conversationMatrix?.layers?.length || 0) + (saveData.matrixData.historyMatrix?.layers?.length || 0) : 0;
     const characterCount = saveData.characterGraphData ? saveData.characterGraphData.characters.length : 0;
-    // 📱 统计手机数据
+    // 📱 Thống kê dữ liệu điện thoại
     const chatCount = saveData.mobileChatData?.chatStorage ? Object.keys(saveData.mobileChatData.chatStorage).length : 0;
     const forumPostCount = saveData.mobileForumData?.postsCache ? Object.keys(saveData.mobileForumData.postsCache).length : 0;
-    // 🎭 用户画像（多画像支持）
-    let profileInfo = '无';
+    // 🎭 Chân dung người dùng (hỗ trợ đa chân dung)
+    let profileInfo = 'Không có';
     if (saveData.userProfileData) {
         try {
             const profileData = typeof saveData.userProfileData === 'string' ?
                 JSON.parse(saveData.userProfileData) : saveData.userProfileData;
             if (profileData.profiles && profileData.profiles.length > 0) {
-                profileInfo = `${profileData.profiles.length} 个画像`;
+                profileInfo = `${profileData.profiles.length} chân dung`;
             } else if (profileData.result || profileData.currentProfile) {
-                profileInfo = '1 个画像';
+                profileInfo = '1 chân dung';
             }
         } catch (e) {
-            profileInfo = '已包含';
+            profileInfo = 'Đã bao gồm';
         }
     }
-    // 🃏 ACJT数据
+    // 🃏 Dữ liệu ACJT
     const deckCount = saveData.acjtData?.deck?.length || 0;
     const relicCount = saveData.acjtData?.playerState?.relics?.length || 0;
-    // 📖 剧情规划存档
+    // 📖 Bản lưu quy hoạch cốt truyện
     const plotArchiveCount = saveData.plotArchiveData?.plots?.length || 0;
 
-    alert(`✅ 存档已导出！\n\n包含内容：\n` +
-        `• 对话向量：${vectorCount} 条\n` +
-        `• History向量：${historyCount} 条\n` +
-        `• 矩阵层数：${matrixLayers} 层\n` +
-        `• 人物图谱：${characterCount} 人\n` +
-        `• 📱 手机聊天：${chatCount} 个对话\n` +
-        `• 📰 论坛帖子：${forumPostCount} 篇\n` +
-        `• 🎭 用户画像：${profileInfo}\n` +
-        `• 🃏 卡组：${deckCount} 张\n` +
-        `• ✨ 圣遗物：${relicCount} 个\n` +
-        `• 📖 剧情规划：${plotArchiveCount} 条`);
+    alert(`✅ Bản lưu đã được xuất!\n\nNội dung bao gồm:\n` +
+        `• Vector đối thoại: ${vectorCount} mục\n` +
+        `• Vector History: ${historyCount} mục\n` +
+        `• Số tầng ma trận: ${matrixLayers} tầng\n` +
+        `• Sơ đồ nhân vật: ${characterCount} người\n` +
+        `• 📱 Trò chuyện điện thoại: ${chatCount} cuộc hội thoại\n` +
+        `• 📰 Bài viết diễn đàn: ${forumPostCount} bài\n` +
+        `• 🎭 Chân dung người dùng: ${profileInfo}\n` +
+        `• 🃏 Bộ bài: ${deckCount} lá\n` +
+        `• ✨ Thánh di vật: ${relicCount} cái\n` +
+        `• 📖 Quy hoạch cốt truyện: ${plotArchiveCount} mục`);
 }
 
 function importSaveFromFile() {
@@ -921,76 +921,76 @@ function importSaveFromFile() {
             try {
                 const saveData = JSON.parse(event.target.result);
                 if (!saveData.variables || !saveData.conversationHistory) {
-                    throw new Error('存档格式不正确');
+                    throw new Error('Định dạng bản lưu không chính xác');
                 }
 
-                // 🔧 统计存档内容
+                // 🔧 Thống kê nội dung bản lưu
                 const vectorCount = saveData.vectorEmbeddings?.length || 0;
                 const historyCount = saveData.historyEmbeddings?.length || 0;
                 const matrixLayers = saveData.matrixData ?
                     (saveData.matrixData.conversationMatrix?.layers?.length || 0) + (saveData.matrixData.historyMatrix?.layers?.length || 0) : 0;
                 const characterCount = saveData.characterGraphData?.characters?.length || 0;
-                // 📱 统计手机数据
+                // 📱 Thống kê dữ liệu điện thoại
                 const chatCount = saveData.mobileChatData?.chatStorage ? Object.keys(saveData.mobileChatData.chatStorage).length : 0;
                 const forumPostCount = saveData.mobileForumData?.postsCache ? Object.keys(saveData.mobileForumData.postsCache).length : 0;
-                // 🎭 用户画像（多画像支持）
-                let profileInfo = '无';
+                // 🎭 Chân dung người dùng (hỗ trợ đa chân dung)
+                let profileInfo = 'Không có';
                 if (saveData.userProfileData) {
                     try {
                         const profileData = typeof saveData.userProfileData === 'string' ?
                             JSON.parse(saveData.userProfileData) : saveData.userProfileData;
                         if (profileData.profiles && profileData.profiles.length > 0) {
-                            profileInfo = `${profileData.profiles.length} 个画像`;
+                            profileInfo = `${profileData.profiles.length} chân dung`;
                         } else if (profileData.result || profileData.currentProfile) {
-                            profileInfo = '1 个画像';
+                            profileInfo = '1 chân dung';
                         }
                     } catch (e) {
-                        profileInfo = '已包含';
+                        profileInfo = 'Đã bao gồm';
                     }
                 }
-                // 🃏 ACJT数据
+                // 🃏 Dữ liệu ACJT
                 const deckCount = saveData.acjtData?.deck?.length || 0;
                 const relicCount = saveData.acjtData?.playerState?.relics?.length || 0;
 
-                let confirmMessage = `确定要导入存档"${saveData.saveName || file.name}"吗？\n\n包含内容：\n`;
-                confirmMessage += `• 对话向量：${vectorCount} 条\n`;
-                confirmMessage += `• History向量：${historyCount} 条\n`;
-                confirmMessage += `• 矩阵层数：${matrixLayers} 层\n`;
-                confirmMessage += `• 人物图谱：${characterCount} 人\n`;
-                confirmMessage += `• 📱 手机聊天：${chatCount} 个对话\n`;
-                confirmMessage += `• 📰 论坛帖子：${forumPostCount} 篇\n`;
-                confirmMessage += `• 🎭 用户画像：${profileInfo}\n`;
-                confirmMessage += `• 🃏 卡组：${deckCount} 张\n`;
-                confirmMessage += `• ✨ 圣遗物：${relicCount} 个\n`;
-                confirmMessage += `\n⚠️ 当前游戏进度将被覆盖！`;
+                let confirmMessage = `Bạn có chắc chắn muốn nhập bản lưu "${saveData.saveName || file.name}" không?\n\nNội dung bao gồm:\n`;
+                confirmMessage += `• Vector đối thoại: ${vectorCount} mục\n`;
+                confirmMessage += `• Vector History: ${historyCount} mục\n`;
+                confirmMessage += `• Số tầng ma trận: ${matrixLayers} tầng\n`;
+                confirmMessage += `• Sơ đồ nhân vật: ${characterCount} người\n`;
+                confirmMessage += `• 📱 Trò chuyện điện thoại: ${chatCount} cuộc hội thoại\n`;
+                confirmMessage += `• 📰 Bài viết diễn đàn: ${forumPostCount} bài\n`;
+                confirmMessage += `• 🎭 Chân dung người dùng: ${profileInfo}\n`;
+                confirmMessage += `• 🃏 Bộ bài: ${deckCount} lá\n`;
+                confirmMessage += `• ✨ Thánh di vật: ${relicCount} cái\n`;
+                confirmMessage += `\n⚠️ Tiến trình trò chơi hiện tại sẽ bị ghi đè!`;
 
                 if (!confirm(confirmMessage)) {
                     return;
                 }
 
-                // 加载存档数据到游戏状态
+                // Tải dữ liệu bản lưu vào trạng thái trò chơi
                 await loadSaveData(saveData);
 
-                // 🔧 自动保存到IndexedDB（同时保存到指定槽位和自动存档）
-                const saveName = saveData.saveName || '导入的存档';
-                await saveGameToSlot(saveName); // 保存到具名存档
-                await saveGameHistory(); // 同时更新自动存档
-                console.log(`[导入存档] 已保存到IndexedDB: ${saveName} (含自动存档)`);
+                // 🔧 Tự động lưu vào IndexedDB (lưu vào slot chỉ định và cả bản tự động lưu)
+                const saveName = saveData.saveName || 'Bản lưu đã nhập';
+                await saveGameToSlot(saveName); // Lưu vào bản lưu có tên
+                await saveGameHistory(); // Đồng thời cập nhật bản tự động lưu
+                console.log(`[Nhập bản lưu] Đã lưu vào IndexedDB: ${saveName} (bao gồm tự động lưu)`);
 
-                alert(`✅ 存档导入成功！\n\n已恢复：\n` +
-                    `• 对话向量：${vectorCount} 条\n` +
-                    `• History向量：${historyCount} 条\n` +
-                    `• 矩阵层数：${matrixLayers} 层\n` +
-                    `• 人物图谱：${characterCount} 人\n` +
-                    `• 📱 手机聊天：${chatCount} 个对话\n` +
-                    `• 📰 论坛帖子：${forumPostCount} 篇\n` +
-                    `• 🎭 用户画像：${profileInfo}\n` +
-                    `• 🃏 卡组：${deckCount} 张\n` +
-                    `• ✨ 圣遗物：${relicCount} 个\n\n` +
-                    `已自动保存到本地数据库`);
+                alert(`✅ Nhập bản lưu thành công!\n\nĐã phục hồi:\n` +
+                    `• Vector đối thoại: ${vectorCount} mục\n` +
+                    `• Vector History: ${historyCount} mục\n` +
+                    `• Số tầng ma trận: ${matrixLayers} tầng\n` +
+                    `• Sơ đồ nhân vật: ${characterCount} người\n` +
+                    `• 📱 Trò chuyện điện thoại: ${chatCount} cuộc hội thoại\n` +
+                    `• 📰 Bài viết diễn đàn: ${forumPostCount} bài\n` +
+                    `• 🎭 Chân dung người dùng: ${profileInfo}\n` +
+                    `• 🃏 Bộ bài: ${deckCount} lá\n` +
+                    `• ✨ Thánh di vật: ${relicCount} cái\n\n` +
+                    `Đã tự động lưu vào cơ sở dữ liệu cục bộ`);
             } catch (error) {
-                alert('导入失败：' + error.message);
-                console.error('导入存档失败:', error);
+                alert('Nhập thất bại: ' + error.message);
+                console.error('Nhập bản lưu thất bại:', error);
             }
         };
         reader.readAsText(file);
@@ -999,30 +999,30 @@ function importSaveFromFile() {
 }
 
 async function saveCurrentGame() {
-    const saveName = prompt('请为存档命名：', gameState.variables.name || '我的存档');
+    const saveName = prompt('Vui lòng đặt tên cho bản lưu:', gameState.variables.name || 'Bản lưu của tôi');
     if (!saveName) return;
     try {
         await saveGameToSlot(saveName);
-        alert('存档保存成功！');
+        alert('Lưu bản lưu thành công!');
     } catch (error) {
-        alert('存档保存失败：' + error.message);
+        alert('Lưu bản lưu thất bại: ' + error.message);
     }
 }
 
 async function showLoadSaveMenu() {
     const saves = await getAllSaves();
     if (saves.length === 0) {
-        alert('暂无存档');
+        alert('Chưa có bản lưu');
         return;
     }
     const historyDiv = document.getElementById('gameHistory');
-    let html = `<div style="padding: 20px;"><h2 style="color: #8b4513; margin-bottom: 20px;">📂 加载存档</h2><div style="display: flex; flex-direction: column; gap: 10px;">`;
+    let html = `<div style="padding: 20px;"><h2 style="color: #8b4513; margin-bottom: 20px;">📂 Tải bản lưu</h2><div style="display: flex; flex-direction: column; gap: 10px;">`;
     saves.forEach(save => {
         const date = new Date(save.timestamp).toLocaleString('zh-CN');
-        const charName = save.variables?.name || '未命名';
-        const realm = save.variables?.realm || '凡人';
+        const charName = save.variables?.name || 'Chưa đặt tên';
+        const realm = save.variables?.realm || 'Phàm nhân';
 
-        // 🆕 统计存档内容
+        // 🆕 Thống kê nội dung bản lưu
         const vectorCount = save.vectorEmbeddings?.length || 0;
         const historyCount = save.historyEmbeddings?.length || 0;
         const matrixLayers = save.matrixData ?
@@ -1031,15 +1031,15 @@ async function showLoadSaveMenu() {
 
         html += `<div style="background: #fdfcf8; border: 2px solid #c19a6b; border-radius: 6px; padding: 15px; cursor: pointer;" onclick="loadSelectedSave(${save.id})">
             <div style="font-weight: bold; font-size: 16px; color: #8b4513; margin-bottom: 5px;">${save.saveName}</div>
-            <div style="font-size: 13px; color: #666;">角色：${charName} | 境界：${realm}</div>
+            <div style="font-size: 13px; color: #666;">Nhân vật: ${charName} | Cảnh giới: ${realm}</div>
             <div style="font-size: 11px; color: #888; margin-top: 5px;">
-                📊 向量:${vectorCount} | History:${historyCount} | 矩阵:${matrixLayers}层 | 人物:${characterCount}人
+                📊 Vector: ${vectorCount} | History: ${historyCount} | Ma trận: ${matrixLayers} tầng | Nhân vật: ${characterCount} người
             </div>
             <div style="font-size: 12px; color: #999; margin-top: 5px;">${date}</div>
-            <button class="btn btn-danger" style="margin-top: 10px; padding: 5px 15px; font-size: 12px;" onclick="event.stopPropagation(); deleteSelectedSave(${save.id});">删除</button>
+            <button class="btn btn-danger" style="margin-top: 10px; padding: 5px 15px; font-size: 12px;" onclick="event.stopPropagation(); deleteSelectedSave(${save.id});">Xóa</button>
         </div>`;
     });
-    html += `</div><button class="btn btn-secondary" onclick="closeLoadSaveMenu()" style="margin-top: 20px; width: 100%;">返回</button></div>`;
+    html += `</div><button class="btn btn-secondary" onclick="closeLoadSaveMenu()" style="margin-top: 20px; width: 100%;">Quay lại</button></div>`;
     historyDiv.innerHTML = html;
 }
 
@@ -1053,32 +1053,32 @@ async function loadSelectedSave(saveId) {
             if (saveData) {
                 await loadSaveData(saveData);
 
-                // 🆕 统计加载内容
+                // 🆕 Thống kê nội dung tải lên
                 const vectorCount = saveData.vectorEmbeddings?.length || 0;
                 const historyCount = saveData.historyEmbeddings?.length || 0;
                 const matrixLayers = saveData.matrixData ?
                     (saveData.matrixData.conversationMatrix?.layers?.length || 0) + (saveData.matrixData.historyMatrix?.layers?.length || 0) : 0;
                 const characterCount = saveData.characterGraphData?.characters?.length || 0;
 
-                alert(`✅ 存档加载成功！\n\n已恢复：\n` +
-                    `• 对话向量：${vectorCount} 条\n` +
-                    `• History向量：${historyCount} 条\n` +
-                    `• 矩阵层数：${matrixLayers} 层\n` +
-                    `• 人物图谱：${characterCount} 人`);
+                alert(`✅ Tải bản lưu thành công!\n\nĐã phục hồi:\n` +
+                    `• Vector đối thoại: ${vectorCount} mục\n` +
+                    `• Vector History: ${historyCount} mục\n` +
+                    `• Số tầng ma trận: ${matrixLayers} tầng\n` +
+                    `• Sơ đồ nhân vật: ${characterCount} người`);
             }
         };
     } catch (error) {
-        alert('加载失败：' + error.message);
+        alert('Tải thất bại: ' + error.message);
     }
 }
 
 async function deleteSelectedSave(saveId) {
-    if (!confirm('确定要删除这个存档吗？')) return;
+    if (!confirm('Bạn có chắc muốn xóa bản lưu này không?')) return;
     try {
         await deleteSave(saveId);
         showLoadSaveMenu();
     } catch (error) {
-        alert('删除失败：' + error.message);
+        alert('Xóa thất bại: ' + error.message);
     }
 }
 
@@ -1086,7 +1086,7 @@ function closeLoadSaveMenu() {
     showMainMenu();
 }
 
-// ==================== AI交互系统 / API配置 ====================
+// ==================== Hệ thống tương tác AI / Cấu hình API ====================
 
 function updateConnectionStatus(connected) {
     const indicator = document.getElementById('connectionStatus');
@@ -1117,14 +1117,14 @@ function displayModels(models) {
 }
 
 function saveConnection() {
-    // 检查是否使用手动输入模型名称
+    // Kiểm tra xem có sử dụng nhập tên mô hình thủ công hay không
     const useManual = document.getElementById('useManualModelInput');
     const manualInput = document.getElementById('manualModelName');
     const modelSelect = document.getElementById('modelSelect');
 
     let selectedModel;
 
-    // 优先使用手动输入的模型名称
+    // Ưu tiên sử dụng tên mô hình nhập thủ công
     if (useManual && useManual.checked && manualInput && manualInput.value.trim()) {
         selectedModel = manualInput.value.trim();
     } else {
@@ -1132,7 +1132,7 @@ function saveConnection() {
     }
 
     if (!selectedModel) {
-        alert('请选择一个模型或手动输入模型名称');
+        alert('Vui lòng chọn một mô hình hoặc nhập tên mô hình thủ công');
         return;
     }
     apiConfig.type = document.getElementById('apiType').value;
@@ -1148,13 +1148,13 @@ function saveConnection() {
     config.model = apiConfig.model;
     config.availableModels = apiConfig.availableModels;
     config.stream = apiConfig.stream;
-    // 保存手动输入设置
+    // Lưu thiết lập nhập thủ công
     config.useManualModel = useManual ? useManual.checked : false;
     config.manualModelName = manualInput ? manualInput.value : '';
     localStorage.setItem('gameConfig', JSON.stringify(config));
-    alert('API配置已保存！\n模型: ' + selectedModel);
+    alert('Cấu hình API đã được lưu!\nMô hình: ' + selectedModel);
     updateConnectionStatus(true);
-    document.getElementById('fetchModelsBtn').innerHTML = '<span class="status-indicator status-connected"></span> 已连接 - ' + selectedModel.substring(0, 20);
+    document.getElementById('fetchModelsBtn').innerHTML = '<span class="status-indicator status-connected"></span> Đã kết nối - ' + selectedModel.substring(0, 20);
 }
 
 function toggleExtraApiFields() {
@@ -1169,39 +1169,39 @@ function toggleExtraApiFields() {
     saveExtraApiEnabled();
 }
 
-// 🆕 异步变量开关切换
+// 🆕 Chuyển đổi công tắc biến không đồng bộ
 function toggleAsyncVariable() {
     const checkbox = document.getElementById('enableAsyncVariable');
     if (!checkbox) return;
 
     const enabled = checkbox.checked;
 
-    // 检查额外API是否已配置（兼容不同变量命名方式）
+    // Kiểm tra API bổ sung đã cấu hình chưa (tương thích các cách đặt tên biến khác nhau)
     const extraConfig = window.extraApiConfig || (typeof extraApiConfig !== 'undefined' ? extraApiConfig : null);
     if (enabled && (!extraConfig || !extraConfig.enabled)) {
-        alert('⚠️ 请先启用并配置"额外API"后再开启异步变量功能');
+        alert('⚠️ Vui lòng bật và cấu hình "API bổ sung" trước khi mở chức năng biến không đồng bộ');
         checkbox.checked = false;
         return;
     }
 
-    // 设置全局变量
+    // Thiết lập biến toàn cục
     window.asyncVariableEnabled = enabled;
 
-    // 保存到 localStorage
+    // Lưu vào localStorage
     const saved = localStorage.getItem('gameConfig');
     let config = saved ? JSON.parse(saved) : {};
     if (!config.asyncVariable) config.asyncVariable = {};
     config.asyncVariable.enabled = enabled;
     localStorage.setItem('gameConfig', JSON.stringify(config));
 
-    console.log('[异步变量]', enabled ? '✅ 已启用' : '❌ 已禁用');
+    console.log('[Biến không đồng bộ]', enabled ? '✅ Đã bật' : '❌ Đã tắt');
 
     if (enabled) {
-        console.log('[异步变量] 主API将使用 baseSystemPrompt，变量规则将发送给额外API处理');
+        console.log('[Biến không đồng bộ] API chính sẽ sử dụng baseSystemPrompt, các quy tắc biến sẽ được gửi cho API bổ sung xử lý');
     }
 }
 
-// 🆕 初始化异步变量开关状态（页面加载时调用）
+// 🆕 Khởi tạo trạng thái công tắc biến không đồng bộ (gọi khi tải trang)
 function initAsyncVariable() {
     try {
         const saved = localStorage.getItem('gameConfig');
@@ -1212,20 +1212,20 @@ function initAsyncVariable() {
                 const checkbox = document.getElementById('enableAsyncVariable');
                 if (checkbox) {
                     checkbox.checked = true;
-                    console.log('[异步变量] ✅ 从配置恢复：已启用');
+                    console.log('[Biến không đồng bộ] ✅ Khôi phục từ cấu hình: Đã bật');
                 }
             }
         }
     } catch (e) {
-        console.warn('[异步变量] 恢复配置失败:', e);
+        console.warn('[Biến không đồng bộ] Khôi phục cấu hình thất bại:', e);
     }
 }
 
-// 页面加载时自动初始化
+// Tự động khởi tạo khi tải trang
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initAsyncVariable);
 } else {
-    // DOM 已加载，延迟执行确保 checkbox 元素存在
+    // DOM đã tải, trì hoãn thực thi để đảm bảo phần tử checkbox tồn tại
     setTimeout(initAsyncVariable, 100);
 }
 
@@ -1257,7 +1257,7 @@ function saveExtraConnection() {
     const modelSelect = document.getElementById('extraModelSelect');
     const selectedModel = modelSelect.value;
     if (!selectedModel) {
-        alert('请先从列表中选择一个模型');
+        alert('Vui lòng chọn một mô hình từ danh sách');
         return;
     }
     extraApiConfig.type = document.getElementById('extraApiType').value;
@@ -1277,12 +1277,12 @@ function saveExtraConnection() {
         stream: extraApiConfig.stream
     };
     localStorage.setItem('gameConfig', JSON.stringify(config));
-    alert('额外API配置已保存！\n模型: ' + selectedModel);
+    alert('Cấu hình API bổ sung đã được lưu!\nMô hình: ' + selectedModel);
     updateExtraConnectionStatus(true);
-    document.getElementById('fetchExtraModelsBtn').innerHTML = '<span class="status-indicator status-connected"></span> 已连接 - ' + selectedModel.substring(0, 20);
+    document.getElementById('fetchExtraModelsBtn').innerHTML = '<span class="status-indicator status-connected"></span> Đã kết nối - ' + selectedModel.substring(0, 20);
 }
 
-// ==================== 游戏设置 ====================
+// ==================== Cài đặt trò chơi ====================
 
 function saveGameSettings() {
     const historyDepth = document.getElementById('historyDepth').value;
@@ -1294,7 +1294,7 @@ function saveGameSettings() {
     const similarityThreshold = document.getElementById('similarityThreshold').value;
     const minTurnGap = document.getElementById('minTurnGap').value;
     const includeRecentAIReplies = document.getElementById('includeRecentAIReplies').value;
-    // 🆕 History矩阵设置
+    // 🆕 Cài đặt ma trận History
     const recentHistoryCount = document.getElementById('recentHistoryCount').value;
     const matrixHistoryCount = document.getElementById('matrixHistoryCount').value;
     const narrativePerspective = document.getElementById('narrativePerspective').value;
@@ -1311,7 +1311,7 @@ function saveGameSettings() {
     config.similarityThreshold = parseFloat(similarityThreshold);
     config.minTurnGap = parseInt(minTurnGap);
     config.includeRecentAIReplies = parseInt(includeRecentAIReplies);
-    // 🆕 保存History矩阵设置
+    // 🆕 Lưu cài đặt ma trận History
     config.recentHistoryCount = parseInt(recentHistoryCount);
     config.matrixHistoryCount = parseInt(matrixHistoryCount);
     config.narrativePerspective = narrativePerspective;
@@ -1323,30 +1323,30 @@ function saveGameSettings() {
         const systemPromptItem = window.contextVectorManager.staticKnowledgeBase.find(item => item.id === 'system_prompt_main');
         if (systemPromptItem) {
             systemPromptItem.content = systemPromptContent;
-            console.log('[系统提示词] 已更新知识库中的系统提示词条目');
+            console.log('[Prompt hệ thống] Đã cập nhật mục Prompt hệ thống trong kho kiến thức');
             window.contextVectorManager.saveStaticKBToIndexedDB().then(() => {
-                console.log('[系统提示词] 已保存到IndexedDB');
+                console.log('[Prompt hệ thống] Đã lưu vào IndexedDB');
             }).catch(error => {
-                console.warn('[系统提示词] 保存到IndexedDB失败:', error);
+                console.warn('[Prompt hệ thống] Lưu vào IndexedDB thất bại:', error);
             });
         }
         window.contextVectorManager.maxRetrieveCount = parseInt(maxRetrieveCount);
         window.contextVectorManager.minSimilarityThreshold = parseFloat(similarityThreshold);
         window.contextVectorManager.minTurnGap = parseInt(minTurnGap);
         window.contextVectorManager.includeRecentAIRepliesInQuery = parseInt(includeRecentAIReplies);
-        // 🆕 更新History矩阵设置
+        // 🆕 Cập nhật cài đặt ma trận History
         window.contextVectorManager.recentHistoryCount = parseInt(recentHistoryCount);
         window.contextVectorManager.matrixHistoryCount = parseInt(matrixHistoryCount);
-        console.log(`[向量检索] 已更新配置 - 查询包含AI回复轮数: ${includeRecentAIReplies}`);
-        console.log(`[History矩阵] 已更新配置 - 最近条数: ${recentHistoryCount}, 矩阵检索条数: ${matrixHistoryCount}`);
+        console.log(`[Truy xuất vector] Đã cập nhật cấu hình - Số lượt AI phản hồi trong truy vấn: ${includeRecentAIReplies}`);
+        console.log(`[Ma trận History] Đã cập nhật cấu hình - Số mục gần đây: ${recentHistoryCount}, Số mục truy xuất ma trận: ${matrixHistoryCount}`);
     }
 
     const perspectiveText = {
-        'first': '第一人称',
-        'second': '第二人称',
-        'third': '第三人称'
+        'first': 'Ngôi thứ nhất',
+        'second': 'Ngôi thứ hai',
+        'third': 'Ngôi thứ ba'
     };
-    alert('游戏设置已保存！\n历史层数: ' + historyDepth + '\n最小字数: ' + minWordCount + '\n向量检索: ' + (enableVectorRetrieval ? '已启用' : '已禁用') + '\n叙事视角: ' + perspectiveText[narrativePerspective] + '\n系统提示词: 已更新知识库');
+    alert('Cài đặt trò chơi đã được lưu!\nĐộ sâu lịch sử: ' + historyDepth + '\nSố chữ tối thiểu: ' + minWordCount + '\nTruy xuất vector: ' + (enableVectorRetrieval ? 'Đã bật' : 'Đã tắt') + '\nGóc nhìn tự sự: ' + perspectiveText[narrativePerspective] + '\nPrompt hệ thống: Đã cập nhật kho kiến thức');
 }
 
 function toggleVectorRetrieval() {
@@ -1364,21 +1364,21 @@ async function changeVectorMethod() {
     const downloadSection = document.getElementById('downloadModelSection');
     const apiVectorSettings = document.getElementById('apiVectorSettings');
 
-    // 显示/隐藏API向量配置区域
+    // Hiển thị/ẩn khu vực cấu hình vector API
     if (apiVectorSettings) {
         if (method === 'api') {
             apiVectorSettings.style.display = 'block';
-            loadVectorApiSettings(); // 加载已保存的配置
+            loadVectorApiSettings(); // Tải cấu hình đã lưu
         } else {
             apiVectorSettings.style.display = 'none';
         }
     }
 
-    // 显示/隐藏下载按钮区域
+    // Hiển thị/ẩn khu vực nút tải xuống
     if (downloadSection) {
         if (method === 'transformers') {
             downloadSection.style.display = 'block';
-            checkModelStatus(); // 检查模型缓存状态
+            checkModelStatus(); // Kiểm tra trạng thái bộ nhớ đệm mô hình
         } else {
             downloadSection.style.display = 'none';
         }
@@ -1390,7 +1390,7 @@ async function changeVectorMethod() {
 }
 
 /**
- * 🆕 保存API向量配置
+ * 🆕 Lưu cấu hình vector API
  */
 function saveVectorApiSettings() {
     const endpoint = document.getElementById('vectorApiEndpoint')?.value?.trim() || '';
@@ -1398,15 +1398,15 @@ function saveVectorApiSettings() {
     const model = document.getElementById('vectorApiModel')?.value?.trim() || 'text-embedding-ada-002';
 
     if (!endpoint) {
-        alert('⚠️ 请输入API端点');
+        alert('⚠️ Vui lòng nhập Endpoint API');
         return;
     }
     if (!key) {
-        alert('⚠️ 请输入API密钥');
+        alert('⚠️ Vui lòng nhập API Key');
         return;
     }
 
-    // 保存到 localStorage
+    // Lưu vào localStorage
     const saved = localStorage.getItem('gameConfig');
     let config = saved ? JSON.parse(saved) : {};
     config.vectorApi = {
@@ -1416,19 +1416,19 @@ function saveVectorApiSettings() {
     };
     localStorage.setItem('gameConfig', JSON.stringify(config));
 
-    // 更新全局配置
+    // Cập nhật cấu hình toàn cục
     window.vectorApiConfig = {
         endpoint: endpoint,
         key: key,
         model: model
     };
 
-    alert('✅ API向量配置已保存！\n\n端点: ' + endpoint + '\n模型: ' + model);
-    console.log('[API向量] 配置已保存:', { endpoint, model });
+    alert('✅ Cấu hình vector API đã được lưu!\n\nEndpoint: ' + endpoint + '\nMô hình: ' + model);
+    console.log('[Vector API] Cấu hình đã được lưu:', { endpoint, model });
 }
 
 /**
- * 🆕 加载API向量配置
+ * 🆕 Tải cấu hình vector API
  */
 function loadVectorApiSettings() {
     try {
@@ -1444,23 +1444,23 @@ function loadVectorApiSettings() {
                 if (keyInput) keyInput.value = config.vectorApi.key || '';
                 if (modelInput) modelInput.value = config.vectorApi.model || 'text-embedding-ada-002';
 
-                // 同时更新全局配置
+                // Đồng thời cập nhật cấu hình toàn cục
                 window.vectorApiConfig = {
                     endpoint: config.vectorApi.endpoint || '',
                     key: config.vectorApi.key || '',
                     model: config.vectorApi.model || 'text-embedding-ada-002'
                 };
 
-                console.log('[API向量] 配置已加载');
+                console.log('[Vector API] Cấu hình đã được tải');
             }
         }
     } catch (e) {
-        console.warn('[API向量] 加载配置失败:', e);
+        console.warn('[Vector API] Tải cấu hình thất bại:', e);
     }
 }
 
 /**
- * 🆕 初始化API向量配置（页面加载时调用）
+ * 🆕 Khởi tạo cấu hình vector API (gọi khi tải trang)
  */
 function initVectorApiConfig() {
     try {
@@ -1473,15 +1473,15 @@ function initVectorApiConfig() {
                     key: config.vectorApi.key || '',
                     model: config.vectorApi.model || 'text-embedding-ada-002'
                 };
-                console.log('[API向量] ✅ 全局配置已初始化');
+                console.log('[Vector API] ✅ Cấu hình toàn cục đã được khởi tạo');
             }
         }
     } catch (e) {
-        console.warn('[API向量] 初始化配置失败:', e);
+        console.warn('[Vector API] Khởi tạo cấu hình thất bại:', e);
     }
 }
 
-// 页面加载时自动初始化API向量配置
+// Tự động khởi tạo cấu hình vector API khi tải trang
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initVectorApiConfig);
 } else {
@@ -1489,7 +1489,7 @@ if (document.readyState === 'loading') {
 }
 
 /**
- * 🆕 获取向量模型列表
+ * 🆕 Lấy danh sách mô hình vector
  */
 async function fetchVectorModels() {
     const endpoint = document.getElementById('vectorApiEndpoint')?.value?.trim() || '';
@@ -1498,17 +1498,17 @@ async function fetchVectorModels() {
     const select = document.getElementById('vectorModelSelect');
 
     if (!endpoint) {
-        alert('⚠️ 请先输入API端点');
+        alert('⚠️ Vui lòng nhập Endpoint API trước');
         return;
     }
     if (!apiKey) {
-        alert('⚠️ 请先输入API密钥');
+        alert('⚠️ Vui lòng nhập API Key trước');
         return;
     }
 
-    // 更新按钮状态
+    // Cập nhật trạng thái nút
     const originalText = btn.innerHTML;
-    btn.innerHTML = '⏳ 获取中...';
+    btn.innerHTML = '⏳ Đang lấy...';
     btn.disabled = true;
 
     try {
@@ -1522,13 +1522,13 @@ async function fetchVectorModels() {
         });
 
         if (!response.ok) {
-            throw new Error(`API返回 ${response.status}: ${response.statusText}`);
+            throw new Error(`API trả về ${response.status}: ${response.statusText}`);
         }
 
         const data = await response.json();
         let models = [];
 
-        // 解析模型列表（兼容OpenAI格式）
+        // Phân tích danh sách mô hình (tương thích định dạng OpenAI)
         if (data.data && Array.isArray(data.data)) {
             models = data.data.map(m => m.id || m.name).filter(Boolean);
         } else if (Array.isArray(data)) {
@@ -1538,10 +1538,10 @@ async function fetchVectorModels() {
         }
 
         if (models.length === 0) {
-            throw new Error('未找到可用模型');
+            throw new Error('Không tìm thấy mô hình khả dụng');
         }
 
-        // 过滤出embedding相关的模型（可选，优先显示embedding模型）
+        // Lọc ra các mô hình liên quan đến embedding (tùy chọn, ưu tiên hiển thị các mô hình embedding)
         const embeddingModels = models.filter(m =>
             m.toLowerCase().includes('embed') ||
             m.toLowerCase().includes('embedding')
@@ -1551,12 +1551,12 @@ async function fetchVectorModels() {
             !m.toLowerCase().includes('embedding')
         );
 
-        // 清空并填充下拉框
-        select.innerHTML = '<option value="">-- 选择一个模型 --</option>';
+        // Làm trống và lấp đầy hộp thả xuống
+        select.innerHTML = '<option value="">-- Chọn một mô hình --</option>';
 
         if (embeddingModels.length > 0) {
             const group1 = document.createElement('optgroup');
-            group1.label = '🎯 Embedding模型';
+            group1.label = '🎯 Mô hình Embedding';
             embeddingModels.forEach(model => {
                 const option = document.createElement('option');
                 option.value = model;
@@ -1568,7 +1568,7 @@ async function fetchVectorModels() {
 
         if (otherModels.length > 0) {
             const group2 = document.createElement('optgroup');
-            group2.label = '📦 其他模型';
+            group2.label = '📦 Các mô hình khác';
             otherModels.forEach(model => {
                 const option = document.createElement('option');
                 option.value = model;
@@ -1578,25 +1578,25 @@ async function fetchVectorModels() {
             select.appendChild(group2);
         }
 
-        // 显示下拉框
+        // Hiển thị hộp thả xuống
         select.style.display = 'block';
 
-        // 更新按钮状态
-        btn.innerHTML = `✅ 已获取 ${models.length} 个模型`;
+        // Cập nhật trạng thái nút
+        btn.innerHTML = `✅ Đã lấy ${models.length} mô hình`;
         btn.style.background = '#28a745';
 
-        console.log(`[API向量] 获取到 ${models.length} 个模型，其中 ${embeddingModels.length} 个是embedding模型`);
+        console.log(`[Vector API] Đã lấy ${models.length} mô hình, trong đó ${embeddingModels.length} mô hình là embedding`);
 
     } catch (error) {
-        console.error('[API向量] 获取模型列表失败:', error);
-        alert('❌ 获取模型列表失败\n\n' + error.message);
+        console.error('[Vector API] Lấy danh sách mô hình thất bại:', error);
+        alert('❌ Lấy danh sách mô hình thất bại\n\n' + error.message);
         btn.innerHTML = originalText;
     } finally {
         btn.disabled = false;
-        // 3秒后恢复按钮文字
+        // Khôi phục văn bản nút sau 3 giây
         setTimeout(() => {
             if (btn.innerHTML.includes('✅')) {
-                btn.innerHTML = '🔍 获取向量模型列表';
+                btn.innerHTML = '🔍 Lấy danh sách mô hình vector';
                 btn.style.background = '';
             }
         }, 3000);
@@ -1604,7 +1604,7 @@ async function fetchVectorModels() {
 }
 
 /**
- * 🆕 选择向量模型时的处理
+ * 🆕 Xử lý khi chọn mô hình vector
  */
 function onVectorModelSelect() {
     const select = document.getElementById('vectorModelSelect');
@@ -1612,12 +1612,12 @@ function onVectorModelSelect() {
 
     if (select && input && select.value) {
         input.value = select.value;
-        console.log('[API向量] 已选择模型:', select.value);
+        console.log('[Vector API] Đã chọn mô hình:', select.value);
     }
 }
 
 /**
- * 检查浏览器AI模型的缓存状态
+ * Kiểm tra trạng thái bộ nhớ đệm của mô hình AI trình duyệt
  */
 function checkModelStatus() {
     const statusEl = document.getElementById('modelStatus');
@@ -1625,24 +1625,24 @@ function checkModelStatus() {
 
     if (!statusEl || !btnEl) return;
 
-    // 检查localStorage中的标记
+    // Kiểm tra cờ trong localStorage
     const modelReady = localStorage.getItem('transformers_model_ready') === '1';
 
     if (modelReady) {
-        statusEl.textContent = '✅ 已缓存';
+        statusEl.textContent = '✅ Đã lưu đệm';
         statusEl.style.color = '#28a745';
-        btnEl.textContent = '🔄 重新下载模型';
+        btnEl.textContent = '🔄 Tải lại mô hình';
         btnEl.style.background = '#6c757d';
     } else {
-        statusEl.textContent = '❌ 未缓存';
+        statusEl.textContent = '❌ Chưa lưu đệm';
         statusEl.style.color = '#dc3545';
-        btnEl.textContent = '📥 预下载模型（约13MB）';
+        btnEl.textContent = '📥 Tải trước mô hình (khoảng 13MB)';
         btnEl.style.background = '#667eea';
     }
 }
 
 /**
- * 预下载浏览器AI模型
+ * Tải trước mô hình AI trình duyệt
  */
 async function predownloadModel() {
     const btnEl = document.getElementById('downloadModelBtn');
@@ -1650,67 +1650,67 @@ async function predownloadModel() {
 
     if (!btnEl || !statusEl) return;
 
-    // 禁用按钮
+    // Vô hiệu hóa nút
     btnEl.disabled = true;
     const originalText = btnEl.textContent;
-    btnEl.textContent = '⏳ 准备下载...';
-    statusEl.textContent = '准备中...';
+    btnEl.textContent = '⏳ Đang chuẩn bị tải...';
+    statusEl.textContent = 'Đang chuẩn bị...';
     statusEl.style.color = '#ffc107';
 
     try {
-        console.log('[预下载模型] 开始加载 Transformers.js 库...');
+        console.log('[Tải trước mô hình] Bắt đầu tải thư viện Transformers.js...');
 
-        // 1. 先加载 Transformers.js 库
+        // 1. Tải thư viện Transformers.js trước
         if (typeof window.loadTransformersJS === 'function') {
             await window.loadTransformersJS();
         } else {
-            throw new Error('loadTransformersJS 函数未定义');
+            throw new Error('Hàm loadTransformersJS chưa được định nghĩa');
         }
 
-        console.log('[预下载模型] 库加载完成，开始下载模型...');
-        btnEl.textContent = '📥 正在下载...';
-        statusEl.textContent = '下载中...';
+        console.log('[Tải trước mô hình] Thư viện đã tải xong, bắt đầu tải mô hình...');
+        btnEl.textContent = '📥 Đang tải...';
+        statusEl.textContent = 'Đang tải...';
 
-        // 2. 触发模型下载（通过调用一次向量生成）
+        // 2. Kích hoạt tải mô hình (thông qua việc gọi tạo vector một lần)
         if (window.contextVectorManager) {
-            await window.contextVectorManager.getEmbeddingFromTransformers('预下载测试');
-            console.log('[预下载模型] ✅ 模型下载并缓存成功！');
+            await window.contextVectorManager.getEmbeddingFromTransformers('Kiểm tra tải trước');
+            console.log('[Tải trước mô hình] ✅ Mô hình đã tải và lưu đệm thành công!');
 
-            // 更新状态
-            statusEl.textContent = '✅ 已缓存';
+            // Cập nhật trạng thái
+            statusEl.textContent = '✅ Đã lưu đệm';
             statusEl.style.color = '#28a745';
-            btnEl.textContent = '✅ 下载完成！';
+            btnEl.textContent = '✅ Tải xong!';
             btnEl.style.background = '#28a745';
 
-            // 3秒后恢复按钮
+            // Khôi phục nút sau 3 giây
             setTimeout(() => {
-                btnEl.textContent = '🔄 重新下载模型';
+                btnEl.textContent = '🔄 Tải lại mô hình';
                 btnEl.style.background = '#6c757d';
                 btnEl.disabled = false;
             }, 3000);
 
-            alert('✅ 模型下载成功！\n\n模型已缓存到浏览器，下次使用时无需等待下载。\n\n💡 提示：你现在可以离线使用浏览器AI模型了！');
+            alert('✅ Mô hình đã tải thành công!\n\nMô hình đã được lưu đệm vào trình duyệt, lần sau sử dụng sẽ không cần chờ tải.\n\n💡 Gợi ý: Giờ đây bạn có thể sử dụng mô hình AI trình duyệt ngoại tuyến!');
 
         } else {
-            throw new Error('contextVectorManager 未初始化');
+            throw new Error('contextVectorManager chưa được khởi tạo');
         }
 
     } catch (error) {
-        console.error('[预下载模型] ❌ 下载失败:', error);
+        console.error('[Tải trước mô hình] ❌ Tải thất bại:', error);
 
-        // 更新状态为失败
-        statusEl.textContent = '❌ 下载失败';
+        // Cập nhật trạng thái thất bại
+        statusEl.textContent = '❌ Tải thất bại';
         statusEl.style.color = '#dc3545';
-        btnEl.textContent = '❌ 下载失败，点击重试';
+        btnEl.textContent = '❌ Tải thất bại, nhấp để thử lại';
         btnEl.style.background = '#dc3545';
         btnEl.disabled = false;
 
-        // 显示详细错误信息
-        let errorMsg = '模型下载失败！\n\n';
+        // Hiển thị thông tin lỗi chi tiết
+        let errorMsg = 'Tải mô hình thất bại!\n\n';
         if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-            errorMsg += '❌ 网络错误\n\n可能原因：\n1. 网络连接不稳定\n2. HuggingFace CDN 访问受限\n3. 需要使用代理/VPN\n\n建议：\n- 检查网络连接\n- 稍后重试\n- 或使用代理访问';
+            errorMsg += '❌ Lỗi mạng\n\nNguyên nhân có thể:\n1. Kết nối mạng không ổn định\n2. Truy cập CDN HuggingFace bị hạn chế\n3. Cần sử dụng Proxy/VPN\n\nGợi ý:\n- Kiểm tra kết nối mạng\n- Thử lại sau\n- Hoặc sử dụng Proxy để truy cập';
         } else {
-            errorMsg += '错误详情：\n' + error.message;
+            errorMsg += 'Chi tiết lỗi:\n' + error.message;
         }
 
         alert(errorMsg);
@@ -1754,17 +1754,17 @@ function saveDynamicWorldSettings() {
     config.dynamicWorld.prompt = prompt;
 
     localStorage.setItem('gameConfig', JSON.stringify(config));
-    alert('动态世界设置已保存！');
+    alert('Cài đặt Thế giới động đã được lưu!');
 }
 
-// ==================== 消息管理 ====================
+// ==================== Quản lý tin nhắn ====================
 
 let deleteMode = false;
 let selectedMessages = new Set();
 
 function toggleDeleteMode() {
     deleteMode = !deleteMode;
-    // 同步到gameState
+    // Đồng bộ vào gameState
     if (window.gameState) {
         window.gameState.deleteMode = deleteMode;
     }
@@ -1774,31 +1774,31 @@ function toggleDeleteMode() {
 
     if (deleteMode) {
         btn.classList.add('active');
-        btn.textContent = '❌ 取消删除';
+        btn.textContent = '❌ Hủy xóa';
         deleteControls.style.display = 'flex';
         historyDiv.classList.add('delete-mode-active');
         const messages = historyDiv.querySelectorAll('.message');
         messages.forEach((msg, index) => {
             let checkbox = msg.querySelector('.message-checkbox');
             if (!checkbox) {
-                // 创建新的复选框
+                // Tạo checkbox mới
                 checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
                 checkbox.className = 'message-checkbox';
                 checkbox.style.display = 'inline-block';
                 msg.insertBefore(checkbox, msg.firstChild);
             } else {
-                // 如果复选框已存在，确保它可见
+                // Nếu checkbox đã tồn tại, đảm bảo nó hiển thị
                 checkbox.style.display = 'inline-block';
             }
 
-            // 无论复选框是新建还是已存在，都重新绑定事件和设置索引
+            // Dù checkbox mới hay cũ, đều gắn lại sự kiện và chỉ số (index)
             checkbox.dataset.index = index;
-            // 移除旧的事件监听器（通过克隆节点）
+            // Loại bỏ trình lắng nghe sự kiện cũ (bằng cách sao chép nút)
             const newCheckbox = checkbox.cloneNode(true);
             checkbox.parentNode.replaceChild(newCheckbox, checkbox);
 
-            // 绑定新的事件处理器
+            // Gắn trình xử lý sự kiện mới
             newCheckbox.onchange = (e) => {
                 if (e.target.checked) {
                     selectedMessages.add(index);
@@ -1820,7 +1820,7 @@ function toggleDeleteMode() {
         const messages = historyDiv.querySelectorAll('.message');
         messages.forEach(msg => msg.classList.remove('selected-for-delete'));
 
-        // 退出删除模式后，更新楼层指示器
+        // Sau khi thoát chế độ xóa, cập nhật lại chỉ số tầng (floor indicators)
         setTimeout(() => {
             if (typeof window.MessageFloorIndicator === 'object' && window.MessageFloorIndicator.updateAllFloorIndicators) {
                 window.MessageFloorIndicator.updateAllFloorIndicators();
@@ -1831,35 +1831,35 @@ function toggleDeleteMode() {
 
 function confirmDelete() {
     if (selectedMessages.size === 0) {
-        alert('请先选择要删除的消息');
+        alert('Vui lòng chọn các tin nhắn cần xóa');
         return;
     }
 
     const historyDiv = document.getElementById('gameHistory');
 
-    // 🔧 修复：只获取真正的对话消息（用户消息和AI消息），排除动态世界等其他消息
+    // 🔧 Sửa lỗi: Chỉ lấy các tin nhắn đối thoại thực sự (tin nhắn người dùng và AI), loại bỏ thế giới động, v.v.
     const allConversationMessages = Array.from(historyDiv.querySelectorAll('.message')).filter(msg => {
-        // 排除动态世界消息
+        // Loại bỏ tin nhắn thế giới động
         const header = msg.querySelector('.message-header');
-        if (header && header.textContent.includes('动态世界')) {
+        if (header && header.textContent.includes('Thế giới động')) {
             return false;
         }
-        // 排除加载提示
+        // Loại bỏ thông báo đang tải
         if (msg.id === 'loading-message' || msg.id === 'dynamic-world-loading') {
             return false;
         }
-        // 排除错误消息
+        // Loại bỏ tin nhắn lỗi
         if (msg.id === 'error-message-with-retry') {
             return false;
         }
-        // 只保留用户消息和AI消息
+        // Chỉ giữ lại tin nhắn người dùng và tin nhắn AI
         return msg.classList.contains('user-message') || msg.classList.contains('ai-message');
     });
 
-    // 🔧 获取所有UI消息用于匹配selectedMessages的索引
+    // 🔧 Lấy tất cả tin nhắn UI để khớp chỉ số của selectedMessages
     const allUIMessages = Array.from(historyDiv.querySelectorAll('.message'));
 
-    // 🔧 将selectedMessages（UI索引）映射到对话消息索引
+    // 🔧 Ánh xạ selectedMessages (chỉ số UI) sang chỉ số tin nhắn đối thoại
     const selectedConversationIndices = new Set();
     const allSelectedUIMessages = [];
 
@@ -1874,55 +1874,55 @@ function confirmDelete() {
     });
 
     if (selectedConversationIndices.size === 0) {
-        alert('请先选择要删除的消息');
+        alert('Vui lòng chọn các tin nhắn cần xóa');
         return;
     }
 
-    if (!confirm(`确定要删除选中的 ${selectedConversationIndices.size} 条消息吗？\n这将同时删除对应的对话历史记录和回滚变量。`)) {
+    if (!confirm(`Bạn có chắc chắn muốn xóa ${selectedConversationIndices.size} tin nhắn đã chọn không?\nThao tác này đồng thời sẽ xóa nhật ký đối thoại tương ứng và hồi quy các biến.`)) {
         return;
     }
 
-    // 🔧 修复：使用对话消息的索引计算删除范围
+    // 🔧 Sửa lỗi: Sử dụng chỉ số của tin nhắn đối thoại để tính toán phạm vi xóa
     const sortedIndices = Array.from(selectedConversationIndices).sort((a, b) => a - b);
     const firstSelectedIndex = sortedIndices[0];
     const deleteCount = sortedIndices.length;
 
-    console.log(`[删除消息] 准备删除: 起始索引=${firstSelectedIndex}, 数量=${deleteCount}`);
-    console.log(`[删除消息] 删除前: conversationHistory长度=${gameState.conversationHistory.length}, variableSnapshots长度=${gameState.variableSnapshots.length}`);
+    console.log(`[Xóa tin nhắn] Chuẩn bị xóa: Chỉ số bắt đầu=${firstSelectedIndex}, Số lượng=${deleteCount}`);
+    console.log(`[Xóa tin nhắn] Trước khi xóa: conversationHistory dài=${gameState.conversationHistory.length}, variableSnapshots dài=${gameState.variableSnapshots.length}`);
 
-    // 保存动态世界的独立数据（在回滚前保存）
+    // Sao lưu dữ liệu độc lập của Thế giới động (trước khi hồi quy)
     const dynamicWorldBackup = {
         history: JSON.parse(JSON.stringify(gameState.dynamicWorld?.history || [])),
         floor: gameState.dynamicWorld?.floor || 0
     };
 
-    // 从conversationHistory中删除对应的记录
+    // Xóa các bản ghi tương ứng trong conversationHistory
     gameState.conversationHistory.splice(firstSelectedIndex, deleteCount);
     gameState.variableSnapshots.splice(firstSelectedIndex, deleteCount);
 
-    // 🔧 修复：删除后，将当前变量设置为剩余快照的最后一个
+    // 🔧 Sửa lỗi: Sau khi xóa, đặt biến hiện tại thành trạng thái cuối cùng của các bản sao chụp còn lại
     if (gameState.variableSnapshots.length > 0) {
         gameState.variables = JSON.parse(JSON.stringify(
             gameState.variableSnapshots[gameState.variableSnapshots.length - 1]
         ));
-        console.log(`[删除消息] 变量已回滚到剩余快照的最后一个状态（索引 ${gameState.variableSnapshots.length - 1}）`);
+        console.log(`[Xóa tin nhắn] Các biến đã hồi quy về trạng thái cuối cùng của bản sao chụp còn lại (chỉ số ${gameState.variableSnapshots.length - 1})`);
     } else {
-        console.log('[删除消息] 没有剩余快照，变量保持当前状态');
+        console.log('[Xóa tin nhắn] Không còn bản sao chụp nào, các biến giữ nguyên trạng thái hiện tại');
     }
 
-    console.log(`[删除消息] 删除后: conversationHistory长度=${gameState.conversationHistory.length}, variableSnapshots长度=${gameState.variableSnapshots.length}`);
+    console.log(`[Xóa tin nhắn] Sau khi xóa: conversationHistory dài=${gameState.conversationHistory.length}, variableSnapshots dài=${gameState.variableSnapshots.length}`);
 
-    // 恢复动态世界的独立数据（回滚后恢复）
+    // Phục hồi dữ liệu độc lập của Thế giới động (sau khi hồi quy)
     if (gameState.dynamicWorld) {
         gameState.dynamicWorld.history = dynamicWorldBackup.history;
         gameState.dynamicWorld.floor = dynamicWorldBackup.floor;
-        console.log('[删除消息] 已保护动态世界数据不被回滚');
+        console.log('[Xóa tin nhắn] Đã bảo vệ dữ liệu Thế giới động không bị hồi quy');
     }
 
-    // 🆕 从向量库中删除对应的条目
+    // 🆕 Xóa các mục tương ứng trong kho vector
     if (window.contextVectorManager) {
-        const turnIndexStart = Math.floor(firstSelectedIndex / 2) + 1; // 计算起始轮次
-        const turnIndexEnd = Math.floor((firstSelectedIndex + deleteCount) / 2); // 计算结束轮次
+        const turnIndexStart = Math.floor(firstSelectedIndex / 2) + 1; // Tính toán lượt bắt đầu
+        const turnIndexEnd = Math.floor((firstSelectedIndex + deleteCount) / 2); // Tính toán lượt kết thúc
 
         let deletedVectorCount = 0;
         for (let turnIndex = turnIndexStart; turnIndex <= turnIndexEnd; turnIndex++) {
@@ -1935,7 +1935,7 @@ function confirmDelete() {
             }
         }
 
-        // 重新调整后续轮次的索引
+        // Điều chỉnh lại chỉ số của các lượt hội thoại sau đó
         window.contextVectorManager.conversationEmbeddings.forEach(conv => {
             if (conv.turnIndex > turnIndexEnd) {
                 conv.turnIndex -= (turnIndexEnd - turnIndexStart + 1);
@@ -1943,10 +1943,10 @@ function confirmDelete() {
         });
 
         if (deletedVectorCount > 0) {
-            console.log(`[向量库] 已删除 ${deletedVectorCount} 条向量记录`);
+            console.log(`[Kho vector] Đã xóa ${deletedVectorCount} bản ghi vector`);
         }
 
-        // 🆕 同时清理historyEmbeddings和historyMatrix
+        // 🆕 Đồng thời dọn dẹp historyEmbeddings và historyMatrix
         if (window.contextVectorManager.historyEmbeddings) {
             const historyIndicesToRemove = [];
             window.contextVectorManager.historyEmbeddings.forEach((entry, index) => {
@@ -1955,12 +1955,12 @@ function confirmDelete() {
                 }
             });
 
-            // 从后往前删除，避免索引偏移问题
+            // Xóa từ dưới lên trên để tránh vấn đề lệch chỉ số
             for (let i = historyIndicesToRemove.length - 1; i >= 0; i--) {
                 window.contextVectorManager.historyEmbeddings.splice(historyIndicesToRemove[i], 1);
             }
 
-            // 重新调整后续轮次的索引
+            // Điều chỉnh lại chỉ số của các lượt hội thoại sau đó
             window.contextVectorManager.historyEmbeddings.forEach(entry => {
                 if (entry.turnIndex > turnIndexEnd) {
                     entry.turnIndex -= (turnIndexEnd - turnIndexStart + 1);
@@ -1968,9 +1968,9 @@ function confirmDelete() {
             });
 
             if (historyIndicesToRemove.length > 0) {
-                console.log(`[History向量库] 已删除第${turnIndexStart}-${turnIndexEnd}轮的${historyIndicesToRemove.length}条history记录`);
+                console.log(`[Kho vector History] Đã xóa ${historyIndicesToRemove.length} bản ghi history của lượt ${turnIndexStart}-${turnIndexEnd}`);
 
-                // 🔧 重建historyMatrix
+                // 🔧 Xây dựng lại historyMatrix
                 if (window.matrixManager && window.matrixManager.historyMatrix) {
                     window.matrixManager.historyMatrix.clear();
                     for (const entry of window.contextVectorManager.historyEmbeddings) {
@@ -1982,21 +1982,21 @@ function confirmDelete() {
                                 timestamp: entry.timestamp
                             });
                         } catch (error) {
-                            console.warn('[History矩阵] 重建时摄入失败:', error);
+                            console.warn('[Ma trận History] Đưa vào thất bại khi xây dựng lại:', error);
                         }
                     }
-                    console.log(`[History矩阵] 已重建（删除楼层后），剩余${window.matrixManager.historyMatrix.layers?.length || 0}层`);
+                    console.log(`[Ma trận History] Đã xây dựng lại (sau khi xóa tầng), còn lại ${window.matrixManager.historyMatrix.layers?.length || 0} tầng`);
                 }
             }
         }
 
-        // 保存到IndexedDB
+        // Lưu vào IndexedDB
         window.contextVectorManager.saveToIndexedDB().catch(err =>
-            console.warn('[向量库] 保存失败:', err)
+            console.warn('[Kho vector] Lưu thất bại:', err)
         );
     }
 
-    // 🆕 从人物图谱中删除对应轮次添加的人物
+    // 🆕 Xóa các nhân vật được thêm vào trong lượt tương ứng khỏi sơ đồ nhân vật
     if (window.characterGraphManager && typeof window.characterGraphManager.deleteCharactersByTurnRange === 'function') {
         const turnIndexStart = Math.floor(firstSelectedIndex / 2) + 1;
         const turnIndexEnd = Math.floor((firstSelectedIndex + deleteCount) / 2);
@@ -2004,27 +2004,27 @@ function confirmDelete() {
         window.characterGraphManager.deleteCharactersByTurnRange(turnIndexStart, turnIndexEnd)
             .then(deletedNames => {
                 if (deletedNames.length > 0) {
-                    console.log(`[人物图谱] ✅ 回滚删除了 ${deletedNames.length} 个人物`);
+                    console.log(`[Sơ đồ nhân vật] ✅ Đã xóa hồi quy ${deletedNames.length} nhân vật`);
                 }
             })
-            .catch(err => console.warn('[人物图谱] 回滚删除失败:', err));
+            .catch(err => console.warn('[Sơ đồ nhân vật] Xóa hồi quy thất bại:', err));
     }
 
-    // 🧠 从GraphRAG语义网络中删除对应轮次的实体和关系
+    // 🧠 Xóa các thực thể và quan hệ trong lượt tương ứng khỏi mạng ngữ nghĩa GraphRAG
     if (window.graphRAGLite && typeof window.graphRAGLite.deleteByTurnIndex === 'function') {
         const turnIndexStart = Math.floor(firstSelectedIndex / 2) + 1;
         window.graphRAGLite.deleteByTurnIndex(turnIndexStart)
             .then(result => {
                 if (result.deletedEntities > 0 || result.deletedRelations > 0) {
-                    console.log(`[GraphRAG] ✅ 回滚删除了 ${result.deletedEntities} 个实体, ${result.deletedRelations} 条关系`);
+                    console.log(`[GraphRAG] ✅ Đã xóa hồi quy ${result.deletedEntities} thực thể, ${result.deletedRelations} quan hệ`);
                 }
             })
-            .catch(err => console.warn('[GraphRAG] 回滚删除失败:', err));
+            .catch(err => console.warn('[GraphRAG] Xóa hồi quy thất bại:', err));
     }
 
-    // 📚 删除对应数量的剧情规划存档（基于删除的AI消息数量）
+    // 📚 Xóa số lượng bản lưu quy hoạch cốt truyện tương ứng (dựa trên số lượng tin nhắn AI bị xóa)
     if (window.plotArchiveManager && typeof window.plotArchiveManager.deleteLastN === 'function') {
-        // 统计被删除的消息中有多少条是AI消息
+        // Thống kê xem có bao nhiêu tin nhắn AI trong số tin nhắn bị xóa
         let aiMessageCount = 0;
         allSelectedUIMessages.forEach(msg => {
             if (msg.classList.contains('ai-message')) {
@@ -2034,28 +2034,28 @@ function confirmDelete() {
 
         if (aiMessageCount > 0) {
             const actualDeleted = window.plotArchiveManager.deleteLastN(aiMessageCount);
-            console.log(`[📚剧情存档] 删除了 ${aiMessageCount} 条AI消息，对应删除 ${actualDeleted} 条剧情规划存档`);
+            console.log(`[📚Lưu trữ cốt truyện] Đã xóa ${aiMessageCount} tin nhắn AI, tương ứng xóa ${actualDeleted} bản lưu quy hoạch cốt truyện`);
         }
     }
 
-    // 从UI中删除消息
+    // Xóa tin nhắn khỏi UI
     allSelectedUIMessages.forEach(msg => msg.remove());
 
-    // 更新状态面板显示
+    // Cập nhật hiển thị bảng trạng thái
     if (typeof updateStatusPanel === 'function') {
         updateStatusPanel();
     }
 
-    saveGameHistory().catch(err => console.error('保存失败:', err));
+    saveGameHistory().catch(err => console.error('Lưu thất bại:', err));
     cancelDelete();
-    alert(`已删除 ${deleteCount} 条消息！\n变量已回滚到剩余快照的最后一个状态。\n\n💡 提示：动态世界数据已保护，不会被删除。`);
+    alert(`Đã xóa ${deleteCount} tin nhắn!\nCác biến đã hồi quy về trạng thái bản sao chụp cuối cùng còn lại.\n\n💡 Gợi ý: Dữ liệu Thế giới động đã được bảo vệ, sẽ không bị xóa.`);
 }
 
 function cancelDelete() {
     toggleDeleteMode();
 }
 
-// ==================== 调试功能 ====================
+// ==================== Chức năng gỡ lỗi ====================
 
 let debugMode = false;
 
@@ -2065,7 +2065,7 @@ function toggleDebugMode() {
     if (debugOutput) {
         debugOutput.style.display = debugMode ? 'block' : 'none';
     }
-    console.log('[调试模式]', debugMode ? '已开启' : '已关闭');
+    console.log('[Chế độ gỡ lỗi]', debugMode ? 'Đã bật' : 'Đã tắt');
 }
 
 function showDebugOutput(content) {
@@ -2077,18 +2077,18 @@ function showDebugOutput(content) {
     }
 }
 
-// ==================== 弹窗管理 ====================
+// ==================== Quản lý cửa sổ bật lên (Modal) ====================
 
 function openConfigModal() {
     const modal = document.getElementById('configModal');
     const overlay = document.getElementById('configModalOverlay');
 
     if (!modal || !overlay) {
-        console.error('[GameCore] 配置模态框不存在，尝试重新生成');
+        console.error('[GameCore] Modal cấu hình không tồn tại, đang thử tạo lại');
         try {
             if (typeof generateConfigModal === 'function') {
                 generateConfigModal();
-                // 重新获取元素
+                // Lấy lại phần tử
                 setTimeout(() => {
                     const newModal = document.getElementById('configModal');
                     const newOverlay = document.getElementById('configModalOverlay');
@@ -2098,10 +2098,10 @@ function openConfigModal() {
                     }
                 }, 100);
             } else {
-                console.error('[GameCore] generateConfigModal 函数不存在');
+                console.error('[GameCore] Hàm generateConfigModal không tồn tại');
             }
         } catch (error) {
-            console.error('[GameCore] 生成配置模态框失败:', error);
+            console.error('[GameCore] Tạo modal cấu hình thất bại:', error);
         }
         return;
     }
@@ -2134,694 +2134,694 @@ function toggleSection(sectionId) {
     }
 }
 
-// ==================== 格式化游戏 ====================
+// ==================== Định dạng trò chơi (Format Game) ====================
 
 async function formatGame() {
-    if (!confirm('⚠️ 警告：此操作将清空所有数据！\n\n包括：\n- 所有存档\n- 游戏历史\n- 向量记忆\n- DLC知识包\n\n✅ 将保留：\n- API配置\n- 游戏设置\n- 动态世界设置\n\n此操作不可恢复！确定要继续吗？')) {
-        return;
-    }
-    if (!confirm('⚠️ 最后确认：真的要格式化所有数据吗？')) {
-        return;
-    }
-    try {
-        // 保存需要保留的配置
-        const gameConfig = localStorage.getItem('gameConfig');
-        const extraApiConfig = localStorage.getItem('extraApiConfig');
-        const staticKBFiles = localStorage.getItem('staticKBFiles');
-        const transformersReady = localStorage.getItem('transformers_model_ready');
+    if (!confirm('⚠️ Cảnh báo: Thao tác này sẽ xóa sạch mọi dữ liệu!\n\nBao gồm:\n- Tất cả bản lưu\n- Lịch sử trò chơi\n- Ký ức vector\n- Gói kiến thức DLC\n\n✅ Sẽ giữ lại:\n- Cấu hình API\n- Cài đặt trò chơi\n- Cài đặt Thế giới động\n\nThao tác này không thể hoàn tác! Bạn có chắc chắn muốn tiếp tục không?')) {
+        return;
+    }
+    if (!confirm('⚠️ Xác nhận cuối cùng: Bạn thực sự muốn định dạng lại toàn bộ dữ liệu?')) {
+        return;
+    }
+    try {
+        // Lưu các cấu hình cần giữ lại
+        const gameConfig = localStorage.getItem('gameConfig');
+        const extraApiConfig = localStorage.getItem('extraApiConfig');
+        const staticKBFiles = localStorage.getItem('staticKBFiles');
+        const transformersReady = localStorage.getItem('transformers_model_ready');
 
-        console.log('[格式化] 正在保留配置数据...');
+        console.log('[Định dạng] Đang giữ lại dữ liệu cấu hình...');
 
-        // 清空游戏历史
-        await clearGameHistory();
+        // Xóa lịch sử trò chơi
+        await clearGameHistory();
 
-        // 清空localStorage
-        localStorage.clear();
+        // Xóa sạch localStorage
+        localStorage.clear();
 
-        // 恢复保留的配置
-        if (gameConfig) {
-            localStorage.setItem('gameConfig', gameConfig);
-            console.log('[格式化] ✓ 已恢复 API 配置和游戏设置');
-        }
-        if (extraApiConfig) {
-            localStorage.setItem('extraApiConfig', extraApiConfig);
-            console.log('[格式化] ✓ 已恢复额外 API 配置');
-        }
-        if (staticKBFiles) {
-            localStorage.setItem('staticKBFiles', staticKBFiles);
-            console.log('[格式化] ✓ 已恢复静态知识库文件配置');
-        }
-        if (transformersReady) {
-            localStorage.setItem('transformers_model_ready', transformersReady);
-            console.log('[格式化] ✓ 已恢复 Transformers 模型状态');
-        }
+        // Khôi phục các cấu hình đã giữ lại
+        if (gameConfig) {
+            localStorage.setItem('gameConfig', gameConfig);
+            console.log('[Định dạng] ✓ Đã khôi phục cấu hình API và cài đặt trò chơi');
+        }
+        if (extraApiConfig) {
+            localStorage.setItem('extraApiConfig', extraApiConfig);
+            console.log('[Định dạng] ✓ Đã khôi phục cấu hình API bổ sung');
+        }
+        if (staticKBFiles) {
+            localStorage.setItem('staticKBFiles', staticKBFiles);
+            console.log('[Định dạng] ✓ Đã khôi phục cấu hình tệp kho kiến thức tĩnh');
+        }
+        if (transformersReady) {
+            localStorage.setItem('transformers_model_ready', transformersReady);
+            console.log('[Định dạng] ✓ Đã khôi phục trạng thái mô hình Transformers');
+        }
 
-        // 清空向量库
-        if (window.contextVectorManager) {
-            window.contextVectorManager.clear();
-            await window.contextVectorManager.clearIndexedDB();
-        }
+        // Xóa sạch kho lưu trữ vector
+        if (window.contextVectorManager) {
+            window.contextVectorManager.clear();
+            await window.contextVectorManager.clearIndexedDB();
+        }
 
-        // 清空DLC数据
-        if (window.dlcManager) {
-            await window.dlcManager.clearAllDLCs();
-        }
+        // Xóa dữ liệu DLC
+        if (window.dlcManager) {
+            await window.dlcManager.clearAllDLCs();
+        }
 
-        alert('✅ 格式化完成！\n\n已保留：\n- API 配置\n- 游戏设置\n- 动态世界设置\n\n页面将自动刷新...');
-        setTimeout(() => {
-            window.location.reload();
-        }, 1000);
-    } catch (error) {
-        alert('格式化失败：' + error.message);
-        console.error('格式化失败:', error);
-    }
+        alert('✅ Định dạng hoàn tất!\n\nĐã giữ lại:\n- Cấu hình API\n- Cài đặt trò chơi\n- Cài đặt Thế giới động\n\nTrang web sẽ tự động làm mới...');
+        setTimeout(() => {
+            window.location.reload();
+        }, 1000);
+    } catch (error) {
+        alert('Định dạng thất bại: ' + error.message);
+        console.error('Định dạng thất bại:', error);
+    }
 }
 
-// ==================== 数据加载和同步系统 ====================
+// ==================== Hệ thống tải và đồng bộ dữ liệu ====================
 
 /**
- * 🆕 去重history数组
- */
+ * 🆕 Loại bỏ trùng lặp trong mảng history
+ */
 function deduplicateHistory(historyArray) {
-    if (!Array.isArray(historyArray)) return [];
+    if (!Array.isArray(historyArray)) return [];
 
-    const seen = new Set();
-    return historyArray.filter(item => {
-        const trimmed = item.trim();
-        if (!trimmed || seen.has(trimmed)) {
-            return false;
-        }
-        seen.add(trimmed);
-        return true;
-    });
+    const seen = new Set();
+    return historyArray.filter(item => {
+        const trimmed = item.trim();
+        if (!trimmed || seen.has(trimmed)) {
+            return false;
+        }
+        seen.add(trimmed);
+        return true;
+    });
 }
 
 /**
- * 🆕 全局函数：立即修复当前游戏中的重复history
- */
+ * 🆕 Hàm toàn cục: Sửa lỗi history bị trùng lặp trong trò chơi hiện tại ngay lập tức
+ */
 window.fixDuplicateHistory = function () {
-    if (!gameState.variables.history || !Array.isArray(gameState.variables.history)) {
-        console.log('[History修复] 没有history数据');
-        return;
-    }
+    if (!gameState.variables.history || !Array.isArray(gameState.variables.history)) {
+        console.log('[Sửa lỗi History] Không có dữ liệu history');
+        return;
+    }
 
-    const originalLength = gameState.variables.history.length;
-    gameState.variables.history = deduplicateHistory(gameState.variables.history);
-    const newLength = gameState.variables.history.length;
-    const removed = originalLength - newLength;
+    const originalLength = gameState.variables.history.length;
+    gameState.variables.history = deduplicateHistory(gameState.variables.history);
+    const newLength = gameState.variables.history.length;
+    const removed = originalLength - newLength;
 
-    console.log(`[History修复] 完成！`);
-    console.log(`  原始: ${originalLength} 条`);
-    console.log(`  现在: ${newLength} 条`);
-    console.log(`  删除: ${removed} 条重复`);
+    console.log(`[Sửa lỗi History] Hoàn tất!`);
+    console.log(`  Gốc: ${originalLength} mục`);
+    console.log(`  Hiện tại: ${newLength} mục`);
+    console.log(`  Đã xóa: ${removed} mục trùng lặp`);
 
-    if (removed > 0) {
-        // 自动保存修复后的数据
-        saveGameToSlot('自动存档');
-        alert(`✅ History修复完成！\n\n删除了 ${removed} 条重复记录\n已自动保存到"自动存档"`);
-    } else {
-        alert('✅ History没有重复记录！');
-    }
+    if (removed > 0) {
+        // Tự động lưu dữ liệu sau khi sửa
+        saveGameToSlot('Tự động lưu');
+        alert(`✅ Sửa lỗi History hoàn tất!\n\nĐã xóa ${removed} bản ghi trùng lặp\nĐã tự động lưu vào "Tự động lưu"`);
+    } else {
+        alert('✅ History không có bản ghi trùng lặp!');
+    }
 };
 
 /**
- * 加载存档数据到游戏
- */
+ * Tải dữ liệu lưu trữ vào trò chơi
+ */
 async function loadSaveData(saveData) {
-    gameState.variables = saveData.variables;
+    gameState.variables = saveData.variables;
 
-    // 🔧 加载后立即去重history
-    if (gameState.variables.history && Array.isArray(gameState.variables.history)) {
-        const originalLength = gameState.variables.history.length;
-        gameState.variables.history = deduplicateHistory(gameState.variables.history);
-        const newLength = gameState.variables.history.length;
-        if (originalLength !== newLength) {
-            console.log(`[存档加载] 🧹 去重history: ${originalLength} → ${newLength} 条`);
-        }
-    }
+    // 🔧 Loại bỏ trùng lặp history ngay sau khi tải
+    if (gameState.variables.history && Array.isArray(gameState.variables.history)) {
+        const originalLength = gameState.variables.history.length;
+        gameState.variables.history = deduplicateHistory(gameState.variables.history);
+        const newLength = gameState.variables.history.length;
+        if (originalLength !== newLength) {
+            console.log(`[Tải bản lưu] 🧹 Loại bỏ trùng lặp history: ${originalLength} → ${newLength} mục`);
+        }
+    }
 
-    gameState.conversationHistory = saveData.conversationHistory;
-    gameState.variableSnapshots = saveData.variableSnapshots;
-    gameState.isGameStarted = saveData.isGameStarted;
-    gameState.characterInfo = saveData.characterInfo;
+    gameState.conversationHistory = saveData.conversationHistory;
+    gameState.variableSnapshots = saveData.variableSnapshots;
+   gameState.isGameStarted = saveData.isGameStarted;
+    gameState.characterInfo = saveData.characterInfo;
 
-    // 🆕 恢复向量库数据
-    if (saveData.vectorEmbeddings && window.contextVectorManager) {
-        window.contextVectorManager.conversationEmbeddings = saveData.vectorEmbeddings;
-        console.log(`[向量库] 已从存档恢复 ${saveData.vectorEmbeddings.length} 条对话记忆`);
-    } else if (!saveData.vectorEmbeddings) {
-        // 如果是旧版存档（没有向量库），提示用户同步
-        console.warn('[向量库] 旧版存档，建议手动同步向量库');
-    }
+    // 🆕 Khôi phục dữ liệu kho lưu trữ vector
+    if (saveData.vectorEmbeddings && window.contextVectorManager) {
+        window.contextVectorManager.conversationEmbeddings = saveData.vectorEmbeddings;
+        console.log(`[Kho vector] Đã khôi phục ${saveData.vectorEmbeddings.length} ký ức đối thoại từ bản lưu`);
+    } else if (!saveData.vectorEmbeddings) {
+        // Nếu là bản lưu phiên bản cũ (không có kho vector), nhắc người dùng đồng bộ
+        console.warn('[Kho vector] Bản lưu phiên bản cũ, kiến nghị đồng bộ thủ công kho vector');
+    }
 
-    // 🆕 恢复history向量库
-    if (saveData.historyEmbeddings && window.contextVectorManager) {
-        window.contextVectorManager.historyEmbeddings = saveData.historyEmbeddings;
-        console.log(`[History向量库] 已从存档恢复 ${saveData.historyEmbeddings.length} 条history记忆`);
-    }
+    // 🆕 Khôi phục kho lưu trữ vector history
+    if (saveData.historyEmbeddings && window.contextVectorManager) {
+        window.contextVectorManager.historyEmbeddings = saveData.historyEmbeddings;
+        console.log(`[Kho vector History] Đã khôi phục ${saveData.historyEmbeddings.length} ký ức history từ bản lưu`);
+    }
 
-    // 🔧 修复：统一保存向量库到IndexedDB（包括history）
-    if (window.contextVectorManager) {
-        await window.contextVectorManager.saveToIndexedDB();
-        console.log(`[向量库] ✅ 已同步到IndexedDB（对话:${window.contextVectorManager.conversationEmbeddings.length}条, History:${window.contextVectorManager.historyEmbeddings.length}条）`);
-    }
+    // 🔧 Sửa lỗi: Đồng bộ lưu kho vector vào IndexedDB (bao gồm cả history)
+    if (window.contextVectorManager) {
+        await window.contextVectorManager.saveToIndexedDB();
+        console.log(`[Kho vector] ✅ Đã đồng bộ vào IndexedDB (Đối thoại:${window.contextVectorManager.conversationEmbeddings.length} mục, History:${window.contextVectorManager.historyEmbeddings.length} mục)`);
+    }
 
-    // 🆕 恢复矩阵数据
-    if (saveData.matrixData && window.matrixManager) {
-        window.matrixManager.import(saveData.matrixData);
-        console.log(`[矩阵管理器] 已从存档恢复矩阵数据`);
-    } else if (window.matrixManager) {
-        // 如果存档中没有矩阵数据，但有向量库，可以重建矩阵
-        if (window.contextVectorManager && window.contextVectorManager.conversationEmbeddings.length > 0) {
-            console.log('[矩阵管理器] 存档无矩阵数据，尝试从向量库重建...');
-            await window.matrixManager.initializeFromHistory();
-        }
-        if (window.contextVectorManager && window.contextVectorManager.historyEmbeddings.length > 0) {
-            console.log('[矩阵管理器] 尝试从history向量库重建矩阵...');
-            await window.matrixManager.initializeHistoryMatrix();
-        }
-    }
+    // 🆕 Khôi phục dữ liệu ma trận
+    if (saveData.matrixData && window.matrixManager) {
+        window.matrixManager.import(saveData.matrixData);
+        console.log(`[Trình quản lý ma trận] Đã khôi phục dữ liệu ma trận từ bản lưu`);
+    } else if (window.matrixManager) {
+        // Nếu trong bản lưu không có dữ liệu ma trận nhưng có kho vector, có thể xây dựng lại ma trận
+        if (window.contextVectorManager && window.contextVectorManager.conversationEmbeddings.length > 0) {
+            console.log('[Trình quản lý ma trận] Bản lưu không có dữ liệu ma trận, thử xây dựng lại từ kho vector...');
+            await window.matrixManager.initializeFromHistory();
+        }
+        if (window.contextVectorManager && window.contextVectorManager.historyEmbeddings.length > 0) {
+            console.log('[Trình quản lý ma trận] Thử xây dựng lại ma trận từ kho vector history...');
+            await window.matrixManager.initializeHistoryMatrix();
+        }
+    }
 
-    // 🆕 恢复人物图谱数据
-    if (saveData.characterGraphData && window.characterGraphManager) {
-        console.log(`[人物图谱] 开始从存档恢复数据...`);
+    // 🆕 Khôi phục dữ liệu sơ đồ nhân vật
+    if (saveData.characterGraphData && window.characterGraphManager) {
+        console.log(`[Sơ đồ nhân vật] Bắt đầu khôi phục dữ liệu từ bản lưu...`);
 
-        // 清空现有数据
-        window.characterGraphManager.characters.clear();
-        window.characterGraphManager.vectors.clear();
+        // Xóa dữ liệu hiện có
+        window.characterGraphManager.characters.clear();
+        window.characterGraphManager.vectors.clear();
 
-        // 恢复人物数据
-        const characters = saveData.characterGraphData.characters || [];
-        let restoredCount = 0;
+        // Khôi phục dữ liệu nhân vật
+        const characters = saveData.characterGraphData.characters || [];
+        let restoredCount = 0;
 
-        for (const [name, character] of characters) {
-            try {
-                // 重新生成向量
-                const vector = await window.characterGraphManager.generateVector(
-                    character.name,
-                    character.personality,
-                    character.appearance
-                );
+        for (const [name, character] of characters) {
+            try {
+                // Tạo lại vector
+                const vector = await window.characterGraphManager.generateVector(
+                    character.name,
+                    character.personality,
+                    character.appearance
+                );
 
-                // 保存到内存（不包含vector）
-                window.characterGraphManager.characters.set(name, character);
-                window.characterGraphManager.vectors.set(name, vector);
+                // Lưu vào bộ nhớ (không bao gồm vector)
+                window.characterGraphManager.characters.set(name, character);
+                window.characterGraphManager.vectors.set(name, vector);
 
-                // 保存到IndexedDB
-                await window.characterGraphManager.saveCharacter(character);
+                // Lưu vào IndexedDB
+                await window.characterGraphManager.saveCharacter(character);
 
-                restoredCount++;
-            } catch (error) {
-                console.error(`[人物图谱] ⚠️ 恢复人物失败: ${name}`, error);
-            }
-        }
+                restoredCount++;
+            } catch (error) {
+                console.error(`[Sơ đồ nhân vật] ⚠️ Khôi phục nhân vật thất bại: ${name}`, error);
+            }
+        }
 
-        // 恢复统计信息
-        if (saveData.characterGraphData.stats) {
-            window.characterGraphManager.stats = saveData.characterGraphData.stats;
-        }
+        // Khôi phục thông tin thống kê
+        if (saveData.characterGraphData.stats) {
+            window.characterGraphManager.stats = saveData.characterGraphData.stats;
+        }
 
-        console.log(`[人物图谱] ✅ 已从存档恢复 ${restoredCount} 个人物`);
-    } else if (!saveData.characterGraphData && window.characterGraphManager) {
-        // 旧版存档，清空人物图谱
-        console.warn('[人物图谱] 旧版存档，清空人物图谱数据');
-        window.characterGraphManager.characters.clear();
-        window.characterGraphManager.vectors.clear();
-    }
+        console.log(`[Sơ đồ nhân vật] ✅ Đã khôi phục ${restoredCount} nhân vật từ bản lưu`);
+    } else if (!saveData.characterGraphData && window.characterGraphManager) {
+        // Bản lưu phiên bản cũ, xóa sạch sơ đồ nhân vật
+        console.warn('[Sơ đồ nhân vật] Bản lưu phiên bản cũ, xóa sạch dữ liệu sơ đồ nhân vật');
+        window.characterGraphManager.characters.clear();
+        window.characterGraphManager.vectors.clear();
+    }
 
-    // 🌍 恢复动态世界数据
-    if (saveData.dynamicWorld) {
-        gameState.dynamicWorld = saveData.dynamicWorld;
-        // 🆕 强制重置处理状态（避免卡在处理中）
-        gameState.dynamicWorld.isProcessing = false;
-        // 🆕 兼容旧存档，添加新字段
-        if (!gameState.dynamicWorld.messageInterval) {
-            gameState.dynamicWorld.messageInterval = 1;
-        }
-        if (!gameState.dynamicWorld.messageCounter) {
-            gameState.dynamicWorld.messageCounter = 0;
-        }
-        console.log(`[动态世界] 已从存档恢复 ${saveData.dynamicWorld.history?.length || 0} 条记录`);
-        // 更新动态世界显示
-        if (typeof displayDynamicWorldHistory === 'function') {
-            displayDynamicWorldHistory();
-        }
-    } else {
-        // 旧版存档，初始化动态世界
-        gameState.dynamicWorld = {
-            enabled: false,
-            history: [],
-            floor: 0,
-            isProcessing: false,
-            messageInterval: 1,
-            messageCounter: 0
-        };
-        console.warn('[动态世界] 旧版存档，动态世界数据已初始化');
-    }
+    // 🌍 Khôi phục dữ liệu Thế giới động
+    if (saveData.dynamicWorld) {
+        gameState.dynamicWorld = saveData.dynamicWorld;
+        // 🆕 Cường chế đặt lại trạng thái xử lý (tránh bị kẹt trong quá trình xử lý)
+        gameState.dynamicWorld.isProcessing = false;
+        // 🆕 Tương thích với bản lưu cũ, thêm các trường mới
+        if (!gameState.dynamicWorld.messageInterval) {
+            gameState.dynamicWorld.messageInterval = 1;
+        }
+        if (!gameState.dynamicWorld.messageCounter) {
+            gameState.dynamicWorld.messageCounter = 0;
+        }
+        console.log(`[Thế giới động] Đã khôi phục ${saveData.dynamicWorld.history?.length || 0} bản ghi từ bản lưu`);
+        // Cập nhật hiển thị Thế giới động
+        if (typeof displayDynamicWorldHistory === 'function') {
+            displayDynamicWorldHistory();
+        }
+    } else {
+        // Bản lưu phiên bản cũ, khởi tạo Thế giới động
+        gameState.dynamicWorld = {
+            enabled: false,
+            history: [],
+            floor: 0,
+            isProcessing: false,
+            messageInterval: 1,
+            messageCounter: 0
+        };
+        console.warn('[Thế giới động] Bản lưu phiên bản cũ, dữ liệu Thế giới động đã được khởi tạo');
+    }
 
-    // 📱 恢复手机聊天数据（如果存档没有手机数据，则清除现有数据）
-    restoreMobileChatData(saveData.mobileChatData);
+    // 📱 Khôi phục dữ liệu trò chuyện điện thoại (nếu bản lưu không có thì xóa dữ liệu hiện có)
+    restoreMobileChatData(saveData.mobileChatData);
 
-    // 📰 恢复手机论坛数据
-    restoreMobileForumData(saveData.mobileForumData);
+    // 📰 Khôi phục dữ liệu diễn đàn điện thoại
+    restoreMobileForumData(saveData.mobileForumData);
 
-    // 🎭 恢复用户画像数据
-    if (saveData.userProfileData && window.userProfileAnalyzer) {
-        try {
-            await window.userProfileAnalyzer.importProfile(saveData.userProfileData);
-            console.log('[用户画像] ✅ 已从存档恢复用户画像');
-        } catch (e) {
-            console.warn('[用户画像] ⚠️ 恢复用户画像失败:', e);
-        }
-    }
+    // 🎭 Khôi phục dữ liệu chân dung người dùng
+    if (saveData.userProfileData && window.userProfileAnalyzer) {
+        try {
+            await window.userProfileAnalyzer.importProfile(saveData.userProfileData);
+            console.log('[Chân dung người dùng] ✅ Đã khôi phục chân dung người dùng từ bản lưu');
+        } catch (e) {
+            console.warn('[Chân dung người dùng] ⚠️ Khôi phục chân dung người dùng thất bại:', e);
+        }
+    }
 
-    // 🃏 恢复 ACJT 卡牌系统数据
-    if (saveData.acjtData) {
-        restoreACJTData(saveData.acjtData);
-    }
+    // 🃏 Khôi phục dữ liệu hệ thống thẻ bài ACJT
+    if (saveData.acjtData) {
+        restoreACJTData(saveData.acjtData);
+    }
 
-    // 📚 恢复剧情规划存档数据
-    if (saveData.plotArchiveData && window.plotArchiveManager) {
-        window.plotArchiveManager.importArchive(saveData.plotArchiveData);
-        console.log('[剧情存档] ✅ 已从存档恢复', saveData.plotArchiveData.plots?.length || 0, '条剧情规划');
-    }
+    // 📚 Khôi phục dữ liệu bản lưu quy hoạch cốt truyện
+    if (saveData.plotArchiveData && window.plotArchiveManager) {
+        window.plotArchiveManager.importArchive(saveData.plotArchiveData);
+        console.log('[Bản lưu cốt truyện] ✅ Đã khôi phục', saveData.plotArchiveData.plots?.length || 0, 'quy hoạch cốt truyện từ bản lưu');
+    }
 
-    // 重新渲染游戏历史
-    const historyDiv = document.getElementById('gameHistory');
-    historyDiv.innerHTML = '';
+    // Render lại lịch sử trò chơi
+    const historyDiv = document.getElementById('gameHistory');
+    historyDiv.innerHTML = '';
 
-    console.log('[加载存档] 开始渲染对话历史，总条数:', gameState.conversationHistory.length);
-    let successCount = 0;
-    let errorCount = 0;
+    console.log('[Tải bản lưu] Bắt đầu render lịch sử đối thoại, tổng số mục:', gameState.conversationHistory.length);
+    let successCount = 0;
+    let errorCount = 0;
 
-    for (let i = 0; i < gameState.conversationHistory.length; i++) {
-        const entry = gameState.conversationHistory[i];
+    for (let i = 0; i < gameState.conversationHistory.length; i++) {
+        const entry = gameState.conversationHistory[i];
 
-        try {
-            if (entry.role === 'user') {
-                if (typeof displayUserMessage === 'function') {
-                    // 🔧 强制渲染，跳过调试模式检查
-                    displayUserMessage(entry.content, true);
-                }
-                successCount++;
-                console.log(`[加载存档] ✅ 已渲染用户消息 ${i + 1}/${gameState.conversationHistory.length}`);
-            } else if (entry.role === 'assistant') {
-                // 解析AI响应
-                try {
-                    let jsonMatch = entry.content.match(/```json\s*([\s\S]*?)\s*```/);
-                    if (!jsonMatch) {
-                        jsonMatch = entry.content.match(/```\s*([\s\S]*?)\s*```/);
-                    }
+        try {
+            if (entry.role === 'user') {
+                if (typeof displayUserMessage === 'function') {
+                    // 🔧 Cường chế render, bỏ qua kiểm tra chế độ gỡ lỗi
+                    displayUserMessage(entry.content, true);
+                }
+                successCount++;
+                console.log(`[Tải bản lưu] ✅ Đã render tin nhắn người dùng ${i + 1}/${gameState.conversationHistory.length}`);
+            } else if (entry.role === 'assistant') {
+                // Phân tích phản hồi AI
+                try {
+                    let jsonMatch = entry.content.match(/```json\s*([\s\S]*?)\s*```/);
+                    if (!jsonMatch) {
+                        jsonMatch = entry.content.match(/```\s*([\s\S]*?)\s*```/);
+                    }
 
-                    let jsonStr = jsonMatch ? jsonMatch[1] : entry.content;
-                    const data = JSON.parse(jsonStr);
+                    let jsonStr = jsonMatch ? jsonMatch[1] : entry.content;
+                    const data = JSON.parse(jsonStr);
 
-                    if (typeof displayAIMessage === 'function') {
-                        displayAIMessage(data.story, data.options, data.reasoning);
-                    }
-                } catch (error) {
-                    console.warn('解析历史消息失败（可能是旧格式存档），直接显示纯文本:', error.message);
-                    // 如果解析失败，说明是纯文本格式（旧版存档），直接显示
-                    if (typeof displayAIMessage === 'function') {
-                        displayAIMessage(entry.content, [], null);
-                    }
-                }
-                successCount++;
-                console.log(`[加载存档] ✅ 已渲染AI消息 ${i + 1}/${gameState.conversationHistory.length}`);
-            }
-        } catch (error) {
-            errorCount++;
-            console.error(`[加载存档] ❌ 渲染消息 ${i + 1} 失败:`, error);
-        }
-    }
+                    if (typeof displayAIMessage === 'function') {
+                        displayAIMessage(data.story, data.options, data.reasoning);
+                    }
+                } catch (error) {
+                    console.warn('Phân tích tin nhắn lịch sử thất bại (có thể là bản lưu định dạng cũ), hiển thị văn bản thuần trực tiếp:', error.message);
+                    // Nếu phân tích thất bại, nghĩa là định dạng văn bản thuần (bản lưu cũ), hiển thị trực tiếp
+                    if (typeof displayAIMessage === 'function') {
+                        displayAIMessage(entry.content, [], null);
+                    }
+                }
+                successCount++;
+                console.log(`[Tải bản lưu] ✅ Đã render tin nhắn AI ${i + 1}/${gameState.conversationHistory.length}`);
+            }
+        } catch (error) {
+            errorCount++;
+            console.error(`[Tải bản lưu] ❌ Render tin nhắn ${i + 1} thất bại:`, error);
+        }
+    }
 
-    console.log(`[加载存档] 渲染完成: 成功 ${successCount} 条, 失败 ${errorCount} 条, 总计 ${gameState.conversationHistory.length} 条`);
-    console.log(`[加载存档] gameHistory子元素数量: ${historyDiv.children.length}`);
+    console.log(`[Tải bản lưu] Render hoàn tất: Thành công ${successCount} mục, Thất bại ${errorCount} mục, Tổng cộng ${gameState.conversationHistory.length} mục`);
+    console.log(`[Tải bản lưu] Số lượng phần tử con của gameHistory: ${historyDiv.children.length}`);
 
-    // 🆕 延迟检查：确保渲染完成后DOM已更新
-    setTimeout(() => {
-        const finalCount = document.getElementById('gameHistory').children.length;
-        console.log(`[加载存档] 🔍 延迟检查 - gameHistory最终子元素数量: ${finalCount}`);
-        if (finalCount !== gameState.conversationHistory.length) {
-            console.error(`[加载存档] ❌ 警告：DOM元素数量(${finalCount}) 与对话历史数量(${gameState.conversationHistory.length}) 不匹配！`);
-            // 自动运行诊断
-            if (typeof diagnoseMessageDisplay === 'function') {
-                diagnoseMessageDisplay();
-            }
-        } else {
-            console.log(`[加载存档] ✅ DOM元素数量与对话历史数量匹配`);
-        }
-    }, 500);
+    // 🆕 Kiểm tra trễ: Đảm bảo sau khi render hoàn tất DOM đã được cập nhật
+    setTimeout(() => {
+        const finalCount = document.getElementById('gameHistory').children.length;
+        console.log(`[Tải bản lưu] 🔍 Kiểm tra trễ - Số lượng phần tử con cuối cùng của gameHistory: ${finalCount}`);
+        if (finalCount !== gameState.conversationHistory.length) {
+            console.error(`[Tải bản lưu] ❌ Cảnh báo: Số lượng phần tử DOM (${finalCount}) không khớp với số lượng lịch sử đối thoại (${gameState.conversationHistory.length})!`);
+            // Tự động chạy chẩn đoán
+            if (typeof diagnoseMessageDisplay === 'function') {
+                diagnoseMessageDisplay();
+            }
+        } else {
+            console.log(`[Tải bản lưu] ✅ Số lượng phần tử DOM khớp với số lượng lịch sử đối thoại`);
+        }
+    }, 500);
 
-    // 更新状态面板
-    if (typeof updateStatusPanel === 'function') {
-        updateStatusPanel();
-    }
+    // Cập nhật bảng trạng thái
+    if (typeof updateStatusPanel === 'function') {
+        updateStatusPanel();
+    }
 
-    // 🌍 更新动态世界Tab页显示
-    if (typeof displayDynamicWorldHistory === 'function') {
-        displayDynamicWorldHistory();
-    }
+    // 🌍 Cập nhật hiển thị trang Tab Thế giới động
+    if (typeof displayDynamicWorldHistory === 'function') {
+        displayDynamicWorldHistory();
+    }
 
-    // 滚动到底部
-    historyDiv.scrollTop = historyDiv.scrollHeight;
+    // Cuộn xuống dưới cùng
+    historyDiv.scrollTop = historyDiv.scrollHeight;
 
-    // 【新增】同步向量库 - 如果启用了向量检索但向量库为空，自动重建
-    const enableVectorRetrieval = document.getElementById('enableVectorRetrieval')?.checked || false;
-    if (enableVectorRetrieval && window.contextVectorManager) {
-        syncVectorLibraryFromHistory();
-    }
+    // 【Thêm mới】Đồng bộ kho vector - Nếu đã bật truy xuất vector nhưng kho vector trống, tự động xây dựng lại
+    const enableVectorRetrieval = document.getElementById('enableVectorRetrieval')?.checked || false;
+    if (enableVectorRetrieval && window.contextVectorManager) {
+        syncVectorLibraryFromHistory();
+    }
 
-    // 🔧 延迟再次更新 PlayerState 显示（确保ACJT的DOM元素已渲染）
-    setTimeout(() => {
-        if (typeof PlayerState !== 'undefined' && PlayerState.updateDisplay) {
-            PlayerState.updateDisplay();
-            console.log('[存档] 已延迟刷新玩家状态显示');
-        }
-    }, 300);
+    // 🔧 Trì hoãn cập nhật lại hiển thị PlayerState (đảm bảo các phần tử DOM của ACJT đã được render)
+    setTimeout(() => {
+        if (typeof PlayerState !== 'undefined' && PlayerState.updateDisplay) {
+            PlayerState.updateDisplay();
+            console.log('[Bản lưu] Đã làm mới hiển thị trạng thái người chơi sau khi trì hoãn');
+        }
+    }, 300);
 }
 
 /**
- * 从对话历史同步向量库
- */
+ * Đồng bộ kho vector từ lịch sử đối thoại
+ */
 async function syncVectorLibraryFromHistory(isManual = false) {
-    if (!window.contextVectorManager) {
-        if (isManual) alert('向量管理器未初始化！');
-        return;
-    }
+    if (!window.contextVectorManager) {
+        if (isManual) alert('Trình quản lý vector chưa khởi tạo!');
+        return;
+    }
 
-    const enableVectorRetrieval = document.getElementById('enableVectorRetrieval')?.checked || false;
-    if (!enableVectorRetrieval && isManual) {
-        alert('向量检索未启用！\n\n请先在游戏设置中启用"🧬 启用向量检索（智能记忆）"');
-        return;
-    }
+    const enableVectorRetrieval = document.getElementById('enableVectorRetrieval')?.checked || false;
+    if (!enableVectorRetrieval && isManual) {
+        alert('Truy xuất vector chưa bật!\n\nVui lòng bật "🧬 Kích hoạt truy xuất vector (Bộ nhớ thông minh)" trong cài đặt trò chơi trước');
+        return;
+    }
 
-    const vectorLibSize = window.contextVectorManager.conversationEmbeddings.length;
-    const historySize = Math.floor(gameState.conversationHistory.length / 2);
+    const vectorLibSize = window.contextVectorManager.conversationEmbeddings.length;
+    const historySize = Math.floor(gameState.conversationHistory.length / 2);
 
-    if (historySize === 0) {
-        if (isManual) alert('对话历史为空！请先进行游戏。');
-        return;
-    }
+    if (historySize === 0) {
+        if (isManual) alert('Lịch sử đối thoại trống! Vui lòng tiến hành trò chơi trước.');
+        return;
+    }
 
-    // 如果向量库为空或明显小于对话历史，进行同步
-    if (vectorLibSize < historySize || isManual) {
-        if (isManual && vectorLibSize >= historySize) {
-            if (!confirm(`当前向量库已有${vectorLibSize}轮对话，对话历史有${historySize}轮。\n\n确定要重新同步吗？这将清空现有向量库并重建。`)) {
-                return;
-            }
-        }
+    // Nếu kho vector trống hoặc nhỏ hơn rõ rệt so với lịch sử đối thoại, tiến hành đồng bộ
+    if (vectorLibSize < historySize || isManual) {
+        if (isManual && vectorLibSize >= historySize) {
+            if (!confirm(`Kho vector hiện tại đã có ${vectorLibSize} lượt đối thoại, lịch sử đối thoại có ${historySize} lượt.\n\nBạn có chắc chắn muốn đồng bộ lại không? Thao tác này sẽ xóa sạch kho vector hiện có và xây dựng lại.`)) {
+                return;
+            }
+        }
 
-        console.log(`[向量库同步] 检测到向量库(${vectorLibSize}轮) < 对话历史(${historySize}轮)，开始同步...`);
+        console.log(`[Đồng bộ kho vector] Phát hiện kho vector (${vectorLibSize} lượt) < lịch sử đối thoại (${historySize} lượt), bắt đầu đồng bộ...`);
 
-        // 显示进度提示
-        const progressMsg = document.createElement('div');
-        progressMsg.id = 'syncProgress';
-        progressMsg.style.cssText = `
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
-            z-index: 10001;
-            text-align: center;
-        `;
-        progressMsg.innerHTML = `
-            <div style="color: #667eea; font-size: 20px; font-weight: bold; margin-bottom: 15px;">
-                🔄 正在同步向量库...
-            </div>
-            <div style="color: #666; font-size: 14px;">
-                请稍候，正在处理 <span id="syncCurrentTurn">0</span>/${historySize} 轮对话
-            </div>
-        `;
-        document.body.appendChild(progressMsg);
+        // Hiển thị thông báo tiến độ
+        const progressMsg = document.createElement('div');
+        progressMsg.id = 'syncProgress';
+        progressMsg.style.cssText = `
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            z-index: 10001;
+            text-align: center;
+        `;
+        progressMsg.innerHTML = `
+            <div style="color: #667eea; font-size: 20px; font-weight: bold; margin-bottom: 15px;">
+                🔄 Đang đồng bộ kho vector...
+            </div>
+            <div style="color: #666; font-size: 14px;">
+                Vui lòng đợi, đang xử lý lượt <span id="syncCurrentTurn">0</span>/${historySize}
+            </div>
+        `;
+        document.body.appendChild(progressMsg);
 
-        // 清空现有向量库
-        window.contextVectorManager.clear();
+        // Xóa sạch kho vector hiện có
+        window.contextVectorManager.clear();
 
-        // 遍历对话历史，重建向量库
-        for (let i = 0; i < gameState.conversationHistory.length - 1; i += 2) {
-            const userMsg = gameState.conversationHistory[i];
-            const aiMsg = gameState.conversationHistory[i + 1];
+        // Duyệt qua lịch sử đối thoại, xây dựng lại kho vector
+        for (let i = 0; i < gameState.conversationHistory.length - 1; i += 2) {
+            const userMsg = gameState.conversationHistory[i];
+            const aiMsg = gameState.conversationHistory[i + 1];
 
-            if (userMsg && aiMsg && userMsg.role === 'user' && aiMsg.role === 'assistant') {
-                const turnIndex = Math.floor(i / 2) + 1;
-                const variables = gameState.variableSnapshots[i + 1] || gameState.variables;
+            if (userMsg && aiMsg && userMsg.role === 'user' && aiMsg.role === 'assistant') {
+                const turnIndex = Math.floor(i / 2) + 1;
+                const variables = gameState.variableSnapshots[i + 1] || gameState.variables;
 
-                // 更新进度
-                const progressSpan = document.getElementById('syncCurrentTurn');
+                // Cập nhật tiến độ
+                const progressSpan = document.getElementById('syncCurrentTurn');
                 if (progressSpan) progressSpan.textContent = turnIndex;
 
-                await window.contextVectorManager.addConversation(
-                    userMsg.content,
-                    aiMsg.content,
-                    turnIndex,
-                    variables
-                );
-            }
-        }
+                await window.contextVectorManager.addConversation(
+                    userMsg.content,
+                    aiMsg.content,
+                    turnIndex,
+                    variables
+                );
+            }
+        }
 
-        // 保存到IndexedDB
-        await window.contextVectorManager.saveToIndexedDB();
+        // Lưu vào IndexedDB
+        await window.contextVectorManager.saveToIndexedDB();
 
-        // 移除进度提示
-        progressMsg.remove();
+        // Gỡ bỏ thông báo tiến độ
+        progressMsg.remove();
 
-        console.log(`[向量库同步] ✅ 完成！已同步${window.contextVectorManager.conversationEmbeddings.length}轮对话`);
+        console.log(`[Đồng bộ kho vector] ✅ Hoàn tất! Đã đồng bộ ${window.contextVectorManager.conversationEmbeddings.length} lượt đối thoại`);
 
-        // 提示用户
-        const syncMsg = document.createElement('div');
-        syncMsg.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: #28a745;
-            color: white;
-            padding: 15px 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            z-index: 9999;
-            font-size: 14px;
-        `;
-        syncMsg.innerHTML = `✅ 向量库已同步 ${window.contextVectorManager.conversationEmbeddings.length} 轮对话`;
-        document.body.appendChild(syncMsg);
+        // Thông báo cho người dùng
+        const syncMsg = document.createElement('div');
+        syncMsg.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #28a745;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 9999;
+            font-size: 14px;
+        `;
+        syncMsg.innerHTML = `✅ Kho vector đã đồng bộ ${window.contextVectorManager.conversationEmbeddings.length} lượt đối thoại`;
+        document.body.appendChild(syncMsg);
 
-        setTimeout(() => syncMsg.remove(), 3000);
+        setTimeout(() => syncMsg.remove(), 3000);
 
-        if (isManual) {
-            alert(`✅ 同步完成！\n\n已将${historySize}轮对话同步到向量库\n\n你可以点击"🧬 查看向量库"查看详情`);
-        }
-    } else if (isManual) {
-        alert(`ℹ️ 向量库已是最新状态\n\n向量库：${vectorLibSize}轮\n对话历史：${historySize}轮\n\n无需同步。`);
-    }
+        if (isManual) {
+            alert(`✅ Đồng bộ hoàn tất!\n\nĐã đồng bộ ${historySize} lượt đối thoại vào kho vector\n\nBạn có thể nhấp vào "🧬 Xem kho vector" để xem chi tiết`);
+        }
+    } else if (isManual) {
+        alert(`ℹ️ Kho vector đã ở trạng thái mới nhất\n\nKho vector: ${vectorLibSize} lượt\nLịch sử đối thoại: ${historySize} lượt\n\nKhông cần đồng bộ.`);
+    }
 }
 
-// ==================== 属性系统工具函数 ====================
+// ==================== Hàm công cụ hệ thống thuộc tính ====================
 
 /**
- * 显示属性变化
- */
+ * Hiển thị thay đổi thuộc tính
+ */
 function showAttributeChanges() {
-    if (!gameState.previousVariables) return;
+    if (!gameState.previousVariables) return;
 
-    const prev = gameState.previousVariables;
-    const curr = gameState.variables;
+    const prev = gameState.previousVariables;
+    const curr = gameState.variables;
 
-    // 货币变化
-    showChange('spiritStonesChange', prev.spiritStones, curr.spiritStones);
+    // Thay đổi tiền tệ
+    showChange('spiritStonesChange', prev.spiritStones, curr.spiritStones);
 
-    // 体力法力变化
-    showChange('hpChange', prev.hp, curr.hp);
-    showChange('mpChange', prev.mp, curr.mp);
+    // Thay đổi Thể lực và Pháp lực
+    showChange('hpChange', prev.hp, curr.hp);
+    showChange('mpChange', prev.mp, curr.mp);
 
-    // 特殊属性变化
-    showChange('karmaFortuneChange', prev.karmaFortune, curr.karmaFortune);
-    showChange('karmaPunishmentChange', prev.karmaPunishment, curr.karmaPunishment);
+    // Thay đổi thuộc tính đặc biệt
+    showChange('karmaFortuneChange', prev.karmaFortune, curr.karmaFortune);
+    showChange('karmaPunishmentChange', prev.karmaPunishment, curr.karmaPunishment);
 
-    // 六维属性变化（已改用雷达图显示，不再显示文本变化提示）
-    // const prevActual = calculateActualAttributesFor(prev);
-    // const currActual = calculateActualAttributes();
-    // showChange('attrPhysiqueChange', prevActual.physique, currActual.physique);
-    // showChange('attrFortuneChange', prevActual.fortune, currActual.fortune);
-    // showChange('attrComprehensionChange', prevActual.comprehension, currActual.comprehension);
-    // showChange('attrSpiritChange', prevActual.spirit, currActual.spirit);
-    // showChange('attrPotentialChange', prevActual.potential, currActual.potential);
-    // showChange('attrCharismaChange', prevActual.charisma, currActual.charisma);
+    // Thay đổi thuộc tính lục vị (Đã chuyển sang hiển thị bằng biểu đồ radar, không hiển thị gợi ý thay đổi văn bản nữa)
+    // const prevActual = calculateActualAttributesFor(prev);
+    // const currActual = calculateActualAttributes();
+    // showChange('attrPhysiqueChange', prevActual.physique, currActual.physique);
+    // showChange('attrFortuneChange', prevActual.fortune, currActual.fortune);
+    // showChange('attrComprehensionChange', prevActual.comprehension, currActual.comprehension);
+    // showChange('attrSpiritChange', prevActual.spirit, currActual.spirit);
+    // showChange('attrPotentialChange', prevActual.potential, currActual.potential);
+    // showChange('attrCharismaChange', prevActual.charisma, currActual.charisma);
 }
 
 /**
- * 计算指定状态的实际属性
- */
+ * Tính toán thuộc tính thực tế của trạng thái chỉ định
+ */
 function calculateActualAttributesFor(variables) {
-    const base = variables.attributes;
-    const equipment = variables.equipment;
-    const actual = { ...base };
+    const base = variables.attributes;
+    const equipment = variables.equipment;
+    const actual = { ...base };
 
-    if (equipment) {
-        Object.values(equipment).forEach(item => {
-            if (item && item.effects) {
-                Object.entries(item.effects).forEach(([attr, value]) => {
-                    if (actual[attr] !== undefined) {
-                        actual[attr] += value;
-                    }
-                });
-            }
-        });
-    }
+    if (equipment) {
+        Object.values(equipment).forEach(item => {
+            if (item && item.effects) {
+                Object.entries(item.effects).forEach(([attr, value]) => {
+                    if (actual[attr] !== undefined) {
+                        actual[attr] += value;
+                    }
+                });
+            }
+        });
+    }
 
-    return actual;
+    return actual;
 }
 
 /**
- * 显示单个属性变化
- */
+ * Hiển thị thay đổi của một thuộc tính đơn lẻ
+ */
 function showChange(elementId, oldValue, newValue) {
-    const element = document.getElementById(elementId);
-    if (!element) return;
+    const element = document.getElementById(elementId);
+    if (!element) return;
 
-    if (oldValue !== newValue) {
-        const change = newValue - oldValue;
-        const changeText = change > 0 ? `+${change}` : `${change}`;
-        const changeColor = change > 0 ? '#28a745' : '#dc3545';
+    if (oldValue !== newValue) {
+        const change = newValue - oldValue;
+        const changeText = change > 0 ? `+${change}` : `${change}`;
+        const changeColor = change > 0 ? '#28a745' : '#dc3545';
 
-        element.innerHTML = `<span style="color: ${changeColor}; font-weight: bold;">${changeText}</span>`;
-        element.style.display = 'inline';
+        element.innerHTML = `<span style="color: ${changeColor}; font-weight: bold;">${changeText}</span>`;
+        element.style.display = 'inline';
 
-        // 3秒后隐藏
-        setTimeout(() => {
-            element.style.display = 'none';
-        }, 3000);
-    }
+        // Ẩn sau 3 giây
+        setTimeout(() => {
+            element.style.display = 'none';
+        }, 3000);
+    }
 }
 
 /**
- * 解析属性要求
- */
+ * Phân tích yêu cầu thuộc tính
+ */
 function parseAttributeRequirement(optionText) {
-    // 确保optionText是字符串
-    if (typeof optionText !== 'string') {
-        optionText = String(optionText);
-    }
+    // Đảm bảo optionText là chuỗi
+    if (typeof optionText !== 'string') {
+        optionText = String(optionText);
+    }
 
-    // 匹配中文属性名 或 英文属性名
-    const chinesePattern = /（(根骨|气运|悟性|神识|潜力|魅力)([><=≥≤])(\d+)）/;
-    const englishPattern = /\((physique|fortune|comprehension|spirit|potential|charisma)([><=])(\d+)\)/i;
+    // Khớp tên thuộc tính tiếng Trung HOẶC tên thuộc tính tiếng Anh
+    const chinesePattern = /（(根骨|气运|悟性|神识|潜力|魅力)([><=≥≤])(\d+)）/;
+    const englishPattern = /\((physique|fortune|comprehension|spirit|potential|charisma)([><=])(\d+)\)/i;
 
-    let match = optionText.match(chinesePattern);
-    let isChinese = true;
+    let match = optionText.match(chinesePattern);
+    let isChinese = true;
 
-    if (!match) {
-        match = optionText.match(englishPattern);
-        isChinese = false;
-    }
+    if (!match) {
+        match = optionText.match(englishPattern);
+        isChinese = false;
+    }
 
-    if (match) {
-        let attrName = match[1].toLowerCase();
-        const operator = match[2];
-        const value = parseInt(match[3]);
+    if (match) {
+        let attrName = match[1].toLowerCase();
+        const operator = match[2];
+        const value = parseInt(match[3]);
 
-        // 转换中文属性名为英文
-        if (isChinese) {
-            const attrMap = {
-                '根骨': 'physique',
-                '气运': 'fortune',
-                '悟性': 'comprehension',
-                '神识': 'spirit',
-                '潜力': 'potential',
-                '魅力': 'charisma'
-            };
-            attrName = attrMap[match[1]];
-        }
+        // Chuyển đổi tên thuộc tính tiếng Trung sang tiếng Anh
+        if (isChinese) {
+            const attrMap = {
+                '根骨': 'physique',
+                '气运': 'fortune',
+                '悟性': 'comprehension',
+                '神识': 'spirit',
+                '潜力': 'potential',
+                '魅力': 'charisma'
+            };
+            attrName = attrMap[match[1]];
+        }
 
-        // 移除要求部分，得到纯净的选项文本
-        const cleanText = optionText.replace(match[0], '').trim();
+        // Loại bỏ phần yêu cầu, thu được văn bản tùy chọn thuần khiết
+        const cleanText = optionText.replace(match[0], '').trim();
 
-        return {
-            hasRequirement: true,
-            attribute: attrName,
-            operator: operator === '≥' ? '>=' : operator === '≤' ? '<=' : operator,
-            value: value,
-            cleanText: cleanText,
-            requirementText: match[0]
-        };
-    }
+        return {
+            hasRequirement: true,
+            attribute: attrName,
+            operator: operator === '≥' ? '>=' : operator === '≤' ? '<=' : operator,
+            value: value,
+            cleanText: cleanText,
+            requirementText: match[0]
+        };
+    }
 
-    return {
-        hasRequirement: false,
-        cleanText: optionText
-    };
+    return {
+        hasRequirement: false,
+        cleanText: optionText
+    };
 }
 
 /**
- * 检查属性要求是否满足
- */
+ * Kiểm tra xem yêu cầu thuộc tính có được thỏa mãn hay không
+ */
 function checkAttributeRequirement(requirement) {
-    if (!requirement.hasRequirement) {
-        return { met: true };
-    }
+    if (!requirement.hasRequirement) {
+        return { met: true };
+    }
 
-    // 获取实际属性值（包含装备加成）
-    const actualAttributes = calculateActualAttributes();
-    const currentValue = actualAttributes[requirement.attribute] || 0;
+    // Lấy giá trị thuộc tính thực tế (bao gồm cả cộng thêm từ trang bị)
+    const actualAttributes = calculateActualAttributes();
+    const currentValue = actualAttributes[requirement.attribute] || 0;
 
-    let met = false;
-    switch (requirement.operator) {
-        case '>':
-            met = currentValue > requirement.value;
-            break;
-        case '>=':
-        case '≥':
-            met = currentValue >= requirement.value;
-            break;
-        case '<':
-            met = currentValue < requirement.value;
-            break;
-        case '<=':
-        case '≤':
-            met = currentValue <= requirement.value;
-            break;
-        case '==':
-        case '=':
-            met = currentValue === requirement.value;
-            break;
-        default:
-            met = false;
-    }
+    let met = false;
+    switch (requirement.operator) {
+        case '>':
+            met = currentValue > requirement.value;
+            break;
+        case '>=':
+        case '≥':
+            met = currentValue >= requirement.value;
+            break;
+        case '<':
+            met = currentValue < requirement.value;
+            break;
+        case '<=':
+        case '≤':
+            met = currentValue <= requirement.value;
+            break;
+        case '==':
+        case '=':
+            met = currentValue === requirement.value;
+            break;
+        default:
+            met = false;
+    }
 
-    // 获取属性中文名显示
-    const attributeNames = {
-        'physique': '根骨',
-        'fortune': '气运',
-        'comprehension': '悟性',
-        'spirit': '神识',
-        'potential': '潜力',
-        'charisma': '魅力'
-    };
+    // Lấy tên hiển thị tiếng Trung của thuộc tính
+    const attributeNames = {
+        'physique': 'Căn cốt',
+        'fortune': 'Khí vận',
+        'comprehension': 'Ngộ tính',
+        'spirit': 'Thần thức',
+        'potential': 'Tiềm lực',
+        'charisma': 'Mị lực'
+    };
 
-    return {
-        met: met,
-        current: currentValue,
-        currentValue: currentValue, // 添加这个字段供user-input-handler.js使用
-        required: requirement.value,
-        operator: requirement.operator,
-        attributeName: attributeNames[requirement.attribute] || requirement.attribute // 添加属性中文名
-    };
+    return {
+        met: met,
+        current: currentValue,
+        currentValue: currentValue, // Thêm trường này để user-input-handler.js sử dụng
+        required: requirement.value,
+        operator: requirement.operator,
+        attributeName: attributeNames[requirement.attribute] || requirement.attribute // Thêm tên tiếng Trung của thuộc tính
+    };
 }
 
 /**
- * 计算当前实际属性（包含装备加成）
- */
+ * Tính toán thuộc tính thực tế hiện tại (bao gồm cả cộng thêm từ trang bị)
+ */
 function calculateActualAttributes() {
-    return calculateActualAttributesFor(gameState.variables);
+    return calculateActualAttributesFor(gameState.variables);
 }
 
-// 注意：以下函数在 game.html 中定义，因为它们依赖大量游戏逻辑：
+// Chú ý: Các hàm sau được định nghĩa trong game.html vì chúng phụ thuộc vào lượng lớn logic trò chơi:
 // - showMainMenu
 // - fetchModels / fetchExtraModels
 // - loadConfig
-// - DLC管理系统函数
-// - 动态世界生成函数
-// 这些函数保留在 game.html 中以避免循环依赖
+// - Các hàm hệ thống quản lý DLC
+// - Các hàm tạo thế giới động
+// Những hàm này được giữ lại trong game.html để tránh phụ thuộc vòng (circular dependency)

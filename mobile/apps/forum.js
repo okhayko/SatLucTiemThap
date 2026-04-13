@@ -1,8 +1,8 @@
-// 📱 监听父页面的AI响应（论坛模块）
+// 📱 Lắng nghe phản hồi AI từ trang cha (Module Diễn đàn)
 window.addEventListener('message', function(event) {
-    // 🗑️ 监听清除数据消息
+    // 🗑️ Lắng nghe lệnh xóa dữ liệu
     if (event.data && event.data.type === 'MOBILE_FORUM_CLEAR') {
-        console.log('[📰论坛] 收到清除数据指令');
+        console.log('[📰Diễn đàn] Đã nhận lệnh xóa dữ liệu');
         if (window.forumApi && window.forumApi.clearAll) {
             window.forumApi.clearAll();
         }
@@ -10,74 +10,74 @@ window.addEventListener('message', function(event) {
     }
     
     if (event.data && event.data.type === 'MOBILE_FORUM_RESPONSE') {
-        console.log('[📰论坛] 收到AI响应');
+        console.log('[📰Diễn đàn] Đã nhận phản hồi từ AI');
         
         const { loadingId, success, reply, error } = event.data;
         
-        // 移除加载状态
+        // Gỡ bỏ trạng thái đang tải (Loading)
         const loadingEl = document.getElementById(loadingId);
         if (loadingEl) {
             loadingEl.remove();
         }
         
         if (success && reply) {
-            // 解析AI回复
+            // Tiến hành phân tích câu trả lời của AI
             if (window.MobilePrompts && window.MobilePrompts.forum) {
                 const data = window.MobilePrompts.forum.parseAIReply(reply);
                 window.forumApi.handleAIResponse(data);
             } else {
-                console.error('[📰论坛] MobilePrompts.forum 未加载');
+                console.error('[📰Diễn đàn] Chưa load xong MobilePrompts.forum');
             }
         } else {
-            window.forumApi.showError(error || '请求失败');
+            window.forumApi.showError(error || 'Yêu cầu thất bại');
         }
     }
 });
 
-// 定义全局论坛功能
+// Định nghĩa các tính năng toàn cục của Diễn đàn
 window.forumApi = {
-    // 当前筛选标签
+    // Thẻ lọc hiện tại (Current filter tag)
     currentTag: null,
     
-    // 当前查看的帖子
+    // Bài viết đang xem
     currentPost: null,
     
-    // 本地帖子缓存
+    // Bộ nhớ đệm bài viết (Local Cache)
     postsCache: {},
     
-    // 本地评论缓存
+    // Bộ nhớ đệm bình luận (Local Cache)
     commentsCache: {},
     
-    // 💾 存储数据
+    // 💾 Dữ liệu được lưu trữ
     forumStorage: {
-        myPosts: [],      // 我发的帖子
-        myComments: [],   // 我的评论
-        favorites: [],    // 收藏的帖子
-        history: [],       // 浏览历史
-        postsCache: {},   // AI生成的帖子缓存
-        commentsCache: {} // 评论缓存
+        myPosts: [],      // Bài viết của tôi
+        myComments: [],   // Bình luận của tôi
+        favorites: [],    // Bài viết đã lưu
+        history: [],       // Lịch sử duyệt bài
+        postsCache: {},   // Bộ nhớ đệm bài viết do AI tạo ra
+        commentsCache: {} // Bộ nhớ đệm bình luận
     },
     
-    // 初始化论坛
+    // Khởi tạo Diễn đàn
     initApp: function() {
         window.forumApi.loadFromStorage();
-        // 显示本地缓存或默认帖子（不触发API）
+        // Hiển thị bộ nhớ đệm cục bộ hoặc bài viết mặc định (Không gọi API)
         setTimeout(() => {
             window.forumApi.showLocalPosts();
         }, 100);
     },
     
-    // 显示本地缓存的帖子（不触发API）
+    // Hiển thị các bài viết trong bộ nhớ đệm cục bộ (Không gọi API)
     showLocalPosts: function(tag = null) {
         window.forumApi.currentTag = tag;
         
-        // 获取缓存的帖子
+        // Lấy bài viết từ bộ nhớ đệm
         const cachedPosts = Object.values(window.forumApi.postsCache);
-        console.log('[📰论坛] 显示本地帖子，缓存数量:', cachedPosts.length);
+        console.log('[📰Diễn đàn] Đang hiển thị bài viết cục bộ, số lượng trong cache:', cachedPosts.length);
         
-        // 如果有缓存，按获取时间排序（新的在前面），然后按标签筛选后显示
+        // Nếu có bộ nhớ đệm, tiến hành sắp xếp theo thời gian lấy dữ liệu (Mới nhất lên đầu), sau đó lọc theo thẻ (tag) rồi hiển thị
         if (cachedPosts.length > 0) {
-            // 🆕 按获取时间排序，新帖子在最上面
+            // 🆕 Sắp xếp theo thời gian lấy dữ liệu, bài mới nhất nằm trên cùng
             cachedPosts.sort((a, b) => (b._fetchTime || 0) - (a._fetchTime || 0));
             
             let filtered = cachedPosts;
@@ -86,24 +86,24 @@ window.forumApi = {
             }
             window.forumApi.renderPostList(filtered);
         } else {
-            // 没有缓存，显示默认帖子
-            console.log('[📰论坛] 没有缓存帖子，显示默认内容');
+            // Không có bộ nhớ đệm, hiển thị bài viết mặc định
+            console.log('[📰Diễn đàn] Không có bài viết trong bộ nhớ đệm, sẽ hiển thị nội dung mặc định');
             window.forumApi.showDefaultPosts(tag);
         }
     },
     
-    // 显示默认帖子（不触发API）
+    // Hiển thị bài viết mặc định (Không gọi API)
     showDefaultPosts: function(tag = null) {
         const defaultPosts = [
             
         ];
         
-        // 缓存默认帖子
+        // Đưa bài viết mặc định vào bộ nhớ đệm
         defaultPosts.forEach(post => {
             window.forumApi.postsCache[post.id] = post;
         });
         
-        // 筛选
+        // Lọc bài viết
         let filtered = defaultPosts;
         if (tag) {
             filtered = defaultPosts.filter(p => p.tag === tag);
@@ -112,91 +112,91 @@ window.forumApi = {
         window.forumApi.renderPostList(filtered);
     },
     
-    // 刷新帖子列表（触发API调用）
+    // Làm mới danh sách bài viết (Có gọi API)
     refreshPosts: function(tag = null) {
         window.forumApi.currentTag = tag;
-        window.forumApi.showLoading('forum-list-container', '正在加载帖子...');
+        window.forumApi.showLoading('forum-list-container', 'Đang tải bài viết...');
         
-        // 构建请求
+        // Khởi tạo Request
         const request = window.MobilePrompts?.forum?.buildBrowseRequest(tag) || 
             JSON.stringify({ action: 'browse', tag: tag });
         
-        // 发送请求到父页面
+        // Gửi Request về trang cha
         window.forumApi.sendRequest(request, 'browse');
     },
     
-    // 查看帖子详情（不自动触发API，显示缓存内容）
+    // Xem chi tiết bài viết (Không tự động gọi API, hiển thị nội dung trong bộ nhớ đệm)
     viewPost: function(postId) {
         window.forumApi.currentPost = postId;
         window.forumApi.switchToDetail();
         
-        // 添加到浏览历史
+        // Lưu vào lịch sử duyệt bài
         window.forumApi.addToHistory(postId);
         
-        // 尝试显示缓存的帖子
+        // Thử hiển thị bài viết từ bộ nhớ đệm
         const cachedPost = window.forumApi.postsCache[postId];
         const cachedComments = window.forumApi.commentsCache[postId] || [];
         
         if (cachedPost) {
-            // 如果帖子没有完整内容，生成一个默认的详情
+            // Nếu bài viết không có nội dung đầy đủ, tạo chi tiết mặc định
             if (!cachedPost.content) {
-                cachedPost.content = cachedPost.preview || '点击下方刷新按钮加载完整内容...';
-                cachedPost.author = cachedPost.author || { name: '未知', realm: '未知', avatar: '👤' };
+                cachedPost.content = cachedPost.preview || 'Hãy nhấn nút Làm mới bên dưới để tải nội dung đầy đủ...';
+                cachedPost.author = cachedPost.author || { name: 'Người dùng ẩn danh', realm: 'Chưa rõ', avatar: '👤' };
             }
             window.forumApi.renderPostDetail(cachedPost, cachedComments);
         } else {
-            // 没有缓存，显示提示
+            // Không có trong bộ nhớ đệm, hiển thị thông báo
             const contentEl = document.getElementById('post-detail-content');
             if (contentEl) {
                 contentEl.innerHTML = `
                     <div class="forum-empty">
                         <div class="empty-icon">📄</div>
-                        <div class="empty-text">帖子未缓存</div>
-                        <button class="retry-btn" onclick="window.forumApi.loadPostDetail('${postId}')">加载帖子</button>
+                        <div class="empty-text">Bài viết chưa được lưu trong bộ nhớ đệm</div>
+                        <button class="retry-btn" onclick="window.forumApi.loadPostDetail('${postId}')">Tải bài viết</button>
                     </div>
                 `;
             }
         }
     },
     
-    // 加载帖子详情（手动触发API）
+    // Tải chi tiết bài viết (Gọi API thủ công)
     loadPostDetail: function(postId) {
-        window.forumApi.showLoading('post-detail-content', '正在加载帖子...');
+        window.forumApi.showLoading('post-detail-content', 'Đang tải bài viết...');
         
-        // 构建请求
+        // Khởi tạo Request
         const request = window.MobilePrompts?.forum?.buildViewRequest(postId) ||
             JSON.stringify({ action: 'view', postId: postId });
         
-        // 发送请求
+        // Gửi Request
         window.forumApi.sendRequest(request, 'view');
     },
     
-    // 发送帖子
+    // Đăng bài viết
     submitPost: function() {
         const title = document.getElementById('new-post-title')?.value?.trim();
         const body = document.getElementById('new-post-body')?.value?.trim();
         const tag = document.getElementById('new-post-tag')?.value;
         
         if (!title) {
-            alert('请输入帖子标题');
+            alert('Vui lòng nhập tiêu đề bài viết');
             return;
         }
         if (!body) {
-            alert('请输入帖子内容');
+            alert('Vui lòng nhập nội dung bài viết');
             return;
         }
         
-        window.forumApi.showLoading('create-post-form', '正在发布...');
+        window.forumApi.showLoading('create-post-form', 'Đang đăng bài...');
         
-        // 构建请求
+        // Khởi tạo Request
         const request = window.MobilePrompts?.forum?.buildPostRequest(title, body, tag) ||
             JSON.stringify({ action: 'post', content: { title, body, tag } });
         
-        // 发送请求
+        // Gửi Request
         window.forumApi.sendRequest(request, 'post');
     },
     
-    // 发送评论
+    // Gửi bình luận
     submitComment: function(replyTo = null) {
         const input = document.getElementById('comment-input');
         const content = input?.value?.trim();
@@ -208,21 +208,21 @@ window.forumApi = {
         const postId = window.forumApi.currentPost;
         if (!postId) return;
         
-        // 构建请求
+        // Khởi tạo Request
         const request = window.MobilePrompts?.forum?.buildCommentRequest(postId, content, replyTo) ||
             JSON.stringify({ action: 'comment', postId, content: { body: content, replyTo } });
         
-        // 清空输入
+        // Làm rỗng khung nhập liệu
         input.value = '';
         
-        // 先本地添加评论（乐观更新）
+        // Thêm bình luận vào bộ nhớ đệm (Hiển thị ngay lập tức - Optimistic Update)
         window.forumApi.addLocalComment(postId, content, replyTo);
         
-        // 发送请求
+        // Gửi Request
         window.forumApi.sendRequest(request, 'comment');
     },
     
-    // 发送请求到父页面
+    // Gửi Request về trang cha
     sendRequest: function(request, action) {
         const loadingId = 'forum-loading-' + Date.now();
         
@@ -234,53 +234,53 @@ window.forumApi = {
                 loadingId: loadingId
             }, '*');
         } catch (e) {
-            console.error('[📰论坛] 发送请求失败:', e);
-            window.forumApi.showError('通讯失败: ' + e.message);
+            console.error('[📰Diễn đàn] Gửi Request thất bại:', e);
+            window.forumApi.showError('Lỗi kết nối: ' + e.message);
         }
     },
     
-    // 处理AI响应
+    // Xử lý phản hồi từ AI
     handleAIResponse: function(data) {
         if (!data) return;
         
-        console.log('[📰论坛] AI返回完整数据:', JSON.stringify(data, null, 2));
+        console.log('[📰Diễn đàn] AI trả về toàn bộ dữ liệu:', JSON.stringify(data, null, 2));
         
         switch (data.type) {
             case 'postList':
-                // 🆕 合并新帖子到缓存，而不是覆盖
+                // 🆕 Hợp nhất bài viết mới vào bộ nhớ đệm, thay vì ghi đè hoàn toàn
                 const newPosts = data.posts || [];
                 const existingIds = new Set(Object.keys(window.forumApi.postsCache));
                 
-                // 为新帖子添加时间戳（用于排序）
+                // Cập nhật timestamp cho bài viết mới (Dùng để sắp xếp)
                 newPosts.forEach(post => {
                     if (!existingIds.has(post.id)) {
-                        post._fetchTime = Date.now(); // 标记获取时间，新的在前面
+                        post._fetchTime = Date.now(); // Ghi nhận thời gian tải về, bài mới sẽ nằm trên cùng
                     }
                     window.forumApi.postsCache[post.id] = post;
-                    // 缓存评论
+                    // Lưu bình luận vào bộ nhớ đệm
                     if (post.comments && post.comments.length > 0) {
                         window.forumApi.commentsCache[post.id] = post.comments;
                     }
                 });
                 
-                // 获取所有帖子并按获取时间排序（新的在前面）
+                // Lấy toàn bộ bài viết và sắp xếp theo thời gian tải (Bài mới lên đầu)
                 const allPosts = Object.values(window.forumApi.postsCache);
                 allPosts.sort((a, b) => (b._fetchTime || 0) - (a._fetchTime || 0));
                 
-                // 按当前标签筛选
+                // Lọc theo Thẻ (Tag) hiện tại
                 let filteredPosts = allPosts;
                 if (window.forumApi.currentTag) {
                     filteredPosts = allPosts.filter(p => p.tag === window.forumApi.currentTag);
                 }
                 
                 window.forumApi.renderPostList(filteredPosts);
-                // 保存AI生成的帖子数据
+                // Lưu dữ liệu bài viết do AI tạo
                 window.forumApi.saveToStorage();
-                console.log(`[📰论坛] 刷新完成，新增 ${newPosts.filter(p => !existingIds.has(p.id)).length} 个帖子，总计 ${allPosts.length} 个`);
+                console.log(`[📰Diễn đàn] Làm mới hoàn tất, có thêm ${newPosts.filter(p => !existingIds.has(p.id)).length} bài viết mới, tổng cộng: ${allPosts.length} bài`);
                 break;
             case 'postDetail':
                 window.forumApi.renderPostDetail(data.post, data.comments || []);
-                // 保存帖子详情和评论
+                // Lưu chi tiết bài viết và bình luận
                 window.forumApi.saveToStorage();
                 break;
             case 'actionResult':
@@ -290,11 +290,11 @@ window.forumApi = {
                 window.forumApi.showError(data.message);
                 break;
             default:
-                console.warn('[📰论坛] 未知响应类型:', data.type);
+                console.warn('[📰Diễn đàn] Loại phản hồi không xác định:', data.type);
         }
     },
     
-    // 渲染帖子列表
+    // Render Danh sách Bài viết
     renderPostList: function(posts) {
         const container = document.getElementById('forum-list-container');
         if (!container) return;
@@ -303,15 +303,15 @@ window.forumApi = {
             container.innerHTML = `
                 <div class="forum-empty">
                     <div class="empty-icon">📭</div>
-                    <div class="empty-text">// 暂无帖子</div>
-                    <div class="empty-hint">点击右上角 + 发布第一个帖子，或点击 🔄 刷新获取新帖</div>
+                    <div class="empty-text">// Chưa có bài viết nào</div>
+                    <div class="empty-hint">Nhấn nút + ở góc phải bên trên để đăng bài đầu tiên, hoặc nhấn 🔄 Làm mới để lấy bài viết mới</div>
                 </div>
             `;
             return;
         }
         
-        // 🆕 注意：缓存逻辑已移到 handleAIResponse 中统一处理
-        // 这里只负责渲染，不再重复缓存
+        // 🆕 Lưu ý: Logic bộ nhớ đệm đã được di chuyển vào hàm handleAIResponse để xử lý thống nhất
+        // Hàm này chỉ đảm nhận việc Render, không tạo lại cache nữa
         
         let html = '';
         posts.forEach(post => {
@@ -330,7 +330,7 @@ window.forumApi = {
                     <h3 class="post-title">>> ${post.title}_</h3>
                     ${post.preview ? `<div class="post-preview">${post.preview}</div>` : ''}
                     <div class="post-meta">
-                        <span class="author">${post.author?.name || '匿名'} · ${post.author?.realm || '未知境界'}</span>
+                        <span class="author">${post.author?.name || 'Ẩn danh'} · ${post.author?.realm || 'Chưa rõ cảnh giới'}</span>
                     </div>
                     <div class="post-stats">
                         <span class="stat">RE: ${replies}</span>
@@ -344,19 +344,19 @@ window.forumApi = {
         container.innerHTML = html;
     },
     
-    // 渲染帖子详情
+    // Render Chi tiết Bài viết
     renderPostDetail: function(post, comments) {
         if (!post) return;
         
-        // 缓存
+        // Cache
         window.forumApi.postsCache[post.id] = post;
         window.forumApi.commentsCache[post.id] = comments;
         
-        // 更新标题
+        // Cập nhật tiêu đề
         const titleEl = document.getElementById('post-detail-title');
         if (titleEl) titleEl.textContent = post.title;
         
-        // 渲染帖子正文
+        // Render nội dung bài viết
         const contentEl = document.getElementById('post-detail-content');
         if (contentEl) {
             const tagClass = post.tag?.toLowerCase() || 'guide';
@@ -370,8 +370,8 @@ window.forumApi = {
                     <div class="detail-author">
                         <span class="author-avatar">${post.author?.avatar || '👤'}</span>
                         <div class="author-info">
-                            <span class="author-name">${post.author?.name || '匿名'}</span>
-                            <span class="author-realm">${post.author?.realm || '未知境界'}</span>
+                            <span class="author-name">${post.author?.name || 'Ẩn danh'}</span>
+                            <span class="author-realm">${post.author?.realm || 'Chưa rõ cảnh giới'}</span>
                         </div>
                         <span class="post-time">${post.time || ''}</span>
                     </div>
@@ -384,15 +384,15 @@ window.forumApi = {
                     </div>
                     <div class="detail-actions">
                         <button class="action-btn" onclick="window.forumApi.toggleFavorite('${post.id}')">
-                            ${window.forumApi.isFavorited(post.id) ? '★ 已收藏' : '☆ 收藏'}
+                            ${window.forumApi.isFavorited(post.id) ? '★ Đã lưu' : '☆ Lưu'}
                         </button>
-                        <button class="action-btn" onclick="window.forumApi.sharePost('${post.id}')">↗ 分享</button>
+                        <button class="action-btn" onclick="window.forumApi.sharePost('${post.id}')">↗ Chia sẻ</button>
                     </div>
                 </div>
                 
                 <div class="comments-section">
                     <div class="comments-header">
-                        <span class="comments-title">评论 (${comments?.length || 0})</span>
+                        <span class="comments-title">Bình luận (${comments?.length || 0})</span>
                     </div>
                     <div class="comments-list" id="comments-list">
                         ${window.forumApi.renderComments(comments)}
@@ -402,64 +402,64 @@ window.forumApi = {
         }
     },
     
-    // 渲染评论列表
+    // Render Danh sách Bình luận
     renderComments: function(comments) {
         if (!comments || comments.length === 0) {
-            return '<div class="no-comments">// 暂无评论，快来抢沙发</div>';
+            return '<div class="no-comments">// Tạm thời chưa có bình luận, hãy là người đầu tiên bóc tem!</div>';
         }
         
         return comments.map((comment, index) => `
             <div class="comment-item" data-floor="${comment.floor || index + 1}">
                 <div class="comment-header">
-                    <span class="comment-author">${comment.author?.name || '匿名'}</span>
+                    <span class="comment-author">${comment.author?.name || 'Ẩn danh'}</span>
                     <span class="comment-realm">${comment.author?.realm || ''}</span>
-                    <span class="comment-floor">#${comment.floor || index + 1}楼</span>
+                    <span class="comment-floor">#${comment.floor || index + 1} Tầng</span>
                 </div>
-                ${comment.replyTo ? `<div class="comment-reply-to">回复 #${comment.replyTo}楼</div>` : ''}
+                ${comment.replyTo ? `<div class="comment-reply-to">Đang trả lời #${comment.replyTo} Tầng</div>` : ''}
                 <div class="comment-content">${window.forumApi.formatContent(comment.content)}</div>
                 <div class="comment-footer">
                     <span class="comment-time">${comment.time || ''}</span>
                     <span class="comment-likes">❤ ${comment.likes || 0}</span>
-                    <button class="reply-btn" onclick="window.forumApi.replyToComment(${comment.floor || index + 1})">回复</button>
+                    <button class="reply-btn" onclick="window.forumApi.replyToComment(${comment.floor || index + 1})">Trả lời</button>
                 </div>
             </div>
         `).join('');
     },
     
-    // 渲染图片描述
+    // Render Mô tả hình ảnh
     renderImages: function(images) {
         if (!images || images.length === 0) return '';
         return `
             <div class="post-images">
-                ${images.map(img => `<div class="image-placeholder">[图片: ${img}]</div>`).join('')}
+                ${images.map(img => `<div class="image-placeholder">[Hình ảnh: ${img}]</div>`).join('')}
             </div>
         `;
     },
     
-    // 格式化内容（处理换行）
+    // Định dạng nội dung (Xử lý ngắt dòng)
     formatContent: function(content) {
         if (!content) return '';
         return content.replace(/\\n/g, '<br>').replace(/\n/g, '<br>');
     },
     
-    // 格式化数字
+    // Định dạng các con số
     formatNumber: function(num) {
-        if (num >= 10000) return (num / 10000).toFixed(1) + 'w';
+        if (num >= 10000) return (num / 10000).toFixed(1) + 'vạn';
         if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
         return String(num);
     },
     
-    // 回复评论
+    // Trả lời bình luận
     replyToComment: function(floor) {
         const input = document.getElementById('comment-input');
         if (input) {
             input.focus();
-            input.placeholder = `回复 #${floor}楼...`;
+            input.placeholder = `Trả lời #${floor} Tầng...`;
             input.dataset.replyTo = floor;
         }
     },
     
-    // 本地添加评论（乐观更新）
+    // Thêm bình luận cục bộ (Optimistic Update)
     addLocalComment: function(postId, content, replyTo) {
         const commentsList = document.getElementById('comments-list');
         if (!commentsList) return;
@@ -467,21 +467,21 @@ window.forumApi = {
         const floor = (window.forumApi.commentsCache[postId]?.length || 0) + 1;
         const newComment = {
             id: window.MobilePrompts?.forum?.generateCommentId() || 'C' + Date.now(),
-            author: { name: '我', id: 'self', realm: '未知' },
+            author: { name: 'Tôi', id: 'self', realm: 'Chưa rõ' },
             content: content,
-            time: '刚刚',
+            time: 'Vừa xong',
             likes: 0,
             floor: floor,
             replyTo: replyTo
         };
         
-        // 添加到缓存
+        // Thêm vào Cache
         if (!window.forumApi.commentsCache[postId]) {
             window.forumApi.commentsCache[postId] = [];
         }
         window.forumApi.commentsCache[postId].push(newComment);
         
-        // 添加到我的评论
+        // Thêm vào Danh sách bình luận của tôi
         window.forumApi.forumStorage.myComments.push({
             ...newComment,
             postId: postId,
@@ -489,23 +489,23 @@ window.forumApi = {
         });
         window.forumApi.saveToStorage();
         
-        // 渲染新评论
+        // Render bình luận mới
         const commentHtml = `
             <div class="comment-item new-comment" data-floor="${floor}">
                 <div class="comment-header">
-                    <span class="comment-author">我</span>
-                    <span class="comment-floor">#${floor}楼</span>
+                    <span class="comment-author">Tôi</span>
+                    <span class="comment-floor">#${floor} Tầng</span>
                 </div>
-                ${replyTo ? `<div class="comment-reply-to">回复 #${replyTo}楼</div>` : ''}
+                ${replyTo ? `<div class="comment-reply-to">Đang trả lời #${replyTo} Tầng</div>` : ''}
                 <div class="comment-content">${window.forumApi.formatContent(content)}</div>
                 <div class="comment-footer">
-                    <span class="comment-time">刚刚</span>
+                    <span class="comment-time">Vừa xong</span>
                     <span class="comment-likes">❤ 0</span>
                 </div>
             </div>
         `;
         
-        // 移除"暂无评论"提示
+        // Xóa dòng "Chưa có bình luận"
         const noComments = commentsList.querySelector('.no-comments');
         if (noComments) noComments.remove();
         
@@ -513,11 +513,11 @@ window.forumApi = {
         commentsList.scrollTop = commentsList.scrollHeight;
     },
     
-    // 处理操作结果
+    // Xử lý các phản hồi từ Action
     handleActionResult: function(data) {
         if (data.success) {
             if (data.newPost) {
-                // 发帖成功
+                // Đăng bài thành công
                 window.forumApi.forumStorage.myPosts.push({
                     ...data.newPost,
                     timestamp: Date.now()
@@ -525,23 +525,23 @@ window.forumApi = {
                 window.forumApi.saveToStorage();
                 window.forumApi.closeCreateView();
                 window.forumApi.refreshPosts();
-                alert('发帖成功！');
+                alert('Đã đăng bài thành công!');
             } else if (data.newComment) {
-                // 评论成功（已乐观更新，可能需要更新ID等）
-                console.log('[📰论坛] 评论成功:', data.newComment);
+                // Bình luận thành công (Đã thực hiện Optimistic Update, có thể sẽ cần thay đổi ID v.v.)
+                console.log('[📰Diễn đàn] Bình luận thành công:', data.newComment);
                 
-                // 处理其他用户对玩家评论的反应
+                // Xử lý các phản hồi từ cư dân mạng đối với bình luận của người chơi
                 if (data.reactions && data.reactions.length > 0) {
-                    console.log('[📰论坛] 收到网友反应:', data.reactions.length, '条');
+                    console.log('[📰Diễn đàn] Đã nhận phản hồi từ cư dân mạng:', data.reactions.length, 'bình luận');
                     window.forumApi.addReactionComments(data.reactions);
                 }
             }
         } else {
-            window.forumApi.showError(data.message || '操作失败');
+            window.forumApi.showError(data.message || 'Thao tác không thành công');
         }
     },
     
-    // 添加网友对玩家评论的反应
+    // Thêm các bình luận của cư dân mạng đối với bình luận của người chơi
     addReactionComments: function(reactions) {
         const postId = window.forumApi.currentPost;
         if (!postId || !reactions || reactions.length === 0) return;
@@ -549,69 +549,69 @@ window.forumApi = {
         const commentsList = document.getElementById('comments-list');
         if (!commentsList) return;
         
-        // 依次添加每条反应评论
+        // Thêm lần lượt từng phản hồi
         reactions.forEach((reaction, index) => {
-            // 添加到缓存
+            // Đưa vào bộ nhớ Cache
             if (!window.forumApi.commentsCache[postId]) {
                 window.forumApi.commentsCache[postId] = [];
             }
             window.forumApi.commentsCache[postId].push(reaction);
             
-            // 延迟显示，模拟网友陆续回复的效果
+            // Hiển thị một cách chậm rãi, giả lập hiệu ứng cư dân mạng bình luận
             setTimeout(() => {
-                // 移除"暂无评论"提示
+                // Gỡ dòng "Chưa có bình luận"
                 const noComments = commentsList.querySelector('.no-comments');
                 if (noComments) {
                     noComments.remove();
                 }
                 
-                // 创建评论DOM
+                // Cấu trúc DOM của bình luận
                 const commentHtml = `
                     <div class="comment-item new-comment reaction-comment" data-floor="${reaction.floor || '?'}">
                         <div class="comment-header">
-                            <span class="comment-author">${reaction.author?.name || '匿名网友'}</span>
+                            <span class="comment-author">${reaction.author?.name || 'Người dùng ẩn danh'}</span>
                             <span class="comment-realm">${reaction.author?.realm || ''}</span>
-                            <span class="comment-floor">#${reaction.floor || '?'}楼</span>
+                            <span class="comment-floor">#${reaction.floor || '?'} Tầng</span>
                         </div>
-                        ${reaction.replyTo ? `<div class="comment-reply-to">回复 #${reaction.replyTo}楼</div>` : ''}
+                        ${reaction.replyTo ? `<div class="comment-reply-to">Đang trả lời #${reaction.replyTo} Tầng</div>` : ''}
                         <div class="comment-content">${window.forumApi.formatContent(reaction.content)}</div>
                         <div class="comment-footer">
-                            <span class="comment-time">${reaction.time || '刚刚'}</span>
+                            <span class="comment-time">${reaction.time || 'Vừa xong'}</span>
                             <span class="comment-likes">❤ ${reaction.likes || 0}</span>
-                            <button class="reply-btn" onclick="window.forumApi.replyToComment(${reaction.floor})">回复</button>
+                            <button class="reply-btn" onclick="window.forumApi.replyToComment(${reaction.floor})">Trả lời</button>
                         </div>
                     </div>
                 `;
                 
                 commentsList.insertAdjacentHTML('beforeend', commentHtml);
                 
-                // 滚动到新评论
+                // Cuộn tới bình luận mới
                 const newComment = commentsList.lastElementChild;
                 if (newComment) {
                     newComment.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                 }
                 
-                console.log('[📰论坛] 显示网友反应:', reaction.author?.name, '-', reaction.content);
-            }, (index + 1) * 800); // 每条间隔800ms显示
+                console.log('[📰Diễn đàn] Đang hiển thị phản hồi từ CĐM:', reaction.author?.name, '-', reaction.content);
+            }, (index + 1) * 800); // Mỗi phản hồi cách nhau 800ms
         });
         
-        // 更新评论数显示
+        // Cập nhật lại số lượng bình luận được hiển thị
         setTimeout(() => {
             const commentsTitle = document.querySelector('.comments-title');
             if (commentsTitle) {
                 const count = window.forumApi.commentsCache[postId]?.length || 0;
-                commentsTitle.textContent = `评论 (${count})`;
+                commentsTitle.textContent = `Bình luận (${count})`;
             }
             window.forumApi.saveToStorage();
         }, reactions.length * 800 + 100);
     },
     
-    // 切换到详情视图
+    // Chuyển qua giao diện chi tiết bài viết
     switchToDetail: function() {
         const listView = document.getElementById('forum-list-view');
         const detailView = document.getElementById('forum-detail-view');
         
-        // 隐藏主框架Header
+        // Ẩn đi phần Header ở giao diện chính
         const appHeader = document.querySelector('.app-header');
         if (appHeader) appHeader.style.display = 'none';
         
@@ -629,12 +629,12 @@ window.forumApi = {
         }
     },
     
-    // 返回列表视图
+    // Trở về giao diện danh sách
     backToList: function() {
         const listView = document.getElementById('forum-list-view');
         const detailView = document.getElementById('forum-detail-view');
         
-        // 恢复主框架Header
+        // Phục hồi lại Header ở giao diện chính
         const appHeader = document.querySelector('.app-header');
         if (appHeader) appHeader.style.display = 'flex';
         
@@ -653,7 +653,7 @@ window.forumApi = {
         window.forumApi.currentPost = null;
     },
     
-    // 打开发帖视图
+    // Mở ra giao diện viết bài
     openCreateView: function() {
         const listView = document.getElementById('forum-list-view');
         const createView = document.getElementById('forum-create-view');
@@ -674,14 +674,14 @@ window.forumApi = {
             createView.classList.remove('hidden');
         }
         
-        // 清空表单
+        // Dọn sạch các nội dung trên biểu mẫu
         const titleInput = document.getElementById('new-post-title');
         const bodyInput = document.getElementById('new-post-body');
         if (titleInput) titleInput.value = '';
         if (bodyInput) bodyInput.value = '';
     },
     
-    // 关闭发帖视图
+    // Thoát khỏi giao diện viết bài
     closeCreateView: function() {
         const listView = document.getElementById('forum-list-view');
         const createView = document.getElementById('forum-create-view');
@@ -702,9 +702,9 @@ window.forumApi = {
         }
     },
     
-    // 筛选标签（只筛选本地缓存，不触发API）
+    // Bộ lọc theo các Tag (Chỉ áp dụng với các bộ nhớ Cache nội bộ, không gọi API)
     filterByTag: function(tag) {
-        // 更新标签按钮状态
+        // Cập nhật lại trạng thái hiển thị của thẻ Tag đang dùng
         document.querySelectorAll('.filter-tag').forEach(el => {
             el.classList.remove('active');
             if (el.dataset.tag === tag || (!tag && !el.dataset.tag)) {
@@ -712,11 +712,11 @@ window.forumApi = {
             }
         });
         
-        // 只筛选本地缓存，不触发API
+        // Tính năng này chỉ dùng Cache nội bộ nên sẽ không gọi API
         window.forumApi.showLocalPosts(tag);
     },
     
-    // 收藏/取消收藏
+    // Thêm/Xóa khỏi danh sách yêu thích
     toggleFavorite: function(postId) {
         const index = window.forumApi.forumStorage.favorites.indexOf(postId);
         if (index > -1) {
@@ -726,19 +726,19 @@ window.forumApi = {
         }
         window.forumApi.saveToStorage();
         
-        // 更新按钮显示
+        // Thiết lập lại nút giao diện (UI button)
         const btn = document.querySelector('.action-btn');
-        if (btn && btn.textContent.includes('收藏')) {
-            btn.textContent = window.forumApi.isFavorited(postId) ? '★ 已收藏' : '☆ 收藏';
+        if (btn && btn.textContent.includes('Lưu')) {
+            btn.textContent = window.forumApi.isFavorited(postId) ? '★ Đã lưu' : '☆ Lưu';
         }
     },
     
-    // 是否已收藏
+    // Xác định xem bài viết đã được yêu thích hay chưa
     isFavorited: function(postId) {
         return window.forumApi.forumStorage.favorites.includes(postId);
     },
     
-    // 添加到浏览历史
+    // Lưu trữ vào danh sách lịch sử truy cập
     addToHistory: function(postId) {
         const history = window.forumApi.forumStorage.history;
         const index = history.indexOf(postId);
@@ -748,20 +748,20 @@ window.forumApi = {
         window.forumApi.saveToStorage();
     },
     
-    // 分享帖子
+    // Chức năng share bài viết
     sharePost: function(postId) {
         const post = window.forumApi.postsCache[postId];
         if (post) {
-            const text = `【${post.tag}】${post.title}\n作者: ${post.author?.name}`;
+            const text = `【${post.tag}】${post.title}\nTác giả: ${post.author?.name}`;
             if (navigator.clipboard) {
                 navigator.clipboard.writeText(text);
-                alert('已复制到剪贴板');
+                alert('Đã sao chép thông tin vào Clipboard');
             }
         }
     },
     
-    // 显示加载状态
-    showLoading: function(containerId, text = '加载中...') {
+    // Trạng thái (Loading) hiển thị khi load nội dung 
+    showLoading: function(containerId, text = 'Đang Tải...') {
         const container = document.getElementById(containerId);
         if (container) {
             container.innerHTML = `
@@ -773,7 +773,7 @@ window.forumApi = {
         }
     },
     
-    // 显示错误
+    // Thông báo Lỗi
     showError: function(message) {
         const container = document.getElementById('forum-list-container') || 
                           document.getElementById('post-detail-content');
@@ -782,29 +782,29 @@ window.forumApi = {
                 <div class="forum-error">
                     <div class="error-icon">⚠</div>
                     <div class="error-text">${message}</div>
-                    <button class="retry-btn" onclick="window.forumApi.refreshPosts()">重试</button>
+                    <button class="retry-btn" onclick="window.forumApi.refreshPosts()">Thử lại</button>
                 </div>
             `;
         }
     },
     
-    // 保存到localStorage
+    // Tính năng đồng bộ và sao lưu với localStorage
     saveToStorage: function() {
         try {
-            // 同步缓存数据到存储对象
+            // Thực hiện quá trình đồng bộ các đối tượng lưu trữ
             window.forumApi.forumStorage.postsCache = window.forumApi.postsCache;
             window.forumApi.forumStorage.commentsCache = window.forumApi.commentsCache;
             
             localStorage.setItem('mobileForumData', JSON.stringify(window.forumApi.forumStorage));
-            // 通知主游戏同步保存
+            // Kích hoạt việc báo tin để đồng bộ với cơ sở dữ liệu IndexedDB của phần game
             window.forumApi.notifyMainGameToSave();
-            console.log('[📰论坛存储] 已保存帖子数据，帖子数量:', Object.keys(window.forumApi.postsCache).length);
+            console.log('[📰Diễn đàn - Bộ Nhớ Đệm] Thông tin về các chủ đề đã được sao lưu, số lượng:', Object.keys(window.forumApi.postsCache).length);
         } catch (e) {
-            console.error('[📰论坛存储] 保存失败:', e);
+            console.error('[📰Diễn đàn - Bộ Nhớ Đệm] Lỗi Lưu trữ:', e);
         }
     },
     
-    // 通知主游戏同步保存到IndexedDB
+// Thông báo cho game chính đồng bộ lưu vào IndexedDB
     notifyMainGameToSave: function() {
         try {
             window.parent.postMessage({
@@ -812,55 +812,55 @@ window.forumApi = {
                 action: 'save',
                 data: window.forumApi.exportSaveData()
             }, '*');
-            console.log('[📰论坛] 已通知主游戏同步保存');
+            console.log('[📰Diễn đàn] Đã thông báo cho game chính đồng bộ lưu');
         } catch (e) {
-            console.warn('[📰论坛] 通知主游戏失败:', e);
+            console.warn('[📰Diễn đàn] Thông báo cho game chính thất bại:', e);
         }
     },
     
-    // 从localStorage加载
+    // Tải từ localStorage
     loadFromStorage: function() {
         try {
             const saved = localStorage.getItem('mobileForumData');
             if (saved) {
                 window.forumApi.forumStorage = JSON.parse(saved);
                 
-                // 恢复缓存数据
+                // Khôi phục dữ liệu bộ nhớ đệm
                 window.forumApi.postsCache = window.forumApi.forumStorage.postsCache || {};
                 window.forumApi.commentsCache = window.forumApi.forumStorage.commentsCache || {};
                 
-                console.log('[📰论坛存储] 已加载数据，帖子数量:', Object.keys(window.forumApi.postsCache).length);
+                console.log('[📰Lưu trữ Diễn đàn] Đã tải dữ liệu, số lượng bài viết:', Object.keys(window.forumApi.postsCache).length);
             } else {
-                // 初始化空的缓存
+                // Khởi tạo bộ nhớ đệm rỗng
                 window.forumApi.postsCache = {};
                 window.forumApi.commentsCache = {};
-                console.log('[📰论坛存储] 没有存档数据，使用初始状态');
+                console.log('[📰Lưu trữ Diễn đàn] Không có dữ liệu lưu trữ, sử dụng trạng thái ban đầu');
             }
         } catch (e) {
-            console.error('[📰论坛存储] 加载失败:', e);
-            // 出错时也要初始化缓存
+            console.error('[📰Lưu trữ Diễn đàn] Tải thất bại:', e);
+            // Khi có lỗi cũng cần khởi tạo bộ nhớ đệm
             window.forumApi.postsCache = {};
             window.forumApi.commentsCache = {};
         }
     },
     
-    // 导出存档数据
+    // Xuất dữ liệu lưu trữ
     exportSaveData: function() {
         return window.forumApi.forumStorage;
     },
     
-    // 导入存档数据
+    // Nhập dữ liệu lưu trữ
     importSaveData: function(data) {
         if (data) {
             window.forumApi.forumStorage = data;
             window.forumApi.saveToStorage();
-            console.log('[📰论坛存储] 已从存档恢复');
+            console.log('[📰Lưu trữ Diễn đàn] Đã khôi phục từ file lưu');
         }
     },
     
-    // 🗑️ 清空所有论坛数据
+    // 🗑️ Xóa tất cả dữ liệu diễn đàn
     clearAll: function() {
-        // 清空存储数据
+        // Xóa dữ liệu lưu trữ
         window.forumApi.forumStorage = {
             myPosts: [],
             myComments: [],
@@ -869,118 +869,112 @@ window.forumApi = {
             postsCache: {},
             commentsCache: {}
         };
-        // 清空内存缓存
+        // Xóa bộ nhớ đệm trên RAM
         window.forumApi.postsCache = {};
         window.forumApi.commentsCache = {};
         window.forumApi.currentPost = null;
         window.forumApi.currentTag = null;
         
-        // 清空 localStorage
+        // Xóa localStorage
         try {
             localStorage.removeItem('mobileForumData');
         } catch (e) {}
         
-        // 刷新显示（显示空列表）
+        // Cập nhật giao diện (hiển thị danh sách trống)
         window.forumApi.showLocalPosts();
         
-        console.log('[📰论坛] 已清空所有数据');
+        console.log('[📰Diễn đàn] Đã xóa tất cả dữ liệu');
     }
 };
 
 const forumApp = `
 <div class="forum-wrapper">
-    <!-- 列表视图 -->
     <div id="forum-list-view" class="forum-view">
         <div class="forum-top-bar">
             <div class="forum-status">FORUM_ONLINE</div>
             <div class="forum-btns">
-                <div class="forum-refresh-btn" onclick="window.forumApi.refreshPosts(window.forumApi.currentTag)" title="刷新论坛">🔄</div>
-                <div class="forum-add-btn" onclick="window.forumApi.openCreateView()" title="发帖">+</div>
+                <div class="forum-refresh-btn" onclick="window.forumApi.refreshPosts(window.forumApi.currentTag)" title="Làm mới diễn đàn">🔄</div>
+                <div class="forum-add-btn" onclick="window.forumApi.openCreateView()" title="Đăng bài">+</div>
             </div>
         </div>
         
-        <!-- 标签筛选 -->
         <div class="filter-bar">
-            <div class="filter-tag active" data-tag="" onclick="window.forumApi.filterByTag(null)">全部</div>
-            <div class="filter-tag" data-tag="HOT" onclick="window.forumApi.filterByTag('HOT')">🔥热门</div>
-            <div class="filter-tag" data-tag="GOSSIP" onclick="window.forumApi.filterByTag('GOSSIP')">💬八卦</div>
-            <div class="filter-tag" data-tag="GUIDE" onclick="window.forumApi.filterByTag('GUIDE')">📖攻略</div>
-            <div class="filter-tag" data-tag="TRADE" onclick="window.forumApi.filterByTag('TRADE')">💰交易</div>
-            <div class="filter-tag" data-tag="ASK" onclick="window.forumApi.filterByTag('ASK')">❓求助</div>
+            <div class="filter-tag active" data-tag="" onclick="window.forumApi.filterByTag(null)">Tất cả</div>
+            <div class="filter-tag" data-tag="HOT" onclick="window.forumApi.filterByTag('HOT')">🔥Đang hot</div>
+            <div class="filter-tag" data-tag="GOSSIP" onclick="window.forumApi.filterByTag('GOSSIP')">💬Hóng hớt</div>
+            <div class="filter-tag" data-tag="GUIDE" onclick="window.forumApi.filterByTag('GUIDE')">📖Hướng dẫn</div>
+            <div class="filter-tag" data-tag="TRADE" onclick="window.forumApi.filterByTag('TRADE')">💰Giao dịch</div>
+            <div class="filter-tag" data-tag="ASK" onclick="window.forumApi.filterByTag('ASK')">❓Hỏi đáp</div>
         </div>
         
-        <!-- 帖子列表 -->
         <div class="forum-container" id="forum-list-container">
             <div class="forum-loading">
                 <div class="loading-spinner"></div>
-                <div class="loading-text">正在连接论坛...</div>
+                <div class="loading-text">Đang kết nối diễn đàn...</div>
             </div>
         </div>
     </div>
     
-    <!-- 帖子详情视图 -->
     <div id="forum-detail-view" class="forum-view hidden">
         <div class="detail-header">
             <div class="detail-back" onclick="window.forumApi.backToList()">
                 <span class="back-arrow">←</span>
             </div>
             <div class="detail-title-box">
-                <div class="detail-name" id="post-detail-title">帖子详情</div>
-                <div class="detail-status">ENCRYPTED_CHANNEL</div>
+                <div class="detail-name" id="post-detail-title">Chi tiết bài viết</div>
+                <div class="detail-status">KÊNH_MÃ_HÓA</div>
             </div>
-            <div class="detail-refresh-btn" onclick="window.forumApi.loadPostDetail(window.forumApi.currentPost)" title="刷新帖子">🔄</div>
+            <div class="detail-refresh-btn" onclick="window.forumApi.loadPostDetail(window.forumApi.currentPost)" title="Làm mới bài viết">🔄</div>
         </div>
         
         <div class="post-detail-area" id="post-detail-content">
-            <!-- 帖子内容动态插入 -->
-        </div>
+            </div>
         
         <div class="comment-input-area">
-            <input type="text" id="comment-input" class="comment-input" placeholder="发表评论..." 
+            <input type="text" id="comment-input" class="comment-input" placeholder="Viết bình luận..." 
                    onkeypress="if(event.keyCode==13) window.forumApi.submitComment(this.dataset.replyTo)">
-            <button class="comment-btn" onclick="window.forumApi.submitComment(document.getElementById('comment-input').dataset.replyTo)">发送</button>
+            <button class="comment-btn" onclick="window.forumApi.submitComment(document.getElementById('comment-input').dataset.replyTo)">Gửi</button>
         </div>
     </div>
     
-    <!-- 发帖视图 -->
     <div id="forum-create-view" class="forum-view hidden">
         <div class="detail-header">
             <div class="detail-back" onclick="window.forumApi.closeCreateView()">
                 <span class="back-arrow">←</span>
             </div>
             <div class="detail-title-box">
-                <div class="detail-name">发布帖子</div>
-                <div class="detail-status">CREATE_NEW_POST</div>
+                <div class="detail-name">Đăng bài viết</div>
+                <div class="detail-status">TẠO_BÀI_MỚI</div>
             </div>
-            <button class="submit-post-btn" onclick="window.forumApi.submitPost()">发布</button>
+            <button class="submit-post-btn" onclick="window.forumApi.submitPost()">Đăng</button>
         </div>
         
         <div class="create-post-form" id="create-post-form">
             <div class="form-group">
-                <label class="form-label">选择分类</label>
+                <label class="form-label">Chọn phân loại</label>
                 <select id="new-post-tag" class="form-select">
-                    <option value="GOSSIP">💬 八卦消息</option>
-                    <option value="GUIDE">📖 攻略指南</option>
-                    <option value="TRADE">💰 交易信息</option>
-                    <option value="ASK">❓ 求助提问</option>
-                    <option value="NEWS">📰 新闻资讯</option>
-                    <option value="SHOW">🌟 晒图炫耀</option>
+                    <option value="GOSSIP">💬 Hóng hớt</option>
+                    <option value="GUIDE">📖 Hướng dẫn</option>
+                    <option value="TRADE">💰 Giao dịch</option>
+                    <option value="ASK">❓ Hỏi đáp</option>
+                    <option value="NEWS">📰 Tin tức</option>
+                    <option value="SHOW">🌟 Khoe khoang</option>
                 </select>
             </div>
             <div class="form-group">
-                <label class="form-label">帖子标题</label>
-                <input type="text" id="new-post-title" class="form-input" placeholder="输入帖子标题..." maxlength="50">
+                <label class="form-label">Tiêu đề bài viết</label>
+                <input type="text" id="new-post-title" class="form-input" placeholder="Nhập tiêu đề..." maxlength="50">
             </div>
             <div class="form-group">
-                <label class="form-label">帖子内容</label>
-                <textarea id="new-post-body" class="form-textarea" placeholder="输入帖子内容..." rows="8"></textarea>
+                <label class="form-label">Nội dung bài viết</label>
+                <textarea id="new-post-body" class="form-textarea" placeholder="Nhập nội dung..." rows="8"></textarea>
             </div>
         </div>
     </div>
 </div>
 
 <style>
-/* 论坛包装器 */
+/* Bao bọc diễn đàn */
 .forum-wrapper {
     position: relative;
     height: 100%;
@@ -1000,7 +994,7 @@ const forumApp = `
     display: none;
 }
 
-/* 顶部栏 */
+/* Thanh trên cùng */
 .forum-top-bar {
     display: flex;
     justify-content: space-between;
@@ -1064,7 +1058,7 @@ const forumApp = `
     background: rgba(0, 243, 255, 0.2);
 }
 
-/* 筛选栏 */
+/* Thanh lọc */
 .filter-bar {
     display: flex;
     gap: 8px;
@@ -1099,7 +1093,7 @@ const forumApp = `
     color: var(--primary);
 }
 
-/* 帖子容器 */
+/* Container chứa bài viết */
 .forum-container {
     flex: 1;
     display: flex;
@@ -1107,13 +1101,13 @@ const forumApp = `
     gap: 12px;
     padding: 10px 15px;
     padding-bottom: 20px;
-    padding-right: 8px; /* 为滚动条留出空间 */
+    padding-right: 8px; /* Dành không gian cho thanh cuộn */
     overflow-y: auto;
     overflow-x: hidden;
     min-height: 0;
 }
 
-/* Cyberpunk scrollbar for forum-container */
+/* Thanh cuộn phong cách Cyberpunk cho forum-container */
 .forum-container::-webkit-scrollbar {
     width: 6px;
 }
@@ -1140,7 +1134,7 @@ const forumApp = `
     background: rgba(0, 0, 0, 0.3);
 }
 
-/* 帖子卡片 */
+/* Thẻ bài viết */
 .post-card {
     position: relative;
     background: rgba(0, 10, 20, 0.8);
@@ -1259,7 +1253,7 @@ const forumApp = `
     color: var(--primary);
 }
 
-/* 详情头部 */
+/* Phần đầu chi tiết */
 .detail-header {
     display: flex;
     align-items: center;
@@ -1319,7 +1313,7 @@ const forumApp = `
     transform: rotate(180deg);
 }
 
-/* 帖子详情区域 */
+/* Khu vực chi tiết bài viết */
 .post-detail-area {
     flex: 1;
     overflow-y: auto;
@@ -1327,7 +1321,7 @@ const forumApp = `
     padding-right: 8px;
 }
 
-/* Cyberpunk scrollbar for post-detail-area */
+/* Thanh cuộn phong cách Cyberpunk cho post-detail-area */
 .post-detail-area::-webkit-scrollbar {
     width: 6px;
 }
@@ -1467,7 +1461,7 @@ const forumApp = `
     background: rgba(0, 243, 255, 0.2);
 }
 
-/* 评论区 */
+/* Khu vực bình luận */
 .comments-section {
     background: rgba(0, 10, 20, 0.4);
     border: 1px solid rgba(0, 243, 255, 0.1);
@@ -1568,7 +1562,7 @@ const forumApp = `
     background: rgba(0, 243, 255, 0.1);
 }
 
-/* 评论输入区 */
+/* Khu vực nhập bình luận */
 .comment-input-area {
     display: flex;
     gap: 10px;
@@ -1601,7 +1595,7 @@ const forumApp = `
     cursor: pointer;
 }
 
-/* 发帖表单 */
+/* Biểu mẫu đăng bài */
 .submit-post-btn {
     padding: 6px 15px;
     background: var(--primary);
@@ -1655,7 +1649,7 @@ const forumApp = `
     color: #fff;
 }
 
-/* 加载状态 */
+/* Trạng thái đang tải */
 .forum-loading {
     display: flex;
     flex-direction: column;
@@ -1689,7 +1683,7 @@ const forumApp = `
     50% { opacity: 0.5; }
 }
 
-/* 错误/空状态 */
+/* Trạng thái lỗi/trống */
 .forum-error, .forum-empty {
     display: flex;
     flex-direction: column;

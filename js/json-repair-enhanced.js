@@ -1,102 +1,102 @@
 /**
- * 增强版JSON修复和解析工具
- * 解决AI响应格式错误问题
+ * Công cụ sửa lỗi và phân tích JSON phiên bản tăng cường
+ * Giải quyết vấn đề lỗi định dạng phản hồi từ AI
  */
 
 /**
- * 增强版JSON自动修复
- * @param {string} jsonStr - 待修复的JSON字符串
- * @returns {string} 修复后的JSON字符串
+ * Tự động sửa lỗi JSON phiên bản tăng cường
+ * @param {string} jsonStr - Chuỗi JSON cần sửa
+ * @returns {string} Chuỗi JSON đã sửa
  */
 function enhancedAutoFixJSON(jsonStr) {
-    console.log('🔧 [增强修复] 开始修复JSON，输入长度:', jsonStr.length);
+    console.log('🔧 [Sửa lỗi tăng cường] Bắt đầu sửa JSON, độ dài đầu vào:', jsonStr.length);
     let fixed = jsonStr.trim();
 
-    // ========== 第1步：清理前缀和后缀 ==========
-    // 移除代码块标记
+    // ========== Bước 1: Dọn dẹp tiền tố và hậu tố ==========
+    // Loại bỏ dấu đánh dấu khối mã (code block)
     fixed = fixed.replace(/^```(?:json)?\s*/i, '');
     fixed = fixed.replace(/\s*```$/, '');
 
-    // 移除 "json 或 json 前缀
+    // Loại bỏ tiền tố "json hoặc json
     fixed = fixed.replace(/^["']?json["']?\s*/i, '');
 
-    // 移除开头多余的引号
+    // Loại bỏ dấu ngoặc kép dư thừa ở đầu
     if (fixed.startsWith('"') && !fixed.startsWith('"{')) {
         fixed = fixed.substring(1);
     }
 
-    // 移除末尾多余的引号
+    // Loại bỏ dấu ngoặc kép dư thừa ở cuối
     if (fixed.endsWith('"') && !fixed.endsWith('}"')) {
         fixed = fixed.substring(0, fixed.length - 1);
     }
 
-    // ========== 第2步：处理注释 ==========
-    // 移除单行注释 //
+    // ========== Bước 2: Xử lý chú thích ==========
+    // Loại bỏ chú thích trên một dòng //
     fixed = fixed.replace(/\/\/[^\n]*/g, '');
 
-    // 移除多行注释 /* */
+    // Loại bỏ chú thích trên nhiều dòng /* */
     fixed = fixed.replace(/\/\*[\s\S]*?\*\//g, '');
 
-    // ========== 第3步：修复换行符 ==========
-    // 在字符串值中转义换行符
+    // ========== Bước 3: Sửa lỗi ký tự xuống dòng ==========
+    // Thoát các ký tự xuống dòng trong giá trị chuỗi
     fixed = fixed.replace(/"([^"\\]*(?:\\.[^"\\]*)*)"/g, (match) => {
         return match.replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\t/g, '\\t');
     });
 
-    // ========== 第4步：修复逗号问题 ==========
-    // 4.0 移除逗号后的无效字符（如 ,_ 应该变成 ,）
-    // 这种情况通常是AI生成时的typo，如 "step": 3,_ 应该修复为 "step": 3,
+    // ========== Bước 4: Sửa lỗi dấu phẩy ==========
+    // 4.0 Loại bỏ các ký tự không hợp lệ sau dấu phẩy (ví dụ ,_ nên trở thành ,)
+    // Trường hợp này thường là lỗi đánh máy khi AI tạo ra, ví dụ "step": 3,_ nên sửa thành "step": 3,
     fixed = fixed.replace(/,\s*[_]+\s*(?=["{\[])/g, ', ');
     fixed = fixed.replace(/,\s*[_]+\s*(?=\n)/g, ',');
 
-    // 4.1 移除对象和数组末尾的多余逗号
+    // 4.1 Loại bỏ dấu phẩy dư thừa ở cuối đối tượng (object) và mảng (array)
     fixed = fixed.replace(/,(\s*[}\]])/g, '$1');
 
-    // 4.2 修复数组元素之间缺失的逗号
-    // 匹配: "xxx" "yyy" 或 "xxx"\n"yyy" (两个字符串之间没有逗号)
+    // 4.2 Sửa lỗi thiếu dấu phẩy giữa các phần tử mảng
+    // Khớp: "xxx" "yyy" hoặc "xxx"\n"yyy" (hai chuỗi không có dấu phẩy ở giữa)
     fixed = fixed.replace(/("[^"]*")\s+(")/g, '$1, $2');
 
-    // 4.3 修复对象之间缺失的逗号: } { 或 }\n{
+    // 4.3 Sửa lỗi thiếu dấu phẩy giữa các đối tượng: } { hoặc }\n{
     fixed = fixed.replace(/(\})\s+(\{)/g, '$1, $2');
 
-    // 4.4 修复数组之间缺失的逗号: ] [ 或 ]\n[
+    // 4.4 Sửa lỗi thiếu dấu phẩy giữa các mảng: ] [ hoặc ]\n[
     fixed = fixed.replace(/(\])\s+(\[)/g, '$1, $2');
 
-    // 4.5 修复对象后跟字符串缺失的逗号: } "xxx"
+    // 4.5 Sửa lỗi thiếu dấu phẩy sau đối tượng theo sau là một chuỗi: } "xxx"
     fixed = fixed.replace(/(\})\s+(")/g, '$1, $2');
 
-    // 4.6 修复字符串后跟对象缺失的逗号: "xxx" {
+    // 4.6 Sửa lỗi thiếu dấu phẩy sau chuỗi theo sau là một đối tượng: "xxx" {
     fixed = fixed.replace(/("[^"]*")\s+(\{)/g, '$1, $2');
 
-    // 4.7 修复数字后跟其他元素缺失的逗号
+    // 4.7 Sửa lỗi thiếu dấu phẩy sau số theo sau là các phần tử khác
     fixed = fixed.replace(/(\d)\s+(")/g, '$1, $2');
     fixed = fixed.replace(/(\d)\s+(\{)/g, '$1, $2');
     fixed = fixed.replace(/(\d)\s+(\[)/g, '$1, $2');
 
-    // 4.8 修复布尔值/null后缺失的逗号
+    // 4.8 Sửa lỗi thiếu dấu phẩy sau giá trị boolean/null
     fixed = fixed.replace(/(true|false|null)\s+(")/gi, '$1, $2');
     fixed = fixed.replace(/(true|false|null)\s+(\{)/gi, '$1, $2');
     fixed = fixed.replace(/(true|false|null)\s+(\[)/gi, '$1, $2');
 
-    // ========== 第5步：补全缺失的括号 ==========
+// ========== Bước 5: Bổ sung các dấu ngoặc còn thiếu ==========
     const openBraces = (fixed.match(/\{/g) || []).length;
     const closeBraces = (fixed.match(/\}/g) || []).length;
     const openBrackets = (fixed.match(/\[/g) || []).length;
     const closeBrackets = (fixed.match(/\]/g) || []).length;
 
     if (openBraces > closeBraces) {
-        console.warn(`🔧 补全${openBraces - closeBraces}个闭合大括号`);
+        console.warn(`🔧 Bổ sung ${openBraces - closeBraces} dấu ngoặc nhọn đóng`);
         fixed += '}'.repeat(openBraces - closeBraces);
     }
 
     if (openBrackets > closeBrackets) {
-        console.warn(`🔧 补全${openBrackets - closeBrackets}个闭合中括号`);
+        console.warn(`🔧 Bổ sung ${openBrackets - closeBrackets} dấu ngoặc vuông đóng`);
         fixed += ']'.repeat(openBrackets - closeBrackets);
     }
 
-    // ========== 第6步：修复引号 ==========
-    // 统一使用双引号
-    // 注意：只替换作为JSON语法的单引号，不影响字符串内部的单引号
+    // ========== Bước 6: Sửa dấu ngoặc kép ==========
+    // Thống nhất sử dụng dấu ngoặc kép
+    // Lưu ý: Chỉ thay thế các dấu ngoặc đơn đóng vai trò cú pháp JSON, không ảnh hưởng đến dấu ngoặc đơn bên trong chuỗi
     let inString = false;
     let result = '';
     let i = 0;
@@ -105,14 +105,14 @@ function enhancedAutoFixJSON(jsonStr) {
         const char = fixed[i];
         const nextChar = fixed[i + 1];
 
-        // 处理转义字符
+        // Xử lý ký tự thoát (escape)
         if (char === '\\' && inString) {
             result += char + (nextChar || '');
             i += 2;
             continue;
         }
 
-        // 切换字符串状态
+        // Chuyển đổi trạng thái chuỗi
         if (char === '"') {
             inString = !inString;
             result += char;
@@ -120,7 +120,7 @@ function enhancedAutoFixJSON(jsonStr) {
             continue;
         }
 
-        // 在字符串外部，将单引号替换为双引号
+        // Nếu ở ngoài chuỗi, thay thế dấu ngoặc đơn thành dấu ngoặc kép
         if (char === "'" && !inString) {
             result += '"';
             i++;
@@ -133,84 +133,75 @@ function enhancedAutoFixJSON(jsonStr) {
 
     fixed = result;
 
-    // ========== 第7步：修复属性名 ==========
-    // 为没有引号的属性名添加引号
-    // 匹配模式：换行+空白+单词+空白+冒号
+    // ========== Bước 7: Sửa tên thuộc tính ==========
+    // Thêm dấu ngoặc kép cho các tên thuộc tính chưa có
+    // Pattern khớp: Xuống dòng + khoảng trắng + từ + khoảng trắng + dấu hai chấm
     fixed = fixed.replace(/(\n\s*)([a-zA-Z_$][a-zA-Z0-9_$]*)(\s*):/g, (match, indent, propName, space) => {
-        // 检查是否已经有引号
+        // Kiểm tra xem đã có dấu ngoặc kép chưa
         if (fixed[fixed.indexOf(match) - 1] === '"') {
             return match;
         }
         return indent + '"' + propName + '"' + space + ':';
     });
 
-    // 也处理第一个属性（在{之后）
+    // Đồng thời xử lý thuộc tính đầu tiên (sau dấu {)
     fixed = fixed.replace(/(\{\s*)([a-zA-Z_$][a-zA-Z0-9_$]*)(\s*):/g, (match, brace, propName, space) => {
         return brace + '"' + propName + '"' + space + ':';
     });
 
-    // ========== 第8步：修复无效的转义序列 ==========
-    // JSON只支持: \" \\ \/ \b \f \n \r \t \uXXXX
-    // 其他的反斜杠+字符组合是无效的，需要修复
+    // ========== Bước 8: Sửa các chuỗi thoát (escape sequence) không hợp lệ ==========
+    // JSON chỉ hỗ trợ: \" \\ \/ \b \f \n \r \t \uXXXX
+    // Các tổ hợp dấu gạch chéo ngược + ký tự khác là không hợp lệ và cần được sửa
     fixed = fixed.replace(/\\([^"\\\/bfnrtu])/g, (match, char) => {
-        // 如果是非法转义序列，移除反斜杠
-        console.log('🔧 [增强修复] 修复无效转义序列: \\' + char + ' -> ' + char);
+        // Nếu là chuỗi thoát bất hợp pháp, loại bỏ dấu gạch chéo ngược
+        console.log('🔧 [Sửa lỗi tăng cường] Sửa chuỗi thoát không hợp lệ: \\' + char + ' -> ' + char);
         return char;
     });
 
-    // 修复 \uXXXX 格式不完整的情况
+    // Sửa trường hợp định dạng \uXXXX không đầy đủ
     fixed = fixed.replace(/\\u(?![0-9a-fA-F]{4})/g, '\\\\u');
 
-    // ========== 第9步：修复特殊字符 ==========
-    // 移除控制字符（除了换行、回车、制表符）
+    // ========== Bước 9: Sửa các ký tự đặc biệt ==========
+    // Loại bỏ các ký tự điều khiển (ngoại trừ xuống dòng, về đầu dòng, tab)
     fixed = fixed.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
 
-    console.log('✅ [增强修复] 修复完成');
+    console.log('✅ [Sửa lỗi tăng cường] Hoàn tất sửa lỗi');
     return fixed;
 }
 
 /**
- * 智能解析AI响应（多策略尝试）
- * @param {string} response - AI原始响应
- * @returns {Object|null} 解析后的数据对象，失败返回null
+ * Phân tích thông minh phản hồi từ AI (thử nhiều chiến lược)
+ * @param {string} response - Phản hồi gốc từ AI
+ * @returns {Object|null} Đối tượng dữ liệu sau khi phân tích, trả về null nếu thất bại
  */
 function smartParseAIResponse(response) {
     const strategies = [
         {
-            name: '直接解析',
+            name: 'Phân tích trực tiếp',
             fn: (r) => JSON.parse(r)
         },
         {
-            // 优先提取代码块中的JSON（AI常用```json包裹完整响应）
-            name: '提取代码块',
+            // Ưu tiên trích xuất JSON trong khối mã (AI thường dùng ```json bao bọc phản hồi)
+            name: 'Trích xuất khối mã',
             fn: (r) => {
                 const match = r.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-                if (!match) throw new Error('未找到代码块');
+                if (!match) throw new Error('Không tim thấy khối mã');
                 return JSON.parse(match[1]);
             }
         },
         {
-            name: '增强修复-代码块',
-            fn: (r) => {
-                const match = r.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-                if (!match) throw new Error('未找到代码块');
-                const fixed = enhancedAutoFixJSON(match[1]);
-                return JSON.parse(fixed);
-            }
-        },
-        {
-            name: '增强修复-全文',
+name: 'Sửa lỗi tăng cường - Toàn văn',
             fn: (r) => {
                 const fixed = enhancedAutoFixJSON(r);
                 return JSON.parse(fixed);
             }
         },
         {
-            // 🆕 处理纯 <variable_update> 标签的情况（AI 没有返回 JSON 格式）
-            // 放在代码块解析之后，避免误匹配JSON中嵌入的variable_update标签
-            name: '提取variable_update标签',
+            // 🆕 Xử lý trường hợp chỉ có thẻ <variable_update> (AI không trả về định dạng JSON)
+            // Đặt sau phần phân tích khối mã để tránh khớp nhầm thẻ variable_update lồng trong JSON
+            name: 'Trích xuất thẻ variable_update',
             fn: (r) => {
-                // 匹配 <variable_update>...</variable_update> 标签
+                // Khớp thẻ <variable_update>...</variable_update>
                 const patterns = [
                     /<variable_update>([\s\S]*?)<\/variable_update>/i,
                     /<variableUpdate>([\s\S]*?)<\/variableUpdate>/i,
@@ -221,63 +212,63 @@ function smartParseAIResponse(response) {
                 for (const pattern of patterns) {
                     const match = r.match(pattern);
                     if (match && match[1]) {
-                        variableUpdateContent = match[0]; // 保留完整标签
+                        variableUpdateContent = match[0]; // Giữ nguyên thẻ hoàn chỉnh
                         break;
                     }
                 }
 
                 if (!variableUpdateContent) {
-                    throw new Error('未找到 variable_update 标签');
+                    throw new Error('Không tìm thấy thẻ variable_update');
                 }
 
-                console.log('✅ [提取variable_update] 成功提取标签，长度:', variableUpdateContent.length);
+                console.log('✅ [Trích xuất variable_update] Trích xuất thẻ thành công, độ dài:', variableUpdateContent.length);
 
-                // 构造标准格式的响应对象
+                // Cấu trúc đối tượng phản hồi theo định dạng chuẩn
                 return {
-                    story: '（变量更新模式，无剧情输出）',
+                    story: '（Chế độ cập nhật biến, không có cốt truyện đầu ra）',
                     variableUpdate: variableUpdateContent,
                     options: [
-                        '继续游戏',
-                        '查看当前状态',
-                        '重新生成',
-                        '返回上一步'
+                        'Tiếp tục trò chơi',
+                        'Xem trạng thái hiện tại',
+                        'Tạo lại',
+                        'Quay lại bước trước'
                     ]
                 };
             }
         },
         {
-            name: '提取花括号内容',
+            name: 'Trích xuất nội dung trong ngoặc nhọn',
             fn: (r) => {
                 const match = r.match(/\{[\s\S]*\}/);
-                if (!match) throw new Error('未找到JSON对象');
+                if (!match) throw new Error('Không tìm thấy đối tượng JSON');
                 const fixed = enhancedAutoFixJSON(match[0]);
                 return JSON.parse(fixed);
             }
         },
         {
-            name: '正则提取关键字段',
+            name: 'Dùng Regex trích xuất các trường chính',
             fn: (r) => {
-                console.log('🔧 [正则提取] 尝试从响应中直接提取关键字段...');
+                console.log('🔧 [Trích xuất Regex] Đang thử trích xuất trực tiếp các trường chính từ phản hồi...');
 
                 const result = {};
                 let extractedCount = 0;
 
-                // 1. 提取 reasoning 对象
+                // 1. Trích xuất đối tượng reasoning
                 const reasoningMatch = r.match(/"reasoning"\s*:\s*(\{[\s\S]*?\n\s*\})\s*(?=,\s*"|\}$)/);
                 if (reasoningMatch) {
                     try {
                         result.reasoning = JSON.parse(reasoningMatch[1]);
                         extractedCount++;
-                        console.log('✅ [正则提取] 成功提取 reasoning');
+                        console.log('✅ [Trích xuất Regex] Trích xuất reasoning thành công');
                     } catch (e) {
-                        console.log('⚠️ [正则提取] reasoning 解析失败:', e.message);
+                        console.log('⚠️ [Trích xuất Regex] Phân tích reasoning thất bại:', e.message);
                     }
                 }
 
-                // 2. 提取 story 字段（最长的字符串字段）
+                // 2. Trích xuất trường story (trường chuỗi dài nhất)
                 const storyMatch = r.match(/"story"\s*:\s*"((?:[^"\\]|\\.)*)"/);
                 if (storyMatch) {
-                    // 处理转义字符
+                    // Xử lý các ký tự thoát
                     result.story = storyMatch[1]
                         .replace(/\\n/g, '\n')
                         .replace(/\\r/g, '\r')
@@ -285,10 +276,10 @@ function smartParseAIResponse(response) {
                         .replace(/\\"/g, '"')
                         .replace(/\\\\/g, '\\');
                     extractedCount++;
-                    console.log('✅ [正则提取] 成功提取 story，长度:', result.story.length);
+                    console.log('✅ [Trích xuất Regex] Trích xuất story thành công, độ dài:', result.story.length);
                 }
 
-                // 3. 提取 variableUpdate 或 variableChanges 字段
+                // 3. Trích xuất trường variableUpdate hoặc variableChanges
                 const varUpdateMatch = r.match(/"variableUpdate"\s*:\s*"((?:[^"\\]|\\.)*)"/);
                 if (varUpdateMatch) {
                     result.variableUpdate = varUpdateMatch[1]
@@ -298,32 +289,32 @@ function smartParseAIResponse(response) {
                         .replace(/\\"/g, '"')
                         .replace(/\\\\/g, '\\');
                     extractedCount++;
-                    console.log('✅ [正则提取] 成功提取 variableUpdate');
+                    console.log('✅ [Trích xuất Regex] Trích xuất variableUpdate thành công');
                 }
 
-                // 也尝试提取 variableChanges 对象格式
+                // Cũng thử trích xuất định dạng đối tượng variableChanges
                 const varChangesMatch = r.match(/"variableChanges"\s*:\s*(\{[\s\S]*?\n\s*\})\s*(?=,\s*"|\}$)/);
                 if (varChangesMatch && !result.variableUpdate) {
                     try {
                         result.variableChanges = JSON.parse(varChangesMatch[1]);
                         extractedCount++;
-                        console.log('✅ [正则提取] 成功提取 variableChanges');
+                        console.log('✅ [Trích xuất Regex] Trích xuất variableChanges thành công');
                     } catch (e) {
-                        console.log('⚠️ [正则提取] variableChanges 解析失败:', e.message);
+                        console.log('⚠️ [Trích xuất Regex] Phân tích variableChanges thất bại:', e.message);
                     }
                 }
 
-                // 4. 提取 options 数组
+                // 4. Trích xuất mảng options
                 const optionsMatch = r.match(/"options"\s*:\s*\[([\s\S]*?)\]/);
                 if (optionsMatch) {
                     try {
-                        // 尝试解析选项数组
+                        // Thử phân tích mảng tùy chọn
                         const optionsStr = '[' + optionsMatch[1] + ']';
                         result.options = JSON.parse(optionsStr);
                         extractedCount++;
-                        console.log('✅ [正则提取] 成功提取 options，数量:', result.options.length);
+                        console.log('✅ [Trích xuất Regex] Trích xuất options thành công, số lượng:', result.options.length);
                     } catch (e) {
-                        // 如果解析失败，尝试逐个提取字符串
+                        // Nếu phân tích thất bại, thử trích xuất từng chuỗi một
                         const optionStrings = optionsMatch[1].match(/"((?:[^"\\]|\\.)*)"/g);
                         if (optionStrings && optionStrings.length > 0) {
                             result.options = optionStrings.map(s =>
@@ -333,36 +324,36 @@ function smartParseAIResponse(response) {
                                     .replace(/\\\\/g, '\\')
                             );
                             extractedCount++;
-                            console.log('✅ [正则提取] 通过备用方法提取 options，数量:', result.options.length);
+                            console.log('✅ [Trích xuất Regex] Trích xuất options bằng phương pháp dự phòng thành công, số lượng:', result.options.length);
                         }
                     }
                 }
 
-                // 验证是否提取到足够的关键字段
+                // Kiểm tra xem đã trích xuất đủ các trường quan trọng chưa
                 if (extractedCount < 2) {
-                    throw new Error(`提取的字段数量不足 (${extractedCount}/2)`);
+                    throw new Error(`Số lượng trường trích xuất không đủ (${extractedCount}/2)`);
                 }
 
-                // 至少需要 story 字段
+                // Ít nhất phải có trường story
                 if (!result.story) {
-                    throw new Error('未能提取到 story 字段');
+                    throw new Error('Không thể trích xuất trường story');
                 }
 
-                console.log(`✅ [正则提取] 成功提取 ${extractedCount} 个关键字段`);
+                console.log(`✅ [Trích xuất Regex] Trích xuất thành công ${extractedCount} trường quan trọng`);
                 return result;
             }
         },
         {
-            name: '宽松JSON解析',
+            name: 'Phân tích JSON lỏng lẻo',
             fn: (r) => {
-                // 使用eval（有风险，作为最后手段）
+                // Sử dụng eval (có rủi ro, là biện pháp cuối cùng)
                 const fixed = enhancedAutoFixJSON(r);
-                // 先尝试JSON.parse
+                // Thử JSON.parse trước
                 try {
                     return JSON.parse(fixed);
                 } catch (e) {
-                    // 如果失败，尝试更激进的修复
-                    console.warn('⚠️ 使用激进修复模式');
+                    // Nếu thất bại, thử sửa lỗi quyết liệt hơn
+                    console.warn('⚠️ Sử dụng chế độ sửa lỗi quyết liệt');
                     return tryAggressiveRepair(fixed);
                 }
             }
@@ -371,48 +362,48 @@ function smartParseAIResponse(response) {
 
     for (const strategy of strategies) {
         try {
-            console.log(`🔍 尝试策略: ${strategy.name}`);
+            console.log(`🔍 Đang thử chiến lược: ${strategy.name}`);
             const result = strategy.fn(response);
-            console.log(`✅ 策略成功: ${strategy.name}`);
+            console.log(`✅ Chiến lược thành công: ${strategy.name}`);
             return result;
         } catch (error) {
-            console.log(`❌ 策略失败: ${strategy.name} - ${error.message}`);
+            console.log(`❌ Chiến lược thất bại: ${strategy.name} - ${error.message}`);
         }
     }
 
-    console.error('❌ 所有解析策略都失败了');
+    console.error('❌ Tất cả các chiến lược phân tích đều thất bại');
     return null;
 }
 
 /**
- * 激进修复模式（最后手段）
- * @param {string} jsonStr - JSON字符串
- * @returns {Object} 解析结果
+ * Chế độ sửa lỗi quyết liệt (Biện pháp cuối cùng)
+ * @param {string} jsonStr - Chuỗi JSON
+ * @returns {Object} Kết quả phân tích
  */
 function tryAggressiveRepair(jsonStr) {
     let fixed = jsonStr;
 
-    console.log('🔧 [激进修复] 开始激进修复，长度:', fixed.length);
+    console.log('🔧 [Sửa lỗi quyết liệt] Bắt đầu sửa lỗi quyết liệt, độ dài:', fixed.length);
 
-    // ========== 策略1：逐字符状态机修复 ==========
+    // ========== Chiến lược 1: Sửa lỗi bằng máy trạng thái (state machine) từng ký tự ==========
     try {
         const stateMachineFixed = fixJsonWithStateMachine(fixed);
         const parsed = JSON.parse(stateMachineFixed);
-        console.log('✅ [激进修复] 状态机修复成功');
+        console.log('✅ [Sửa lỗi quyết liệt] Sửa lỗi bằng máy trạng thái thành công');
         return parsed;
     } catch (e) {
-        console.log('⚠️ [激进修复] 状态机修复失败:', e.message);
+        console.log('⚠️ [Sửa lỗi quyết liệt] Sửa lỗi bằng máy trạng thái thất bại:', e.message);
     }
 
-    // ========== 策略2：找到最后一个完整的JSON ==========
+    // ========== Chiến lược 2: Tìm JSON hoàn chỉnh cuối cùng ==========
     let lastValidJson = null;
     let maxLength = 0;
 
-    // 从后往前尝试找到有效的JSON
+    // Thử tìm JSON hợp lệ bằng cách duyệt ngược từ dưới lên
     for (let i = fixed.length; i > fixed.length / 2; i--) {
         const substr = fixed.substring(0, i);
 
-        // 补全可能缺失的结束符
+        // Bổ sung các ký tự kết thúc có thể bị thiếu
         let attempt = substr;
         const missingBraces = (attempt.match(/\{/g) || []).length - (attempt.match(/\}/g) || []).length;
         const missingBrackets = (attempt.match(/\[/g) || []).length - (attempt.match(/\]/g) || []).length;
@@ -420,7 +411,7 @@ function tryAggressiveRepair(jsonStr) {
         if (missingBraces > 0) attempt += '}'.repeat(missingBraces);
         if (missingBrackets > 0) attempt += ']'.repeat(missingBrackets);
 
-        // 移除尾随逗号
+        // Loại bỏ dấu phẩy thừa ở cuối
         attempt = attempt.replace(/,(\s*[}\]])/g, '$1');
 
         try {
@@ -430,22 +421,22 @@ function tryAggressiveRepair(jsonStr) {
                 lastValidJson = parsed;
             }
         } catch (e) {
-            // 继续尝试
+            // Tiếp tục thử
         }
     }
 
     if (lastValidJson) {
-        console.log('✅ [激进修复] 截断修复成功，长度:', maxLength);
+        console.log('✅ [Sửa lỗi quyết liệt] Sửa lỗi bằng cách cắt đoạn thành công, độ dài:', maxLength);
         return lastValidJson;
     }
 
-    throw new Error('激进修复也失败');
+    throw new Error('Sửa lỗi quyết liệt cũng thất bại');
 }
 
 /**
- * 使用状态机修复JSON（处理缺失逗号等问题）
- * @param {string} jsonStr - JSON字符串
- * @returns {string} 修复后的JSON字符串
+ * Sử dụng máy trạng thái để sửa JSON (xử lý các vấn đề như thiếu dấu phẩy)
+ * @param {string} jsonStr - Chuỗi JSON
+ * @returns {string} Chuỗi JSON đã sửa
  */
 function fixJsonWithStateMachine(jsonStr) {
     let result = '';
@@ -453,22 +444,22 @@ function fixJsonWithStateMachine(jsonStr) {
     let inString = false;
     let escapeNext = false;
     let lastNonWhitespaceChar = '';
-    let stack = []; // 记录 { 或 [ 的嵌套
+    let stack = []; // Ghi lại sự lồng nhau của { hoặc [
 
     while (i < jsonStr.length) {
         const char = jsonStr[i];
 
-        // 处理转义字符
+        // Xử lý ký tự thoát
         if (escapeNext) {
-            // 检查是否是有效的JSON转义字符
+            // Kiểm tra xem có phải là ký tự thoát JSON hợp lệ không
             const validEscapes = ['"', '\\', '/', 'b', 'f', 'n', 'r', 't', 'u'];
             if (validEscapes.includes(char)) {
                 result += char;
             } else {
-                // 无效的转义序列，移除前面的反斜杠，只保留字符
-                // 需要移除result末尾的反斜杠
+                // Chuỗi thoát không hợp lệ, loại bỏ dấu gạch chéo ngược phía trước, chỉ giữ lại ký tự
+                // Cần loại bỏ dấu gạch chéo ngược ở cuối result
                 result = result.slice(0, -1) + char;
-                console.log('🔧 [状态机] 修复无效转义序列: \\' + char + ' -> ' + char);
+                console.log('🔧 [Máy trạng thái] Sửa chuỗi thoát không hợp lệ: \\' + char + ' -> ' + char);
             }
             escapeNext = false;
             i++;
@@ -482,15 +473,15 @@ function fixJsonWithStateMachine(jsonStr) {
             continue;
         }
 
-        // 处理字符串边界
+        // Xử lý biên của chuỗi
         if (char === '"') {
-            // 检查是否需要在引号前加逗号
+            // Kiểm tra xem có cần thêm dấu phẩy trước dấu ngoặc kép không
             if (!inString && (lastNonWhitespaceChar === '"' || lastNonWhitespaceChar === '}' || lastNonWhitespaceChar === ']' || /\d/.test(lastNonWhitespaceChar))) {
-                // 检查是否是键值对的冒号后面（不需要加逗号）
+                // Kiểm tra xem có phải sau dấu hai chấm của cặp key-value không (không cần thêm dấu phẩy)
                 const trimmedResult = result.trimEnd();
                 if (!trimmedResult.endsWith(':') && !trimmedResult.endsWith(',') && !trimmedResult.endsWith('[') && !trimmedResult.endsWith('{')) {
                     result += ',';
-                    console.log('🔧 [状态机] 在位置', i, '补充逗号');
+                    console.log('🔧 [Máy trạng thái] Bổ sung dấu phẩy tại vị trí', i);
                 }
             }
             inString = !inString;
@@ -503,7 +494,7 @@ function fixJsonWithStateMachine(jsonStr) {
         }
 
         if (inString) {
-            // 在字符串内部，处理未转义的换行
+            // Bên trong chuỗi, xử lý các dấu xuống dòng chưa được thoát
             if (char === '\n') {
                 result += '\\n';
             } else if (char === '\r') {
@@ -517,14 +508,14 @@ function fixJsonWithStateMachine(jsonStr) {
             continue;
         }
 
-        // 不在字符串内部
+        // Ngoài chuỗi
         if (char === '{' || char === '[') {
-            // 检查是否需要加逗号
+            // Kiểm tra xem có cần thêm dấu phẩy không
             if (lastNonWhitespaceChar === '"' || lastNonWhitespaceChar === '}' || lastNonWhitespaceChar === ']' || /\d/.test(lastNonWhitespaceChar)) {
                 const trimmedResult = result.trimEnd();
                 if (!trimmedResult.endsWith(':') && !trimmedResult.endsWith(',') && !trimmedResult.endsWith('[') && !trimmedResult.endsWith('{')) {
                     result += ',';
-                    console.log('🔧 [状态机] 在位置', i, '补充逗号(开括号前)');
+                    console.log('🔧 [Máy trạng thái] Bổ sung dấu phẩy tại vị trí', i, '(trước dấu mở ngoặc)');
                 }
             }
             stack.push(char);
@@ -535,11 +526,11 @@ function fixJsonWithStateMachine(jsonStr) {
         }
 
         if (char === '}' || char === ']') {
-            // 移除尾随逗号
+            // Loại bỏ dấu phẩy thừa ở cuối
             const trimmedResult = result.trimEnd();
             if (trimmedResult.endsWith(',')) {
                 result = trimmedResult.slice(0, -1);
-                console.log('🔧 [状态机] 移除尾随逗号');
+                console.log('🔧 [Máy trạng thái] Loại bỏ dấu phẩy thừa');
             }
             stack.pop();
             result += char;
@@ -555,187 +546,187 @@ function fixJsonWithStateMachine(jsonStr) {
             continue;
         }
 
-        // 空白字符
+        // Ký tự khoảng trắng
         if (/\s/.test(char)) {
             result += char;
             i++;
             continue;
         }
 
-        // 其他字符（数字、true、false、null等）
-        // 过滤掉不应该出现在JSON中的无效字符（如孤立的 _ ）
-        // 有效字符：字母、数字、-（用于负数）、.（用于小数）、true/false/null的一部分
+        // Các ký tự khác (số, true, false, null, v.v.)
+        // Lọc bỏ các ký tự không nên xuất hiện trong JSON (như dấu _ đứng lẻ loi)
+        // Ký tự hợp lệ: chữ cái, chữ số, - (cho số âm), . (cho số thập phân), một phần của true/false/null
         if (/[a-zA-Z0-9.\-]/.test(char)) {
             result += char;
             lastNonWhitespaceChar = char;
         } else {
-            // 跳过无效字符（如 _ ），并记录日志
-            console.log('🔧 [状态机] 跳过无效字符:', char, '在位置', i);
+            // Bỏ qua ký tự không hợp lệ (như _ ) và ghi log
+            console.log('🔧 [Máy trạng thái] Bỏ qua ký tự không hợp lệ:', char, 'tại vị trí', i);
         }
         i++;
     }
 
-    // 补全缺失的闭合括号
+    // Bổ sung các dấu ngoặc đóng còn thiếu
     while (stack.length > 0) {
         const open = stack.pop();
         result += (open === '{') ? '}' : ']';
-        console.log('🔧 [状态机] 补充闭合括号:', (open === '{') ? '}' : ']');
+        console.log('🔧 [Máy trạng thái] Bổ sung dấu ngoặc đóng:', (open === '{') ? '}' : ']');
     }
 
     return result;
 }
 
 /**
- * 验证并补全必需字段
- * @param {Object} data - 解析后的数据
- * @returns {Object} 验证并补全后的数据
+ * Xác thực và bổ sung các trường bắt buộc
+ * @param {Object} data - Dữ liệu sau khi phân tích
+ * @returns {Object} Dữ liệu đã xác thực và bổ sung
  */
 function validateAndCompleteData(data) {
-    console.log('🔍 验证数据完整性...');
+    console.log('🔍 Đang xác thực tính toàn vẹn của dữ liệu...');
 
-    // 必需字段定义
+    // Định nghĩa các trường bắt buộc
     const requiredFields = {
         reasoning: {
             default: {
-                situation: '数据解析中',
-                playerChoice: '继续游戏',
-                logicChain: ['解析成功'],
-                outcome: '继续游戏流程'
+                situation: 'Đang phân tích dữ liệu',
+                playerChoice: 'Tiếp tục trò chơi',
+                logicChain: ['Phân tích thành công'],
+                outcome: 'Tiếp tục luồng trò chơi'
             },
             type: 'object'
         },
         variableChanges: {
             default: {
-                analysis: 'No changes',
+                analysis: 'Không có thay đổi',
                 changes: {}
             },
             type: 'object'
         },
         story: {
-            default: '（AI正在生成剧情...）',
+            default: '（AI đang tạo cốt truyện...）',
             type: 'string'
         },
         options: {
             default: [
-                '与周围人交谈',
-                '离开此地',
-                '继续探索',
-                '【R18】休息片刻'
+                'Trò chuyện với những người xung quanh',
+                'Rời khỏi nơi này',
+                'Tiếp tục khám phá',
+                '【R18】Nghỉ ngơi chốc lát'
             ],
             type: 'array',
             minLength: 4
         }
     };
 
-    // 检查并补全缺失字段
+    // Kiểm tra và bổ sung các trường thiếu
     for (const [field, config] of Object.entries(requiredFields)) {
         if (!data[field]) {
-            console.warn(`⚠️ 缺少字段 ${field}，使用默认值`);
+            console.warn(`⚠️ Thiếu trường ${field}, sử dụng giá trị mặc định`);
             data[field] = config.default;
         } else if (config.type === 'array' && config.minLength) {
-            // 补全不足的数组元素
+            // Bổ sung các phần tử mảng còn thiếu
             while (data[field].length < config.minLength) {
                 const index = data[field].length;
-                data[field].push(config.default[index] || `选项${index + 1}`);
+                data[field].push(config.default[index] || `Tùy chọn ${index + 1}`);
             }
         }
     }
 
-    // 验证options数量
+    // Xác thực số lượng options
     if (data.options && data.options.length < 4) {
-        console.warn(`⚠️ 选项数量不足（${data.options.length}/4），自动补全`);
+        console.warn(`⚠️ Số lượng tùy chọn không đủ（${data.options.length}/4）, tự động bổ sung`);
         const defaultOptions = [
-            '与周围人交谈',
-            '离开此地',
-            '继续探索',
-            '【R18】休息片刻'
+            'Trò chuyện với những người xung quanh',
+            'Rời khỏi nơi này',
+            'Tiếp tục khám phá',
+            '【R18】Nghỉ ngơi chốc lát'
         ];
         while (data.options.length < 4) {
-            data.options.push(defaultOptions[data.options.length] || `选项${data.options.length + 1}`);
+            data.options.push(defaultOptions[data.options.length] || `Tùy chọn ${data.options.length + 1}`);
         }
     }
 
-    // 验证story长度
+    // Xác thực độ dài story
     if (data.story && data.story.length < 20) {
-        console.warn('⚠️ 剧情描述过短');
-        data.story += '\n\n（故事继续...）';
+        console.warn('⚠️ Mô tả cốt truyện quá ngắn');
+        data.story += '\n\n（Câu chuyện tiếp tục...）';
     }
 
-    console.log('✅ 数据验证完成');
+    console.log('✅ Xác thực dữ liệu hoàn tất');
     return data;
 }
 
 /**
- * 降级渲染模式（当JSON完全无法解析时）
- * @param {string} response - AI原始响应
- * @returns {Object} 降级后的数据对象
+ * Chế độ hiển thị dự phòng (Khi JSON hoàn toàn không thể phân tích được)
+ * @param {string} response - Phản hồi gốc từ AI
+ * @returns {Object} Đối tượng dữ liệu dự phòng
  */
 function fallbackParse(response) {
-    console.log('⚠️ 启动降级渲染模式');
+    console.log('⚠️ Khởi động chế độ hiển thị dự phòng');
 
-    // 尝试提取文本内容
+    // Thử trích xuất nội dung văn bản
     let story = response;
 
-    // 移除代码块标记
+    // Loại bỏ các ký hiệu khối mã
     story = story.replace(/```(?:json)?\s*/g, '').replace(/```/g, '');
 
-    // 如果文本太短，添加提示
+// Nếu văn bản quá ngắn, thêm thông báo nhắc nhở
     if (story.length < 50) {
-        story = `AI响应格式异常，原始内容：\n\n${story}\n\n建议选择"重新生成"。`;
+        story = `Định dạng phản hồi AI bất thường, nội dung gốc:\n\n${story}\n\nKhuyên bạn nên chọn "Tạo lại".`;
     }
 
     return {
         reasoning: {
-            situation: 'AI响应解析失败',
-            playerChoice: '等待玩家选择',
-            logicChain: ['响应格式错误', '启用降级模式', '显示原始内容'],
-            outcome: '等待玩家重新生成或继续'
+            situation: 'Phân tích phản hồi AI thất bại',
+            playerChoice: 'Đang chờ người chơi lựa chọn',
+            logicChain: ['Lỗi định dạng phản hồi', 'Kích hoạt chế độ dự phòng', 'Hiển thị nội dung gốc'],
+            outcome: 'Chờ người chơi tạo lại hoặc tiếp tục'
         },
         variableChanges: {
-            analysis: 'No changes due to parsing error',
+            analysis: 'Không có thay đổi do lỗi phân tích',
             changes: {}
         },
         story: story,
         options: [
-            '重新生成回复',
-            '尝试继续',
-            '查看原始响应',
-            '返回上一步',
-            '保存并退出'
+            'Tạo lại phản hồi',
+            'Thử tiếp tục',
+            'Xem phản hồi gốc',
+            'Quay lại bước trước',
+            'Lưu và thoát'
         ]
     };
 }
 
 /**
- * 完整的AI响应处理流程
- * @param {string} response - AI原始响应
- * @returns {Object} 处理后的数据对象（保证不为null）
+ * Quy trình xử lý phản hồi AI hoàn chỉnh
+ * @param {string} response - Phản hồi gốc từ AI
+ * @returns {Object} Đối tượng dữ liệu sau xử lý (đảm bảo không phải null)
  */
 function processAIResponse(response) {
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('🤖 [AI响应处理] 开始处理');
-    console.log('📝 响应长度:', response.length);
+    console.log('🤖 [Xử lý phản hồi AI] Bắt đầu xử lý');
+    console.log('📝 Độ dài phản hồi:', response.length);
 
     try {
-        // 第1步：智能解析
+        // Bước 1: Phân tích thông minh
         let data = smartParseAIResponse(response);
 
-        // 第2步：如果解析失败，使用降级模式
+        // Bước 2: Nếu phân tích thất bại, sử dụng chế độ dự phòng
         if (!data) {
-            console.warn('⚠️ 智能解析失败，使用降级模式');
+            console.warn('⚠️ Phân tích thông minh thất bại, sử dụng chế độ dự phòng');
             data = fallbackParse(response);
         }
 
-        // 第3步：验证并补全数据
+        // Bước 3: Xác thực và bổ sung dữ liệu
         data = validateAndCompleteData(data);
 
-        console.log('✅ [AI响应处理] 处理成功');
+        console.log('✅ [Xử lý phản hồi AI] Xử lý thành công');
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
         return data;
     } catch (error) {
-        console.error('❌ [AI响应处理] 处理失败:', error);
-        console.error('使用最终降级方案');
+        console.error('❌ [Xử lý phản hồi AI] Xử lý thất bại:', error);
+        console.error('Sử dụng phương án dự phòng cuối cùng');
 
         return fallbackParse(response);
     }

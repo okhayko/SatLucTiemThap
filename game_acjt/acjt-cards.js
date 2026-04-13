@@ -1,127 +1,119 @@
 /**
- * 艾超尖塔 - 卡牌系统
+ * Tháp Cao ACJT - Hệ thống Bài
  * Card System for ACJT Game
  */
-
-// ==================== 卡牌类型枚举 ====================
+// ==================== Enum Loại Bài ====================
 const CardType = {
-    ATTACK: 'attack',           // 攻击
-    H_ATTACK: 'h_attack',       // H攻击（特殊攻击）
-    HEAL: 'heal',               // 治疗
-    BUFF: 'buff',               // 我方增益
-    DEBUFF: 'debuff',           // 给对方debuff
-    ARMOR: 'armor',             // 护甲
-    CURSE: 'curse'              // 诅咒（敌人H技能，不能打出）
+    ATTACK: 'attack',           // Tấn công
+    H_ATTACK: 'h_attack',       // Tấn công Đặc biệt (H-Attack)
+    HEAL: 'heal',               // Hồi máu
+    BUFF: 'buff',               // Tăng sức mạnh cho Ta
+    DEBUFF: 'debuff',           // Giảm sức mạnh kẻ địch
+    ARMOR: 'armor',             // Giáp
+    CURSE: 'curse'              // Lời nguyền (Kỹ năng H của địch, không thể tung ra)
 };
-
-// ==================== 路线卡类型 ====================
+// ==================== Loại Bài Tuyến Đường ====================
 const RouteType = {
-    UNKNOWN: 'unknown',         // 问号牌（随机事件）
-    MONSTER: 'monster',         // 小怪牌
-    ELITE: 'elite',             // 精英怪牌
-    BOSS: 'boss',               // Boss牌
-    SHOP: 'shop',               // 商店牌
-    REST: 'rest'                // 温泉牌（休息/升级）
+    UNKNOWN: 'unknown',         // Bài dấu hỏi (Sự kiện ngẫu nhiên)
+    MONSTER: 'monster',         // Bài Quái thường
+    ELITE: 'elite',             // Bài Quái tinh anh
+    BOSS: 'boss',               // Bài Trùm
+    SHOP: 'shop',               // Bài Cửa hàng
+    REST: 'rest'                // Bài Suối nước nóng (Nghỉ ngơi/Nâng cấp)
 };
-
 const RouteTypeConfig = {
-    [RouteType.UNKNOWN]: { name: '???', icon: '❓', color: '#9c88ff', desc: '随机事件' },
-    [RouteType.MONSTER]: { name: '小怪', icon: '👹', color: '#ff4757', desc: '战斗遭遇' },
-    [RouteType.ELITE]: { name: '精英', icon: '💀', color: '#ffa502', desc: '精英战斗' },
-    [RouteType.BOSS]: { name: 'BOSS', icon: '👿', color: '#ff0000', desc: 'Boss战斗' },
-    [RouteType.SHOP]: { name: '商店', icon: '🏪', color: '#2ed573', desc: '购买卡牌和圣遗物' },
-    [RouteType.REST]: { name: '温泉', icon: '♨️', color: '#70a1ff', desc: '休息或升级卡牌' }
+    [RouteType.UNKNOWN]: { name: '???', icon: '❓', color: '#9c88ff', desc: 'Sự kiện ngẫu nhiên' },
+    [RouteType.MONSTER]: { name: 'Quái Thường', icon: '👹', color: '#ff4757', desc: 'Gặp gỡ chiến đấu' },
+    [RouteType.ELITE]: { name: 'Tinh Anh', icon: '💀', color: '#ffa502', desc: 'Chiến đấu Tinh anh' },
+    [RouteType.BOSS]: { name: 'Trùm', icon: '👿', color: '#ff0000', desc: 'Chiến đấu Boss' },
+    [RouteType.SHOP]: { name: 'Cửa Hàng', icon: '🏪', color: '#2ed573', desc: 'Mua bài và Thánh di vật' },
+    [RouteType.REST]: { name: 'Suối Nước Nóng', icon: '♨️', color: '#70a1ff', desc: 'Nghỉ ngơi hoặc nâng cấp bài' }
 };
-
-// ==================== 敌人意图系统 ====================
+// ==================== Hệ thống Ý định của Kẻ địch ====================
 const EnemyIntentType = {
-    ATTACK: 'attack',           // 攻击
-    DEFEND: 'defend',           // 防御（获得护甲）
-    BUFF: 'buff',               // 自我增强
-    DEBUFF: 'debuff',           // 削弱玩家
-    CHARGE: 'charge',           // 蓄力（下回合大招）
-    HEAL: 'heal',               // 治疗自身
-    SPECIAL: 'special'          // Boss专属技能
+    ATTACK: 'attack',           // Tấn công
+    DEFEND: 'defend',           // Phòng thủ (Nhận Giáp)
+    BUFF: 'buff',               // Tăng cường bản thân
+    DEBUFF: 'debuff',           // Làm suy yếu người chơi
+    CHARGE: 'charge',           // Nạp năng lượng (Chiêu cuối lượt sau)
+    HEAL: 'heal',               // Hồi máu cho bản thân
+    SPECIAL: 'special'          // Kỹ năng đặc trưng của Boss
 };
-
 const EnemyIntentConfig = {
-    [EnemyIntentType.ATTACK]: { name: '攻击', icon: '⚔️', color: '#ff4757', desc: '造成伤害' },
-    [EnemyIntentType.DEFEND]: { name: '防御', icon: '🛡️', color: '#74b9ff', desc: '获得护甲' },
-    [EnemyIntentType.BUFF]: { name: '增强', icon: '💪', color: '#ffa502', desc: '提升自身属性' },
-    [EnemyIntentType.DEBUFF]: { name: '削弱', icon: '💫', color: '#a55eea', desc: '降低玩家属性' },
-    [EnemyIntentType.CHARGE]: { name: '蓄力', icon: '🔥', color: '#ff6348', desc: '准备大招' },
-    [EnemyIntentType.HEAL]: { name: '治疗', icon: '❤️', color: '#2ed573', desc: '恢复生命' },
-    [EnemyIntentType.SPECIAL]: { name: '特殊', icon: '⭐', color: '#ffd700', desc: 'Boss技能' }
+    [EnemyIntentType.ATTACK]: { name: 'Tấn Công', icon: '⚔️', color: '#ff4757', desc: 'Gây sát thương' },
+    [EnemyIntentType.DEFEND]: { name: 'Phòng Thủ', icon: '🛡️', color: '#74b9ff', desc: 'Nhận Giáp' },
+    [EnemyIntentType.BUFF]: { name: 'Tăng Cường', icon: '💪', color: '#ffa502', desc: 'Tăng thuộc tính bản thân' },
+    [EnemyIntentType.DEBUFF]: { name: 'Suy Yếu', icon: '💫', color: '#a55eea', desc: 'Giảm thuộc tính người chơi' },
+    [EnemyIntentType.CHARGE]: { name: 'Nạp Năng Lượng', icon: '🔥', color: '#ff6348', desc: 'Chuẩn bị chiêu cuối' },
+    [EnemyIntentType.HEAL]: { name: 'Hồi Máu', icon: '❤️', color: '#2ed573', desc: 'Phục hồi sinh mệnh' },
+    [EnemyIntentType.SPECIAL]: { name: 'Đặc Thu', icon: '⭐', color: '#ffd700', desc: 'Kỹ năng Boss' }
 };
-
-// ==================== 卡牌词缀系统 ====================
+// ==================== Hệ thống Hậu tố Bài (Affix) ====================
 const CardAffixConfig = {
     burning: {
-        id: 'burning', name: '炽热', icon: '🔥', rarity: 'common',
-        description: '额外造成3点燃烧(2回合)',
+        id: 'burning', name: 'Cháy Bỏng', icon: '🔥', rarity: 'common',
+        description: 'Gây thêm 3 điểm Cháy Bỏng (2 lượt)',
         effect: { type: 'dot', damage: 3, duration: 2 }
     },
     frozen: {
-        id: 'frozen', name: '冰冻', icon: '❄️', rarity: 'rare',
-        description: '15%几率冻结敌人1回合',
+        id: 'frozen', name: 'Băng Đông', icon: '❄️', rarity: 'rare',
+        description: 'Có 15% cơ hội đóng băng kẻ địch 1 lượt',
         effect: { type: 'freeze', chance: 0.15, duration: 1 }
     },
     vampiric: {
-        id: 'vampiric', name: '吸血', icon: '🦷', rarity: 'rare',
-        description: '伤害的20%恢复生命',
+        id: 'vampiric', name: 'Hút Máu', icon: '🦷', rarity: 'rare',
+        description: 'Phục hồi 20% sát thương gây ra bằng HP',
         effect: { type: 'lifesteal', percent: 0.2 }
     },
     poison: {
-        id: 'poison', name: '剧毒', icon: '🧪', rarity: 'common',
-        description: '额外造成2点毒伤(3回合)',
+        id: 'poison', name: 'Kịch Độc', icon: '🧪', rarity: 'common',
+        description: 'Gây thêm 2 điểm độc sát (3 lượt)',
         effect: { type: 'dot', damage: 2, duration: 3 }
     },
     echo: {
-        id: 'echo', name: '回响', icon: '🔊', rarity: 'epic',
-        description: '30%几率再次触发效果',
+        id: 'echo', name: 'Tiếng Vọng', icon: '🔊', rarity: 'epic',
+        description: 'Có 30% cơ hội kích hoạt hiệu ứng lần nữa',
         effect: { type: 'echo', chance: 0.3 }
     },
     swift: {
-        id: 'swift', name: '迅捷', icon: '⚡', rarity: 'common',
-        description: '使用后抽1张牌',
+        id: 'swift', name: 'Nhanh Nhẹn', icon: '⚡', rarity: 'common',
+        description: 'Sau khi sử dụng, rút thêm 1 lá bài',
         effect: { type: 'draw', count: 1 }
     },
     fortify: {
-        id: 'fortify', name: '坚固', icon: '🛡️', rarity: 'common',
-        description: '额外获得3点护甲',
+        id: 'fortify', name: 'Kiên Cố', icon: '🛡️', rarity: 'common',
+        description: 'Nhận thêm 3 điểm Giáp',
         effect: { type: 'armor', value: 3 }
     },
     blessed: {
-        id: 'blessed', name: '祝福', icon: '✨', rarity: 'rare',
-        description: '使用后恢复3HP',
+        id: 'blessed', name: 'Phúc Lành', icon: '✨', rarity: 'rare',
+        description: 'Sau khi sử dụng, hồi phục 3 HP',
         effect: { type: 'heal', value: 3 }
     },
     cursed: {
-        id: 'cursed', name: '诅咒', icon: '💀', rarity: 'epic',
-        description: '效果+50%，但增加3堕落值',
+        id: 'cursed', name: 'Lời Nguyền', icon: '💀', rarity: 'epic',
+        description: 'Hiệu ứng tăng +50%, nhưng tăng thêm 3 điểm Suy thoái',
         effect: { type: 'empower', bonus: 0.5, corruption: 3 }
     },
     chaos: {
-        id: 'chaos', name: '混沌', icon: '🌀', rarity: 'legendary',
-        description: '随机触发另一种词缀效果',
+        id: 'chaos', name: 'Hỗn Độn', icon: '🌀', rarity: 'legendary',
+        description: 'Ngẫu nhiên kích hoạt hiệu ứng của một Hậu tố khác',
         effect: { type: 'random' }
     }
 };
-
 const AffixRarityWeights = {
     common: 60,
     rare: 25,
     epic: 12,
     legendary: 3
 };
-
-// ==================== 职业系统 ====================
+// ==================== Hệ thống Nghề nghiệp (Profession) ====================
 const ProfessionConfig = {
     nun: {
         id: 'nun',
-        name: '修女',
-        icon: 'img/user/nun.gif',  // 修女职业图标
-        description: '虔诚的修女，擅长治疗和神圣攻击，堕落后解锁强力H技能。',
+        name: 'Tu Nữ',
+        icon: 'img/user/nun.gif',  // Icon nghề Tu Nữ
+        description: 'Vị tu nữ mộ đạo, giỏi hồi máu và tấn công thánh thần, sau khi Suy thoái sẽ mở khóa kỹ năng H cực mạnh.',
         baseStats: {
             hp: 70, maxHp: 70, energy: 3, attack: 0, defense: 0, baseArmor: 0, corruption: 0
         },
@@ -143,9 +135,9 @@ const ProfessionConfig = {
     },
     courtesan: {
         id: 'courtesan',
-        name: '妓女',
+        name: 'Kỹ Nữ',
         icon: 'img/user/user_006.png',
-        description: '风月场中的老手，擅长削弱敌人攻防，少数技能可控制敌人。',
+        description: 'Thành thạo trong giới hoa lệ, giỏi làm suy yếu Tấn công và Phòng thủ của kẻ địch, một số kỹ năng có thể khống chế đối phương.',
         baseStats: {
             hp: 55, maxHp: 55, energy: 3, attack: 2, defense: 0, baseArmor: 0, corruption: 20
         },
@@ -167,9 +159,9 @@ const ProfessionConfig = {
     },
     commoner: {
         id: 'commoner',
-        name: '平民',
+        name: 'Bình Dân',
         icon: 'img/user/user_004.png',
-        description: '普通人的智慧与韧性，低费高效，擅长抽牌和获取金币。',
+        description: 'Trí tuệ và sự kiên cường của người bình thường, tiêu phí thấp hiệu suất cao, giỏi rút bài và kiếm vàng.',
         baseStats: {
             hp: 65, maxHp: 65, energy: 3, attack: 0, defense: 0, baseArmor: 0, corruption: 0
         },
@@ -191,9 +183,9 @@ const ProfessionConfig = {
     },
     thief: {
         id: 'thief',
-        name: '盗贼',
+        name: 'Trộm Cướp',
         icon: 'img/user/user_002.png',
-        description: '身手敏捷的盗贼，擅长持续伤害和抽牌，用毒和流血慢慢磨死敌人。',
+        description: 'Kẻ trộm lanh lợi, giỏi gây sát thương theo thời gian và rút bài, dùng độc và chảy máu từ từ làm hao mòn kẻ địch.',
         baseStats: {
             hp: 50, maxHp: 50, energy: 4, attack: 3, defense: 0, baseArmor: 0, corruption: 5
         },
@@ -215,9 +207,9 @@ const ProfessionConfig = {
     },
     warrior: {
         id: 'warrior',
-        name: '战士',
+        name: 'Chiến Sĩ',
         icon: 'img/user/user_005.png',
-        description: '勇猛的女战士，高生命高护甲，正面作战能力强。',
+        description: 'Nữ chiến binh dũng mãnh, HP cao Giáp cao, khả năng giao chiến trực diện mạnh mẽ.',
         baseStats: {
             hp: 85, maxHp: 85, energy: 3, attack: 2, defense: 2, baseArmor: 5, corruption: 0
         },
@@ -237,9 +229,9 @@ const ProfessionConfig = {
     },
     mage: {
         id: 'mage',
-        name: '女法师',
+        name: 'Nữ Pháp Sư',
         icon: 'img/user/user_009.png',
-        description: '精通魔法的法师，高伤害法术，擅长抽牌和能量获取。',
+        description: 'Pháp sư tinh thông phép thuật, pháp thuật gây sát thương cao, giỏi rút bài và tích lũy năng lượng.',
         baseStats: {
             hp: 45, maxHp: 45, energy: 4, attack: 0, defense: 0, baseArmor: 0, corruption: 0
         },
@@ -261,9 +253,9 @@ const ProfessionConfig = {
     },
     succubus_player: {
         id: 'succubus_player',
-        name: '魅魔',
+        name: 'Mị Ma',
         icon: 'img/user/user_013.png',
-        description: '来自深渊的魅魔，擅长吸血，造成伤害的同时恢复生命。',
+        description: 'Mị ma đến từ vực sâu, giỏi Hút Máu, hồi phục sinh mệnh đồng thời gây sát thương.',
         baseStats: {
             hp: 55, maxHp: 55, energy: 3, attack: 3, defense: 0, baseArmor: 0, corruption: 30
         },
@@ -282,12 +274,12 @@ const ProfessionConfig = {
         ],
         guaranteedCards: ['succubus_p_001', 'succubus_p_004', 'succubus_p_005', 'h_attack_001', 'h_attack_002']
     },
-    // 🆕 魔法少女职业
+    // 🆕 Nghề nghiệp Pháp Sư Tí Hon (Magical Girl)
     magicalGirl: {
         id: 'magicalGirl',
-        name: '魔法少女',
+        name: 'Pháp Sư Tí Hon',
         icon: 'img/user/user_012.png',
-        description: '变身后拥有强大力量的魔法少女！必须在变身期间击败敌人，否则力竭倒下！(ﾉ◕ヮ◕)ﾉ*:･ﾟ✧',
+        description: 'Pháp sư có sức mạnh to lớn khi biến hình! Phải đánh bại kẻ địch trong thời gian biến hình, nếu không sẽ kiệt sức ngã gục! (ﾉ◕ヮ◕)ﾉ*:･ﾟ✧',
         baseStats: {
             hp: 50, maxHp: 50, energy: 3, attack: 0, defense: 0, baseArmor: 0, corruption: 0
         },
@@ -309,530 +301,526 @@ const ProfessionConfig = {
         guaranteedCards: ['mg_transform', 'mg_001', 'mg_002', 'mg_003', 'attack_001']
     }
 };
-
-
-// ==================== 种族系统 ====================
+// ==================== Hệ thống Chủng tộc (Race) ====================
 const RaceConfig = {
     human: {
-        id: 'human', name: '人类', icon: '👩',
-        description: '普通的人类女性，属性均衡，没有特殊优劣。',
+        id: 'human', name: 'Con Người', icon: '👩',
+        description: 'Nữ nhân loại bình thường, thuộc tính cân bằng, không có ưu nhược điểm đặc biệt.',
         statMods: { hp: 0, attack: 0, defense: 0, energy: 0, corruption: 0 }
     },
     elf: {
-        id: 'elf', name: '精灵', icon: '🧝‍♀️',
-        description: '优雅的精灵族，魔力充沛但体质较弱。',
+        id: 'elf', name: 'Tinh Linh', icon: '‍♀️',
+        description: 'Tộc tinh linh tao nhã, ma lực dồi dào nhưng thể chất tương đối yếu.',
         statMods: { hp: -10, attack: 0, defense: -1, energy: 1, corruption: 0 }
     },
     succubus: {
-        id: 'succubus', name: '魅魔', icon: '😈',
-        description: '魅惑的魅魔，天生擅长H技能，但防御较低。',
+        id: 'succubus', name: 'Mị Ma', icon: '😈',
+        description: 'Mị ma quyến rũ, bẩm sinh giỏi kỹ năng H, nhưng Phòng thủ thấp.',
         statMods: { hp: -5, attack: 3, defense: -2, energy: 0, corruption: 15 }
     },
     incubus: {
-        id: 'incubus', name: '淫魔', icon: '👿',
-        description: '淫欲化身的淫魔，攻击力极高但极易堕落。',
+        id: 'incubus', name: 'Dâm Ma', icon: '👿',
+        description: 'Dâm ma hóa thân dục vọng, Tấn công cực cao nhưng rất dễ bị Suy thoái.',
         statMods: { hp: -15, attack: 5, defense: -1, energy: 0, corruption: 30 }
     },
     catgirl: {
-        id: 'catgirl', name: '猫娘', icon: '🐱',
-        description: '灵活的猫娘，闪避能力强，擅长连续攻击。',
+        id: 'catgirl', name: 'Mèo Nữ', icon: '🐱',
+        description: 'Mèo nữ linh hoạt, khả năng Né tránh mạnh, giỏi tấn công liên hoàn.',
         statMods: { hp: -5, attack: 2, defense: 1, energy: 0, corruption: 5 }
     },
     foxgirl: {
-        id: 'foxgirl', name: '狐娘', icon: '🦊',
-        description: '狡黠的狐娘，魅惑能力强，综合实力均衡。',
+        id: 'foxgirl', name: 'Cáo Nữ', icon: '🦊',
+        description: 'Cáo nữ xảo quyệt, khả năng mê hoặc mạnh, sức chiến đấu tổng hợp cân bằng.',
         statMods: { hp: 0, attack: 1, defense: 0, energy: 0, corruption: 10 }
     }
 };
-
-// ==================== 身体属性配置 ====================
+// ==================== Cấu hình Thuộc tính Cơ thể ====================
 const BodyConfig = {
     height: [
-        { id: 'petite', name: '娇小 (145-155cm)', desc: '娇小玲珑的身材' },
-        { id: 'short', name: '偏矮 (155-160cm)', desc: '小巧可爱的身高' },
-        { id: 'average', name: '中等 (160-165cm)', desc: '普通的身高' },
-        { id: 'tall', name: '偏高 (165-170cm)', desc: '修长的身材' },
-        { id: 'model', name: '高挑 (170-175cm)', desc: '模特般的高挑身材' },
-        { id: 'amazon', name: '高大 (175cm+)', desc: '高大威猛的身材' }
+        { id: 'petite', name: 'Mảnh Khảnh (145-155cm)', desc: 'Vóc dáng nhỏ nhắn, tinh xảo' },
+        { id: 'short', name: 'Hơi Thấp (155-160cm)', desc: 'Chiều cao nhỏ xinh đáng yêu' },
+        { id: 'average', name: 'Trung Bình (160-165cm)', desc: 'Chiều cao thông thường' },
+        { id: 'tall', name: 'Hơi Cao (165-170cm)', desc: 'Vóc dáng thon dài' },
+        { id: 'model', name: 'Cao Ráo (170-175cm)', desc: 'Vóc dáng cao như người mẫu' },
+        { id: 'amazon', name: 'Khổng Lồ (175cm+)', desc: 'Vóc dáng cao lớn mạnh mẽ' }
     ],
     weight: [
-        { id: 'slim', name: '纤细', desc: '纤细苗条' },
-        { id: 'slender', name: '苗条', desc: '苗条匀称' },
-        { id: 'average', name: '标准', desc: '标准身材' },
-        { id: 'curvy', name: '丰满', desc: '曲线丰满' },
-        { id: 'plump', name: '圆润', desc: '肉感十足' },
-        { id: 'voluptuous', name: '肉感', desc: '丰腴诱人' }
+        { id: 'slim', name: 'Mảnh Dẻo', desc: 'Thon thả, mảnh mai' },
+        { id: 'slender', name: 'Dáng Thon', desc: 'Thon gọn cân đối' },
+        { id: 'average', name: 'Tiêu Chuẩn', desc: 'Vóc dáng chuẩn mực' },
+        { id: 'curvy', name: 'Cong Cửa', desc: 'Đường cong đầy đặn' },
+        { id: 'plump', name: 'Mũm Mĩm', desc: 'Tràn đầy cảm giác thịt' },
+        { id: 'voluptuous', name: 'Mọng Nước', desc: 'Sung túc quyến rũ' }
     ],
     chest: [
-        { id: 'A', name: 'A罩杯', desc: '平坦的胸部' },
-        { id: 'B', name: 'B罩杯', desc: '小巧的双峰' },
-        { id: 'C', name: 'C罩杯', desc: '适中的胸围' },
-        { id: 'D', name: 'D罩杯', desc: '丰满的乳房' },
-        { id: 'E', name: 'E罩杯', desc: '巨大的双峰' },
-        { id: 'F', name: 'F罩杯', desc: '硕大的巨乳' }
+        { id: 'A', name: 'Cúp A', desc: 'Ngực phẳng phiu' },
+        { id: 'B', name: 'Cúp B', desc: 'Hai bầu nhỏ xinh' },
+        { id: 'C', name: 'Cúp C', desc: 'Vòng ngực vừa phải' },
+        { id: 'D', name: 'Cúp D', desc: 'Ngực đầy đặn' },
+        { id: 'E', name: 'Cúp E', desc: 'Hai bầu lớn' },
+        { id: 'F', name: 'Cúp F', desc: 'Ngực siêu to khổng lồ' }
     ],
     hips: [
-        { id: 'slim', name: '纤细', desc: '纤细的臀部' },
-        { id: 'petite', name: '小巧', desc: '小巧玲珑的翘臀' },
-        { id: 'average', name: '适中', desc: '匀称的臀部' },
-        { id: 'round', name: '浑圆', desc: '浑圆饱满的臀部' },
-        { id: 'plump', name: '肥硕', desc: '肥美丰腴的臀部' },
-        { id: 'huge', name: '巨臀', desc: '硕大诱人的肥臀' }
+        { id: 'slim', name: 'Mảnh Dẻo', desc: 'Hông thon gọn' },
+        { id: 'petite', name: 'Nhỏ Xinh', desc: 'Vòng hông nhỏ nhắn, cong xinh' },
+        { id: 'average', name: 'Trung Bình', desc: 'Vòng hông cân đối' },
+        { id: 'round', name: 'Tròn Trĩnh', desc: 'Vòng hông tròn trịa đầy đặn' },
+        { id: 'plump', name: 'Mập Mạp', desc: 'Hông mọng nước, béo tốt' },
+        { id: 'huge', name: 'Siêu Hông', desc: 'Vòng hông khổng lồ quyến rũ' }
     ],
     vagina: [
-        // ===== 外形分类 =====
-        { id: 'steamed_bun', name: '馒头型', desc: '【馒头型】阴阜饱满隆起，肉感十足，圆润可爱' },
-        { id: 'pink_butterfly', name: '粉蝴蝶', desc: '【粉蝴蝶】花瓣粉嫩外翻如蝶翼，娇艳欲滴' },
-        { id: 'black_butterfly', name: '黑蝴蝶', desc: '【黑蝴蝶】蝶翼舒展色泽深邃，成熟妩媚' },
-        { id: 'abalone', name: '鲍鱼型', desc: '【鲍鱼型】外缩口小巧紧致，层层褶皱如鲍鱼' },
-        { id: 'conch', name: '海螺型', desc: '【海螺型】螺旋状褶皱深邃，曲径通幽' },
-        { id: 'cherry', name: '樱桃型', desc: '【樱桃型】小巧玲珑粉嫩，娇小可人' },
-        { id: 'white_tiger', name: '白虎', desc: '【白虎】光滑无毛天生丽质，娇嫩如玉' },
-        { id: 'peach', name: '蜜桃型', desc: '【蜜桃型】丰满圆润如蜜桃，汁水充盈' },
-        { id: 'virgin_tight', name: '一线天', desc: '【一线天】紧闭如线缝隙极小，处女名器' },
-        { id: 'lotus', name: '莲花型', desc: '【莲花型】花瓣层叠如莲绽放，清雅脱俗' },
-        // ===== 内部特征分类 =====
-        { id: 'octopus_pot', name: '章鱼壶', desc: '【章鱼壶】入口紧小内部宽敞，吸附力强' },
-        { id: 'thousand_worm', name: '千蚯蚓', desc: '【千蚯蚓】内壁褶皱密布蠕动，缠绵销魂' },
-        { id: 'bead_string', name: '数珠型', desc: '【数珠型】内壁颗粒如串珠，刺激非凡' },
-        { id: 'spiral', name: '螺旋型', desc: '【螺旋型】内壁旋转纹路，紧致缠绵' },
-        { id: 'velvet', name: '天鹅绒', desc: '【天鹅绒】内壁柔软如丝绒，温柔包裹' },
-        { id: 'suction', name: '吸盘型', desc: '【吸盘型】强力吸附紧紧咬住，欲罢不能' },
-        { id: 'hot_spring', name: '温泉型', desc: '【温泉型】内部温热湿润，水量充沛' },
-        { id: 'honey_pot', name: '蜜罐型', desc: '【蜜罐型】蜜汁丰盈甜美，润滑顺畅' },
-        { id: 'deep_throat', name: '深渊型', desc: '【深渊型】穴道深邃直抵花心，深不可测' },
-        { id: 'sensitive', name: '敏感型', desc: '【敏感型】轻触即有反应，极易高潮' }
+        // ===== Phân loại ngoại hình =====
+        { id: 'steamed_bun', name: 'Kiểu Bánh Bao', desc: '【Bánh Bao】Môi lớn đầy đặn, thịt cảm giác mạnh, tròn trịa đáng yêu' },
+        { id: 'pink_butterfly', name: 'Bướm Hồng', desc: '【Bướm Hồng】Cánh hoa màu hồng nhạt mở ra như cánh bướm, mọng nước tươi tắn' },
+        { id: 'black_butterfly', name: 'Bướm Đen', desc: '【Bướm Đen】Cánh bướm bung rộng, sắc màu sâu thẳm, trưởng thành quyến rũ' },
+        { id: 'abalone', name: 'Kiểu Hàu', desc: '【Hàu】Lỗ nhỏ gọn khép kín bên ngoài, nhiều nếp gấp như hàu' },
+        { id: 'conch', name: 'Kiểu Ốc Xà Cừ', desc: '【Ốc Xà Cừ】Nếp gấp xoắn ốc sâu thẳm, khúc quanh bí ẩn' },
+        { id: 'cherry', name: 'Kiểu Cherry', desc: '【Cherry】Nhỏ nhắn xinh xắn màu hồng nhạt, đáng yêu bé bỏng' },
+        { id: 'white_tiger', name: 'Bạch Hổ', desc: '【Bạch Hổ】Mịn màng không lông, trời sinh mỹ lệ như ngọc' },
+        { id: 'peach', name: 'Kiểu Mật Đào', desc: '【Mật Đào】Đầy đặn tròn trịa như quả đào, nước dồi dào' },
+        { id: 'virgin_tight', name: 'Một Đường Trời', desc: '【Một Đường Trời】Khép kín như đường chỉ rất nhỏ, là tuyệt phẩm trinh nguyên' },
+        { id: 'lotus', name: 'Kiểu Sen', desc: '【Sen】Cánh hoa xếp lớp như sen nở, thanh nhã thoát tục' },
+        // ===== Phân loại đặc điểm bên trong =====
+        { id: 'octopus_pot', name: 'Bình Bạch Tuộc', desc: '【Bạch Tuộc】Lối vào nhỏ gọn nhưng bên trong rộng rãi, lực hút mạnh mẽ' },
+        { id: 'thousand_worm', name: 'Ngàn Giun', desc: '【Ngàn Giun】Thành trong có nhiều nếp gấp bò trườn, quyến luyến mê hồn' },
+        { id: 'bead_string', name: 'Kiểu Chuỗi Hạt', desc: '【Chuỗi Hạt】Bên trong các hạt như chuỗi ngọc trai, kích thích phi thường' },
+        { id: 'spiral', name: 'Kiểu Xoắn Ốc', desc: '【Xoắn Ốc】Hoa văn xoay tròn bên trong, khít khao quyến luyến' },
+        { id: 'velvet', name: 'Nhung', desc: '【Nhung】Bên trong mềm mại như nhung lụa, bao bọc dịu dàng' },
+        { id: 'suction', name: 'Kiểu Hút', desc: '【Hút】Lực hút mạnh mẽ ghì chặt, không muốn buông' },
+        { id: 'hot_spring', name: 'Kiểu Suối Nóng', desc: '【Suối Nóng】Bên trong ấm áp ẩm ướt, lượng nước dồi dào' },
+        { id: 'honey_pot', name: 'Kiểu Mật Tương', desc: '【Mật Tương】Nước mật ngọt ngào phong phú, trơn tru mượt mà' },
+        { id: 'deep_throat', name: 'Kiểu Vực Sâu', desc: '【Vực Sâu】Hõm sâu thẳng tới nhụy hoa, thăm thẳm không lường được' },
+        { id: 'sensitive', name: 'Kiểu Nhạy Cảm', desc: '【Nhạy Cảm】Chỉ chạm nhẹ cũng phản ứng, cực kỳ dễ đạt cao trào' }
     ]
 };
-
-// ==================== 开局特殊状态（消耗点数，与黑市联动） ====================
+// ==================== Trạng thái Khởi đầu Đặc biệt (Tiêu hao điểm, liên kết với Chợ Đen) ====================
 const StartingStatusConfig = {
-    // ========== 负面状态（给予点数） ==========
+    // ========== Trạng thái Tiêu cực (Nhận điểm) ==========
     slave_collar: {
-        id: 'slave_collar', name: '奴隶项圈', icon: '⭕', points: 15,
-        description: '脖子上戴着屈辱的项圈',
-        effect: '最大HP-10',
+        id: 'slave_collar', name: 'Vòng Cổ Nô Lệ', icon: '⭕', points: 15,
+        description: 'Đeo vòng cổ sỉ nhục trên cổ',
+        effect: 'Giảm Max HP -10',
         statusEffect: { maxHp: -10 },
         linkedBodyMod: null
     },
     chastity_belt: {
-        id: 'chastity_belt', name: '贞操带', icon: '🔒', points: 20,
-        description: '被锁上了贞操带',
-        effect: 'HP无法超过50%',
+        id: 'chastity_belt', name: 'Vòng Của Sự Trinh Tiết', icon: '🔒', points: 20,
+        description: 'Bị khóa bằng vòng trinh tiết',
+        effect: 'HP không thể vượt quá 50%',
         statusEffect: { hpCap: 0.5 },
         linkedBodyMod: null
     },
     curse_mark: {
-        id: 'curse_mark', name: '淫纹诅咒', icon: '🔮', points: 25,
-        description: '身上刻有淫靡的魔纹',
-        effect: '每次休息堕落+5',
+        id: 'curse_mark', name: 'Ấn Tỳ Nguyền Rủa', icon: '🔮', points: 25,
+        description: 'Trên người khắc có phù văn dâm mỹ',
+        effect: 'Mỗi lần nghỉ ngơi Suy thoái +5',
         statusEffect: { corruptionPerRest: 5 },
         linkedBodyMod: null
     },
     aphrodisiac: {
-        id: 'aphrodisiac', name: '残留媚药', icon: '💊', points: 10,
-        description: '体内残留着媚药',
-        effect: '攻击-2',
+        id: 'aphrodisiac', name: 'Dư Lượng Dược Liệu', icon: '💊', points: 10,
+        description: 'Trong cơ thể còn sót lại dược liệu mê tình',
+        effect: 'Tấn công -2',
         statusEffect: { attack: -2 },
         linkedBodyMod: null
     },
     branded: {
-        id: 'branded', name: '奴隶烙印', icon: '🔥', points: 15,
-        description: '身上有奴隶的烙印',
-        effect: '防御-2',
+        id: 'branded', name: 'Dấu Ấn Nô Lệ', icon: '🔥', points: 15,
+        description: 'Trên người có dấu ấn nô lệ',
+        effect: 'Phòng thủ -2',
         statusEffect: { defense: -2 },
         linkedBodyMod: null
     },
     debt_slave: {
-        id: 'debt_slave', name: '债务奴隶', icon: '📜', points: 20,
-        description: '背负巨额债务',
-        effect: '初始金币-50',
+        id: 'debt_slave', name: 'Nô Lệ Nợ Nần', icon: '📜', points: 20,
+        description: 'Mang trên mình món nợ khổng lồ',
+        effect: 'Vàng khởi điểm -50',
         statusEffect: { gold: -50 },
         linkedBodyMod: null
     },
-
-    // ========== 黑市同款状态（消耗点数） ==========
-    // 魔族系
+    // ========== Trạng thái đồng bộ Chợ Đen (Tiêu hao điểm) ==========
+    // Hệ Ma Tộc
     start_succubus: {
-        id: 'start_succubus', name: '魅魔化', icon: '😈', points: -40,
-        description: '天生的魅魔体质',
-        effect: '堕落+50, 攻+3, 防+3',
+        id: 'start_succubus', name: 'Mị Ma Hóa', icon: '😈', points: -40,
+        description: 'Thể chất Mị Ma bẩm sinh',
+        effect: 'Suy thoái +50, Tấn công +3, Phòng thủ +3',
         statusEffect: { corruption: 50, attack: 3, defense: 3 },
         linkedBodyMod: 'succubus'
     },
     start_demon_blood: {
-        id: 'start_demon_blood', name: '淫魔血脉', icon: '🩸', points: -50,
-        description: '体内流淌着淫魔血液',
-        effect: '堕落+60, 攻+5, 防+5',
+        id: 'start_demon_blood', name: 'Huyết Mạch Dâm Ma', icon: '🩸', points: -50,
+        description: 'Trong cơ thể chảy dòng máu Dâm Ma',
+        effect: 'Suy thoái +60, Tấn công +5, Phòng thủ +5',
         statusEffect: { corruption: 60, attack: 5, defense: 5 },
-        linkedBodyMod: 'demon_blood'
+        linkedBodyMod: null // Giữ nguyên vì không có mod cơ thể tương ứng rõ ràng (chỉ là buff)
     },
     start_demon_tail: {
-        id: 'start_demon_tail', name: '魔族尾巴', icon: '🦯', points: -25,
-        description: '天生拥有魔族尾巴',
-        effect: '堕落+25, 攻+2, 防+2',
+        id: 'start_demon_tail', name: 'Đuôi Ma Tộc', icon: '🦯', points: -25,
+        description: 'Bẩm sinh sở hữu đuôi ma tộc',
+        effect: 'Suy thoái +25, Tấn công +2, Phòng thủ +2',
         statusEffect: { corruption: 25, attack: 2, defense: 2 },
-        linkedBodyMod: 'demon_tail'
+        linkedBodyMod: null
     },
     start_demon_horns: {
-        id: 'start_demon_horns', name: '魔族犄角', icon: '🦌', points: -25,
-        description: '头顶天生有犄角',
-        effect: '堕落+30, 攻+4',
+        id: 'start_demon_horns', name: 'Sừng Ma Tộc', icon: '🦌', points: -25,
+        description: 'Bẩm sinh có sừng trên đầu',
+        effect: 'Suy thoái +30, Tấn công +4',
         statusEffect: { corruption: 30, attack: 4 },
-        linkedBodyMod: 'demon_horns'
+        linkedBodyMod: null
     },
     start_demon_wings: {
-        id: 'start_demon_wings', name: '魔族翅膀', icon: '🦇', points: -35,
-        description: '天生拥有翅膀',
-        effect: '堕落+35, 攻+3, 防+3',
+        id: 'start_demon_wings', name: 'Cánh Ma Tộc', icon: '🦇', points: -35,
+        description: 'Bẩm sinh sở hữu đôi cánh',
+        effect: 'Suy thoái +35, Tấn công +3, Phòng thủ +3',
         statusEffect: { corruption: 35, attack: 3, defense: 3 },
-        linkedBodyMod: 'demon_wings'
+        linkedBodyMod: null
     },
-
-    // 胸部系
+    // Hệ Ngực
     start_nipple_ring: {
-        id: 'start_nipple_ring', name: '乳环', icon: '💎', points: -20,
-        description: '乳头上的银色环饰',
-        effect: '堕落+20, H伤害+6',
+        id: 'start_nipple_ring', name: 'Vòng Núm', icon: '💎', points: -20,
+        description: 'Chiếc vòng bạc trên đầu ngực',
+        effect: 'Suy thoái +20, Sát thương H +6',
         statusEffect: { corruption: 20, hDamageBonus: 6 },
         linkedBodyMod: 'nipple_ring'
     },
     start_lactation: {
-        id: 'start_lactation', name: '泌乳体质', icon: '🍼', points: -25,
-        description: '天生会分泌乳汁',
-        effect: '堕落+30, 每回合+1HP, 防+2',
+        id: 'start_lactation', name: 'Thể Chất Dưỡng Lậu', icon: '🍼', points: -25,
+        description: 'Bẩm sinh tiết sữa',
+        effect: 'Suy thoái +30, Mỗi lượt +1HP, Phòng thủ +2',
         statusEffect: { corruption: 30, hpPerTurn: 1, defense: 2 },
-        linkedBodyMod: 'lactation'
+        linkedBodyMod: null
     },
     start_mega_breast: {
-        id: 'start_mega_breast', name: '天然巨乳', icon: '🎈', points: -35,
-        description: '天生的巨乳',
-        effect: '堕落+40, 防+5, 攻-1',
+        id: 'start_mega_breast', name: 'Ngực Khổng Lồ Thiên Nhiên', icon: '🎈', points: -35,
+        description: 'Ngực to khổng lồ bẩm sinh',
+        effect: 'Suy thoái +40, Phòng thủ +5, Tấn công -1',
         statusEffect: { corruption: 40, defense: 5, attack: -1 },
-        linkedBodyMod: 'mega_breast'
+        linkedBodyMod: null
     },
-
-    // 下体系
+    // Hệ Hạ Thân
     start_pussy_enhance: {
-        id: 'start_pussy_enhance', name: '名器', icon: '🌸', points: -35,
-        description: '天生的名器',
-        effect: '堕落+40, H伤害+15',
+        id: 'start_pussy_enhance', name: 'Tâm Phách Danh Khí', icon: '🌸', points: -35,
+        description: 'Danh khí bẩm sinh',
+        effect: 'Suy thoái +40, Sát thương H +15',
         statusEffect: { corruption: 40, hDamageBonus: 15 },
-        linkedBodyMod: 'pussy_enhance'
+        linkedBodyMod: null
     },
     start_anal_develop: {
-        id: 'start_anal_develop', name: '后穴敏感', icon: '🍑', points: -30,
-        description: '后穴天生敏感',
-        effect: '堕落+35, 防+3',
+        id: 'start_anal_develop', name: 'Hậu Huyệt Phát Triển', icon: '🍑', points: -30,
+        description: 'Hậu huyệt bẩm sinh nhạy cảm',
+        effect: 'Suy thoái +35, Phòng thủ +3',
         statusEffect: { corruption: 35, defense: 3 },
         linkedBodyMod: 'anal_develop'
     },
 
-    // 体质系
+    start_anal_develop: {
+        id: 'start_anal_develop', name: 'Hậu Huyệt Nhạy Cảm', icon: '🍑', points: -30,
+        description: 'Hậu huyệt bẩm sinh nhạy cảm',
+        effect: 'Suy thoái +35, Phòng thủ +3',
+        statusEffect: { corruption: 35, defense: 3 },
+        linkedBodyMod: 'anal_develop'
+    },
+    // Hệ Thể Chất
     start_sensitive_body: {
-        id: 'start_sensitive_body', name: '敏感体质', icon: '💗', points: -25,
-        description: '天生的敏感体质',
-        effect: '堕落+25, 每回合+2HP',
+        id: 'start_sensitive_body', name: 'Thể Chất Nhạy Cảm', icon: '💗', points: -25,
+        description: 'Thể chất nhạy cảm bẩm sinh',
+        effect: 'Suy thoái +25, Mỗi lượt +2HP',
         statusEffect: { corruption: 25, hpPerTurn: 2 },
         linkedBodyMod: 'sensitive_body'
     },
     start_heat_body: {
-        id: 'start_heat_body', name: '发情体质', icon: '🔥', points: -30,
-        description: '天生容易发情',
-        effect: '堕落+35, 攻+4',
+        id: 'start_heat_body', name: 'Thể Chất Phát Tình', icon: '🔥', points: -30,
+        description: 'Bẩm sinh dễ phát tình',
+        effect: 'Suy thoái +35, Tấn công +4',
         statusEffect: { corruption: 35, attack: 4 },
         linkedBodyMod: 'heat_body'
     },
     start_body_enhance: {
-        id: 'start_body_enhance', name: '强壮体质', icon: '💪', points: -25,
-        description: '天生强壮',
-        effect: '堕落+20, HP+15',
+        id: 'start_body_enhance', name: 'Thể Chất Cường Tráng', icon: '💪', points: -25,
+        description: 'Bẩm sinh cường tráng',
+        effect: 'Suy thoái +20, HP +15',
         statusEffect: { corruption: 20, maxHp: 15 },
         linkedBodyMod: 'body_enhance'
     },
     start_elastic_body: {
-        id: 'start_elastic_body', name: '柔韧身体', icon: '🤸', points: -25,
-        description: '天生柔软灵活',
-        effect: '堕落+25, 防+4',
+        id: 'start_elastic_body', name: 'Cơ Thể Dẻo Dai', icon: '🤸', points: -25,
+        description: 'Bẩm sinh mềm mại linh hoạt',
+        effect: 'Suy thoái +25, Phòng thủ +4',
         statusEffect: { corruption: 25, defense: 4 },
         linkedBodyMod: 'elastic_body'
     },
     start_regeneration: {
-        id: 'start_regeneration', name: '再生能力', icon: '♻️', points: -40,
-        description: '天生的再生能力',
-        effect: '堕落+35, 每回合+3HP',
+        id: 'start_regeneration', name: 'Năng Lực Tái Sinh', icon: '♻️', points: -40,
+        description: 'Khả năng tái sinh bẩm sinh',
+        effect: 'Suy thoái +35, Mỗi lượt +3HP',
         statusEffect: { corruption: 35, hpPerTurn: 3 },
         linkedBodyMod: 'regeneration'
     },
     start_pain_pleasure: {
-        id: 'start_pain_pleasure', name: '受虐体质', icon: '😵', points: -30,
-        description: '痛苦会转化为快感',
-        effect: '堕落+40, 受伤+4HP, 防-2',
+        id: 'start_pain_pleasure', name: 'Thể Chất Thích Đau', icon: '😵', points: -30,
+        description: 'Đau đớn chuyển hóa thành khoái cảm',
+        effect: 'Suy thoái +40, Nhận sát thương +4HP, Phòng thủ -2',
         statusEffect: { corruption: 40, hpOnHit: 4, defense: -2 },
         linkedBodyMod: 'pain_pleasure'
     },
-
-    // 特殊系
+    // Hệ Đặc Biệt
     start_pheromone_gland: {
-        id: 'start_pheromone_gland', name: '媚香体质', icon: '🌺', points: -25,
-        description: '散发迷人香气',
-        effect: '堕落+30, 敌人攻击-2',
+        id: 'start_pheromone_gland', name: 'Thể Chất Hương Lệ', icon: '🌺', points: -25,
+        description: 'Tỏa ra hương thơm quyến rũ',
+        effect: 'Suy thoái +30, Tấn công địch -2',
         statusEffect: { corruption: 30, enemyAttackReduce: 2 },
         linkedBodyMod: 'pheromone_gland'
     },
     start_pleasure_nerve: {
-        id: 'start_pleasure_nerve', name: '快感神经', icon: '⚡', points: -35,
-        description: '痛苦转化为快感',
-        effect: '堕落+45, 受伤+3HP',
+        id: 'start_pleasure_nerve', name: 'Dây Thần Kinh Khoái Cảm', icon: '⚡', points: -35,
+        description: 'Đau đớn chuyển hóa thành khoái cảm',
+        effect: 'Suy thoái +45, Nhận sát thương +3HP',
         statusEffect: { corruption: 45, hpOnHit: 3 },
         linkedBodyMod: 'pleasure_nerve'
     },
     start_tentacle_implant: {
-        id: 'start_tentacle_implant', name: '触手共生', icon: '🐙', points: -40,
-        description: '体内有触手器官',
-        effect: '堕落+45, 攻+6',
+        id: 'start_tentacle_implant', name: 'Cấy Ghép Xúc Thủ', icon: '🐙', points: -40,
+        description: 'Trong cơ thể có cơ quan xúc thủ',
+        effect: 'Suy thoái +45, Tấn công +6',
         statusEffect: { corruption: 45, attack: 6 },
         linkedBodyMod: 'tentacle_implant'
     },
     start_charm_voice: {
-        id: 'start_charm_voice', name: '魅音', icon: '🎤', points: -30,
-        description: '天生的魅惑嗓音',
-        effect: '堕落+30, 敌攻-3, 攻+2',
+        id: 'start_charm_voice', name: 'Âm Thanh Quyến Rũ', icon: '🎤', points: -30,
+        description: 'Giọng nói quyến rũ bẩm sinh',
+        effect: 'Suy thoái +30, Tấn công địch -3, Tấn công +2',
         statusEffect: { corruption: 30, enemyAttackReduce: 3, attack: 2 },
         linkedBodyMod: 'charm_voice'
     },
     start_lewd_tattoo: {
-        id: 'start_lewd_tattoo', name: '天生淫纹', icon: '🔯', points: -25,
-        description: '出生就带有淫纹',
-        effect: '堕落+30, H伤害+10',
+        id: 'start_lewd_tattoo', name: 'Hắc Văn Dâm Mỹ', icon: '🔯', points: -25,
+        description: 'Bẩm sinh mang hình xăm dâm mỹ',
+        effect: 'Suy thoái +30, Sát thương H +10',
         statusEffect: { corruption: 30, hDamageBonus: 10 },
         linkedBodyMod: 'lewd_tattoo'
     },
     start_charm_body: {
-        id: 'start_charm_body', name: '天生媚体', icon: '💃', points: -35,
-        description: '天生充满魅力的身体',
-        effect: '堕落+40, 攻+5',
+        id: 'start_charm_body', name: 'Thể Chất Mị Hoặc', icon: '💃', points: -35,
+        description: 'Cơ thể bẩm sinh đầy sức hút',
+        effect: 'Suy thoái +40, Tấn công +5',
         statusEffect: { corruption: 40, attack: 5 },
         linkedBodyMod: 'charm_body'
     }
 };
 
-// ==================== 开局经历配置 ====================
-// 正点数 = 艰难背景(给予点数), 负点数 = 有利背景(消耗点数)
+// ==================== Cấu Hình Gốc (Origin) ====================
+// Điểm Dương = Bối cảnh khó khăn (Cấp điểm), Điểm Âm = Bối cảnh lợi thế (Tiêu điểm)
 const OriginConfig = {
     slum: {
-        id: 'slum', name: '贫民窟孤儿', icon: '🏚️', points: 10,
-        description: '在贫民窟长大的孤儿，见惯了世态炎凉。',
-        effect: '初始金币-30，初始HP+5',
+        id: 'slum', name: 'Trẻ Mồ Côi Khu Phố', icon: '🏚️', points: 10,
+        description: 'Mồ côi lớn lên trong khu ổ chuột, chứng kiến vô vàn thăng trầm thế sự.',
+        effect: 'Tiền vàng ban đầu -30, HP ban đầu +5',
         statMods: { gold: -30, hp: 5, maxHp: 5 }
     },
     debt: {
-        id: 'debt', name: '背负债务', icon: '💰', points: 20,
-        description: '欠下巨额债务，被迫来此冒险还债。',
-        effect: '初始金币-50，攻击+1',
+        id: 'debt', name: 'Mang Nợ Nần', icon: '💰', points: 20,
+        description: 'Gánh trên vai khoản nợ khổng lồ, buộc phải đến đây phiêu lưu trả nợ.',
+        effect: 'Tiền vàng ban đầu -50, Tấn công +1',
         statMods: { gold: -50, attack: 1 }
     },
     slave: {
-        id: 'slave', name: '逃亡奴隶', icon: '⛓️', points: 25,
-        description: '从主人身边逃跑的奴隶，正在被追杀。',
-        effect: '初始金币-60，防御+2，堕落+10',
+        id: 'slave', name: 'Nô Lệ Đào Thoát', icon: '⛓️', points: 25,
+        description: 'Tên nô lệ trốn chạy khỏi chủ nhân, đang bị truy sát.',
+        effect: 'Tiền vàng ban đầu -60, Phòng thủ +2, Suy thoái +10',
         statMods: { gold: -60, defense: 2, corruption: 10 }
     },
     fallen_noble: {
-        id: 'fallen_noble', name: '落魄贵族', icon: '👑', points: -10,
-        description: '曾经的贵族小姐，家道中落。',
-        effect: '初始金币+20，无战斗经验',
+        id: 'fallen_noble', name: 'Quý Tộc Sa Ngã', icon: '👑', points: -10,
+        description: 'Tiểu thư quý tộc trước đây, gia cảnh đã suy tàn.',
+        effect: 'Tiền vàng ban đầu +20, Không có kinh nghiệm chiến đấu',
         statMods: { gold: 20 }
     },
     brothel: {
-        id: 'brothel', name: '青楼出身', icon: '🏮', points: -15,
-        description: '从青楼中逃出，熟悉风月之事。',
-        effect: '堕落+20，H伤害+5',
+        id: 'brothel', name: 'Xuất Thân Từ Lầu Các', icon: '🏮', points: -15,
+        description: 'Trốn thoát khỏi lầu các, quen thuộc với chuyện phong lưu.',
+        effect: 'Suy thoái +20, Sát thương H +5',
         statMods: { corruption: 20, hDamageBonus: 5 }
     },
     cursed: {
-        id: 'cursed', name: '诅咒缠身', icon: '☠️', points: 30,
-        description: '身上背负着神秘的诅咒。',
-        effect: '最大HP-15，每场战斗堕落+2',
+        id: 'cursed', name: 'Bị Lời Nguyền Ám Ảnh', icon: '☠️', points: 30,
+        description: 'Mang trên người một lời nguyền bí ẩn.',
+        effect: 'HP tối đa -15, Suy thoái +2 mỗi trận chiến',
         statMods: { maxHp: -15, hp: -15, corruptionPerBattle: 2 }
     },
     adventurer: {
-        id: 'adventurer', name: '新人冒险者', icon: '🎒', points: 0,
-        description: '怀揣梦想的新人冒险者。',
-        effect: '无特殊效果',
+        id: 'adventurer', name: 'Mạo Hiểm Giả Tân Thủ', icon: '🎒', points: 0,
+        description: 'Người mạo hiểm giả mang trong mình ước mơ.',
+        effect: 'Không có hiệu ứng đặc biệt',
         statMods: {}
     },
     witch: {
-        id: 'witch', name: '被驱逐的魔女', icon: '🧙‍♀️', points: -20,
-        description: '因为某些原因被村庄驱逐的魔女。',
-        effect: '费用+1，HP-10',
+        id: 'witch', name: 'Phù Thủy Bị Trục Xuất', icon: '🧙‍♀️', points: -20,
+        description: 'Phù thủy bị làng bản trục xuất vì một lý do nào đó.',
+        effect: 'Chi phí +1, HP -10',
         statMods: { energy: 1, hp: -10, maxHp: -10 }
     },
     experiment: {
-        id: 'experiment', name: '炼金实验体', icon: '⚗️', points: -25,
-        description: '从炼金术士的实验室逃出的实验体。',
-        effect: '攻击+2，防御-1，堕落+15',
+        id: 'experiment', name: 'Đối Tượng Thí Nghiệm', icon: '🧪', points: -25,
+        description: 'Đối tượng thí nghiệm trốn thoát từ phòng thí nghiệm của nhà giả kim.',
+        effect: 'Tấn công +2, Phòng thủ -1, Suy thoái +15',
         statMods: { attack: 2, defense: -1, corruption: 15 }
     },
     temple_maiden: {
-        id: 'temple_maiden', name: '堕落的圣女', icon: '⛪', points: -30,
-        description: '曾是神殿的圣女，因某种原因被逐出神殿。',
-        effect: '最大HP+10，堕落+25，初始金币+30',
+        id: 'temple_maiden', name: 'Thánh Nữ Sa Ngã', icon: '⛪', points: -30,
+        description: 'Từng là thánh nữ của đền thờ, vì một lý do nào đó đã bị trục xuất.',
+        effect: 'HP tối đa +10, Suy thoái +25, Tiền vàng ban đầu +30',
         statMods: { maxHp: 10, hp: 10, corruption: 25, gold: 30 }
     },
     assassin: {
-        id: 'assassin', name: '逃离刺客', icon: '🗡️', points: 15,
-        description: '曾是刺客公会的成员，因任务失败而被追杀。',
-        effect: '攻击+3，初始金币-40，被追杀状态',
+        id: 'assassin', name: 'Sát Thủ Đào Thoát', icon: '🗡️', points: 15,
+        description: 'Từng là thành viên của công hội sát thủ, bị truy sát sau thất bại nhiệm vụ.',
+        effect: 'Tấn công +3, Tiền vàng ban đầu -40, Trạng thái Bị Truy Sát',
         statMods: { attack: 3, gold: -40 }
     },
     merchant_daughter: {
-        id: 'merchant_daughter', name: '商人之女', icon: '🏪', points: -5,
-        description: '富商的女儿，因家族破产而流落江湖。',
-        effect: '初始金币+50，无战斗经验',
+        id: 'merchant_daughter', name: 'Con Gái Thương Nhân', icon: '🏪', points: -5,
+        description: 'Con gái của thương nhân giàu có, vì gia tộc phá sản mà lưu lạc giang hồ.',
+        effect: 'Tiền vàng ban đầu +50, Không có kinh nghiệm chiến đấu, Tấn công -1',
         statMods: { gold: 50, attack: -1 }
     },
     forest_raised: {
-        id: 'forest_raised', name: '森林养大', icon: '🌲', points: 5,
-        description: '从小被遗弃在森林，由野兽养大。',
-        effect: '攻击+2，防御+1，初始金币-30',
+        id: 'forest_raised', name: 'Lớn Lên Trong Rừng', icon: '🌲', points: 5,
+        description: 'Bị bỏ rơi từ nhỏ trong rừng, được dã thú nuôi lớn.',
+        effect: 'Tấn công +2, Phòng thủ +1, Tiền vàng ban đầu -30',
         statMods: { attack: 2, defense: 1, gold: -30 }
     },
     demon_contract: {
-        id: 'demon_contract', name: '魔族契约', icon: '📜', points: -35,
-        description: '与魔族签订了契约，获得力量但失去自由。',
-        effect: '攻击+4，堕落+30，每场战斗堕落+3',
+        id: 'demon_contract', name: 'Khế Ước Ma Tộc', icon: '📜', points: -35,
+        description: 'Ký khế ước với ma tộc, nhận được sức mạnh nhưng đánh mất tự do.',
+        effect: 'Tấn công +4, Suy thoái +30, Suy thoái +3 mỗi trận chiến',
         statMods: { attack: 4, corruption: 30, corruptionPerBattle: 3 }
     },
     war_refugee: {
-        id: 'war_refugee', name: '战争难民', icon: '🏃', points: 20,
-        description: '家乡被战火摧毁，失去一切的难民。',
-        effect: '初始金币-50，防御+2，HP+10',
+        id: 'war_refugee', name: 'Người Tị Nạn Chiến Tranh', icon: '🏃', points: 20,
+        description: 'Quê hương bị chiến hỏa tàn phá, trở thành người tị nạn không nơi nương tựa.',
+        effect: 'Tiền vàng ban đầu -50, Phòng thủ +2, HP +10',
         statMods: { gold: -50, defense: 2, hp: 10, maxHp: 10 }
     },
     circus_performer: {
-        id: 'circus_performer', name: '马戏团逃者', icon: '🎪', points: 10,
-        description: '从残酷的马戏团逃出的表演者。',
-        effect: '敏捷+1，初始金币-20，堕落+10',
+        id: 'circus_performer', name: 'Diễn Viên Rạp Xiếc', icon: '🎪', points: 10,
+        description: 'Người biểu diễn trốn thoát khỏi rạp xiếc tàn khốc.',
+        effect: 'Nhanh nhẹn +1, Tiền vàng ban đầu -20, Suy thoái +10',
         statMods: { gold: -20, corruption: 10, defense: 1 }
     },
     cult_survivor: {
-        id: 'cult_survivor', name: '邪教幸存者', icon: '🔮', points: 25,
-        description: '从邪教祭祀中侥幸逃脱的幸存者。',
-        effect: '堕落+35，HP-10，神秘抗性',
+        id: 'cult_survivor', name: 'Người Sống Sót Của Giáo Phái', icon: '🔮', points: 25,
+        description: 'May mắn thoát khỏi lễ hiến tế của giáo phái.',
+        effect: 'Suy thoái +35, HP -10, Kháng Thần Bí',
         statMods: { corruption: 35, hp: -10, maxHp: -10 }
     },
     royal_spy: {
-        id: 'royal_spy', name: '皇家密探', icon: '🎭', points: -15,
-        description: '曾是皇家密探，因知晓太多秘密而被灭口。',
-        effect: '攻击+2，初始金币+25，被追杀状态',
+        id: 'royal_spy', name: 'Gián Điệp Hoàng Gia', icon: '🎭', points: -15,
+        description: 'Từng là gián điệp hoàng gia, bị ám sát vì biết quá nhiều bí mật.',
+        effect: 'Tấn công +2, Tiền vàng ban đầu +25, Trạng thái Bị Truy Sát',
         statMods: { attack: 2, gold: 25 }
     },
     gladiator: {
-        id: 'gladiator', name: '角斗士奴隶', icon: '⚔️', points: 15,
-        description: '曾是竞技场的角斗士，通过血腥战斗求生。',
-        effect: '攻击+3，防御+1，初始金币-40，堕落+10',
+        id: 'gladiator', name: 'Nô Lệ Đấu Trường', icon: '⚔️', points: 15,
+        description: 'Từng là đấu sĩ tại đấu trường, sống sót bằng những trận chiến đẫm máu.',
+        effect: 'Tấn công +3, Phòng thủ +1, Tiền vàng ban đầu -40, Suy thoái +10',
         statMods: { attack: 3, defense: 1, gold: -40, corruption: 10 }
     },
     shrine_servant: {
-        id: 'shrine_servant', name: '神社巫女', icon: '⛩️', points: -10,
-        description: '神社的巫女，因神社被毁而流浪。',
-        effect: '最大HP+5，初始金币+15，堕落-5',
+        id: 'shrine_servant', name: 'Người Phục Vụ Đền Thờ', icon: '⛩️', points: -10,
+        description: 'Thần nữ của đền thờ, nay lưu lạc sau khi đền bị hủy diệt.',
+        effect: 'HP tối đa +5, Tiền vàng ban đầu +15, Suy thoái -5',
         statMods: { maxHp: 5, hp: 5, gold: 15, corruption: -5 }
     },
     pirate_captive: {
-        id: 'pirate_captive', name: '海盗俘虏', icon: '🏴‍☠️', points: 15,
-        description: '被海盗掳走后逃脱的俘虏。',
-        effect: '初始金币-30，防御+2，堕落+15',
+        id: 'pirate_captive', name: 'Tù Binh Hải Tặc', icon: '🏴‍☠️', points: 15,
+        description: 'Tù binh bị hải tặc bắt giữ rồi trốn thoát.',
+        effect: 'Tiền vàng ban đầu -30, Phòng thủ +2, Suy thoái +15',
         statMods: { gold: -30, defense: 2, corruption: 15 }
     },
     noble_maid: {
-        id: 'noble_maid', name: '贵族侍女', icon: '🎀', points: 5,
-        description: '曾服务于贵族家庭的侍女，因主人倒台而失业。',
-        effect: '初始金币-10，堕落+5，了解贵族社交',
+        id: 'noble_maid', name: 'Cô Thị Nữ Quý Tộc', icon: '🎀', points: 5,
+        description: 'Từng phục vụ trong gia đình quý tộc, thất nghiệp sau khi chủ nhân sụp đổ.',
+        effect: 'Tiền vàng ban đầu -10, Suy thoái +5, Am hiểu giao tế giới quý tộc',
         statMods: { gold: -10, corruption: 5 }
     },
     monster_child: {
-        id: 'monster_child', name: '魔物之子', icon: '👹', points: -40,
-        description: '人类与魔物结合所生的混血儿。',
-        effect: '攻击+5，堕落+40，被歧视状态',
+        id: 'monster_child', name: 'Hỗn Huyết Ma Vật', icon: '👹', points: -40,
+        description: 'Con lai giữa người và ma vật.',
+        effect: 'Tấn công +5, Suy thoái +40, Trạng thái Bị Kỳ Thị',
         statMods: { attack: 5, corruption: 40 }
     },
     alchemist_apprentice: {
-        id: 'alchemist_apprentice', name: '炼金学徒', icon: '🧪', points: -10,
-        description: '炼金术士的学徒，因师父去世而独自流浪。',
-        effect: '初始金币+20，最大HP-5',
+        id: 'alchemist_apprentice', name: 'Học Viên Giả Kim', icon: '🧪', points: -10,
+        description: 'Học viên của nhà giả kim, lưu lạc một mình sau khi sư phụ qua đời.',
+        effect: 'Tiền vàng ban đầu +20, HP tối đa -5',
         statMods: { gold: 20, maxHp: -5, hp: -5 }
     },
     arena_champion: {
-        id: 'arena_champion', name: '竞技冠军', icon: '🏆', points: -25,
-        description: '地下竞技场的冠军，因拒绝打假比赛而被追杀。',
-        effect: '攻击+4，防御+2，初始金币-20',
+        id: 'arena_champion', name: 'Quán Quân Đấu Trường', icon: '🏆', points: -25,
+        description: 'Quán quân của đấu trường ngầm, bị truy sát vì từ chối đánh giả.',
+        effect: 'Tấn công +4, Phòng thủ +2, Tiền vàng ban đầu -20',
         statMods: { attack: 4, defense: 2, gold: -20 }
     },
     dream_wanderer: {
-        id: 'dream_wanderer', name: '梦境旅人', icon: '💫', points: 10,
-        description: '不知为何从异世界梦境中醒来的旅人。',
-        effect: '初始金币-20，神秘感知',
+        id: 'dream_wanderer', name: 'Lữ Khách Mộng Cảnh', icon: '💫', points: 10,
+        description: 'Người lữ khách tỉnh dậy từ giấc mơ dị giới không rõ lý do.',
+        effect: 'Tiền vàng ban đầu -20, Giác Quan Thần Bí',
         statMods: { gold: -20 }
     },
     sacrifice_survivor: {
-        id: 'sacrifice_survivor', name: '祭品幸存', icon: '🩸', points: 30,
-        description: '本应成为献祭的祭品，却奇迹般逃脱。',
-        effect: '堕落+40，最大HP-15，神秘印记',
+        id: 'sacrifice_survivor', name: 'Người Sống Sót Lễ Vật', icon: '🩸', points: 30,
+        description: 'Lẽ ra là vật hiến tế, nhưng lại kỳ tích thoát thân.',
+        effect: 'Suy thoái +40, HP tối đa -15, Dấu Ấn Thần Bí',
         statMods: { corruption: 40, maxHp: -15, hp: -15 }
     },
     ruined_princess: {
-        id: 'ruined_princess', name: '亡国公主', icon: '👸', points: -20,
-        description: '曾经繁华的王国一夕覆灭，公主流落民间隐姓埋名。',
-        effect: '初始金币+40，防御+2，堕落+15',
+        id: 'ruined_princess', name: 'Công Chúa Hoang Phế', icon: '👸', points: -20,
+        description: 'Vương quốc từng hưng thịnh sụp đổ trong một đêm, công chúa ẩn danh lưu lạc dân gian.',
+        effect: 'Tiền vàng ban đầu +40, Phòng thủ +2, Suy thoái +15',
         statMods: { gold: 40, defense: 2, corruption: 15 }
     }
 };
 
-// ==================== 玩家状态管理 ====================
+// ==================== Quản lý Trạng thái Người chơi ====================
 const PlayerState = {
-    profession: null,           // 职业
-    race: null,                 // 种族
-    name: '旅行者',
-    age: 18,                    // 年龄
-    hp: 70,
-    maxHp: 70,
-    energy: 3,                  // 费用点（每回合）
-    attack: 0,                  // 攻击力加成
-    defense: 0,                 // 防御力加成
-    baseArmor: 0,               // 进入战斗时的初始护甲
-    corruption: 0,              // 堕落值
-    gold: 100,                  // 金币
-    floor: 1,                   // 当前层数
-    relics: [],                 // 圣遗物列表
-    floorSnapshots: {},         // 楼层快照（用于回滚）
-    // 身体属性
+    profession: null,           // Nghề nghiệp
+    race: null,                 // Chủng tộc
+    name: 'Lữ Hành Giả',
+    age: 18,                    // Tuổi
+    hp: 70,                     // Máu hiện tại
+    maxHp: 70,                  // Máu tối đa
+    energy: 3,                  // Điểm năng lượng (mỗi lượt)
+    attack: 0,                  // Tăng sức tấn công
+    defense: 0,                 // Tăng phòng thủ
+    baseArmor: 0,               // Giáp ban đầu khi vào trận chiến
+    corruption: 0,              // Giá trị Suy thoái
+    gold: 100,                  // Tiền vàng
+    floor: 1,                   // Tầng hiện tại
+    relics: [],                 // Danh sách Thánh di vật
+    floorSnapshots: {},         // Ảnh chụp nhanh tầng (dùng để hoàn tác)
+    // Thuộc tính cơ thể
     bodyAttributes: {
-        height: null,
-        weight: null,
-        chest: null,
-        hips: null,
-        vagina: null
+        height: null,             // Chiều cao
+        weight: null,             // Cân nặng
+        chest: null,              // Ngực
+        hips: null,               // Hông
+        vagina: null              // Âm đạo
     },
-    // 开局经历
+    // Kinh nghiệm khởi đầu
     origin: null,
-    // 开局特殊状态（与黑市联动）
+    // Trạng thái đặc biệt khi bắt đầu (liên kết với Chợ Đen)
     startingStatuses: [],
-
-    // 初始化玩家（支持完整角色创建数据）
+    // Khởi tạo người chơi (hỗ trợ dữ liệu tạo nhân vật hoàn chỉnh)
     init: function (professionId, name, options = {}) {
         const prof = ProfessionConfig[professionId];
         if (!prof) {
-            console.error('[玩家] 职业不存在:', professionId);
+            console.error('[Người Chơi] Nghề nghiệp không tồn tại:', professionId);
             return;
         }
-
         this.profession = prof;
-        this.name = name || '旅行者';
+        this.name = name || 'Lữ Hành Giả';
         this.age = options.age || 18;
-
-        // 基础属性来自职业
+        // Thuộc tính cơ bản từ nghề nghiệp
         this.hp = prof.baseStats.hp;
         this.maxHp = prof.baseStats.maxHp;
         this.energy = prof.baseStats.energy;
@@ -844,8 +832,7 @@ const PlayerState = {
         this.floor = 1;
         this.relics = [];
         this.floorSnapshots = {};
-
-        // 应用种族修正
+        // Áp dụng sửa đổi của chủng tộc
         if (options.raceId && RaceConfig[options.raceId]) {
             this.race = RaceConfig[options.raceId];
             const mods = this.race.statMods;
@@ -856,13 +843,11 @@ const PlayerState = {
             this.energy += mods.energy || 0;
             this.corruption += mods.corruption || 0;
         }
-
-        // 保存身体属性
+        // Lưu thuộc tính cơ thể
         if (options.bodyAttributes) {
             this.bodyAttributes = { ...options.bodyAttributes };
         }
-
-        // 应用开局经历
+        // Áp dụng kinh nghiệm khởi đầu
         if (options.originId && OriginConfig[options.originId]) {
             this.origin = OriginConfig[options.originId];
             const mods = this.origin.statMods;
@@ -874,8 +859,7 @@ const PlayerState = {
             if (mods.energy) this.energy += mods.energy;
             if (mods.corruption) this.corruption += mods.corruption;
         }
-
-        // 应用开局特殊状态
+        // Áp dụng các trạng thái đặc biệt khi bắt đầu
         this.startingStatuses = options.startingStatuses || [];
         this.startingStatuses.forEach(statusId => {
             const status = StartingStatusConfig[statusId];
@@ -888,18 +872,15 @@ const PlayerState = {
                 if (eff.corruption) this.corruption += eff.corruption;
             }
         });
-
-        // 确保HP不超过maxHp
+        // Đảm bảo HP không vượt quá MaxHp
         if (this.hp > this.maxHp) this.hp = this.maxHp;
-        // 确保HP不低于1
+        // Đảm bảo HP không dưới 1
         if (this.hp < 1) this.hp = 1;
-        // 确保金币不为负
+        // Đảm bảo Tiền vàng không âm
         if (this.gold < 0) this.gold = 0;
-
-        console.log('[玩家] 初始化完成:', this.name, '职业:', prof.name);
+        console.log('[Người Chơi] Khởi tạo hoàn tất:', this.name, 'Nghề nghiệp:', prof.name);
     },
-
-    // 🔧 创建楼层快照（进入新楼层时调用）
+    // 🔧 Tạo ảnh chụp nhanh tầng (gọi khi vào tầng mới)
     createFloorSnapshot: function () {
         const snapshot = {
             hp: this.hp,
@@ -912,44 +893,38 @@ const PlayerState = {
         };
         this.floorSnapshots[this.floor] = snapshot;
         this.save();
-        console.log('[玩家] 创建楼层快照: 第', this.floor, '层', snapshot);
+        console.log('[Người Chơi] Tạo ảnh chụp nhanh tầng: Tầng', this.floor, ', Trạng thái:', snapshot);
     },
-
-    // 🔧 回滚到指定楼层快照
+    // 🔧 Hoàn tác về ảnh chụp nhanh tầng đích
     rollbackToFloor: function (targetFloor) {
         const snapshot = this.floorSnapshots[targetFloor];
         if (!snapshot) {
-            console.error('[玩家] 找不到第', targetFloor, '层的快照');
+            console.error('[Người Chơi] Không tìm thấy ảnh chụp nhanh của Tầng', targetFloor);
             return false;
         }
-
         this.hp = snapshot.hp;
         this.maxHp = snapshot.maxHp;
         this.gold = snapshot.gold;
         this.corruption = snapshot.corruption;
         this.relics = [...snapshot.relics];
         this.floor = targetFloor;
-
-        // 回滚卡组
+        // Hoàn tác bộ bài
         if (snapshot.deck) {
             CardDeckManager.init(snapshot.deck);
             saveCardDeck();
         }
-
-        // 删除目标楼层之后的所有快照
+        // Xóa tất cả các ảnh chụp nhanh sau tầng đích
         Object.keys(this.floorSnapshots).forEach(floor => {
             if (parseInt(floor) > targetFloor) {
                 delete this.floorSnapshots[floor];
             }
         });
-
         this.save();
         this.updateDisplay();
-        console.log('[玩家] 回滚到第', targetFloor, '层，堕落值:', this.corruption);
+        console.log('[Người Chơi] Hoàn tác về Tầng', targetFloor, ', Suy thoái:', this.corruption);
         return true;
     },
-
-    // 保存状态
+    // Lưu trạng thái
     save: function () {
         const data = {
             professionId: this.profession?.id,
@@ -968,8 +943,7 @@ const PlayerState = {
         };
         localStorage.setItem('acjt_player_state', JSON.stringify(data));
     },
-
-    // 加载状态
+    // Tải trạng thái
     load: function () {
         const saved = localStorage.getItem('acjt_player_state');
         if (saved) {
@@ -978,7 +952,7 @@ const PlayerState = {
                 if (data.professionId) {
                     this.profession = ProfessionConfig[data.professionId];
                 }
-                this.name = data.name || '旅行者';
+                this.name = data.name || 'Lữ Hành Giả';
                 this.hp = data.hp || 70;
                 this.maxHp = data.maxHp || 70;
                 this.energy = data.energy || 3;
@@ -987,67 +961,58 @@ const PlayerState = {
                 this.baseArmor = data.baseArmor || 0;
                 this.corruption = data.corruption || 0;
                 this.gold = data.gold || 100;
-                this.floor = typeof data.floor === 'number' ? data.floor : 1; // 🔧 正确处理floor=0
+                this.floor = typeof data.floor === 'number' ? data.floor : 1; // 🔧 Xử lý floor=0 đúng cách
                 this.relics = data.relics || [];
                 this.floorSnapshots = data.floorSnapshots || {};
-
-                // 🔧 优先使用主游戏的 variables.name（确保两个系统名字同步）
+                // 🔧 Đồng bộ tên với Game State chính
                 if (typeof gameState !== 'undefined' && gameState.variables?.name) {
                     this.name = gameState.variables.name;
-                    console.log('[玩家] 名字同步自主游戏:', this.name);
+                    console.log('[Người Chơi] Đồng bộ Tên từ Game Chính:', this.name);
                 }
-
-                // 🔧 根据主游戏的 variables.job（职业名称）同步职业配置
+                // 🔧 Đồng bộ nghề nghiệp với Game State chính
                 if (typeof gameState !== 'undefined' && gameState.variables?.job) {
                     const jobName = gameState.variables.job;
-                    // 在 ProfessionConfig 中查找匹配的职业（按名称匹配）
+                    // Tìm kiếm trong ProfessionConfig theo tên
                     for (const key in ProfessionConfig) {
                         if (ProfessionConfig[key].name === jobName) {
                             this.profession = ProfessionConfig[key];
-                            console.log('[玩家] 职业同步自主游戏:', jobName, '→', key);
+                            console.log('[Người Chơi] Đồng bộ Nghề nghiệp từ Game Chính:', jobName, '→', key);
                             break;
                         }
                     }
                 }
-
                 return true;
             } catch (e) {
-                console.error('[玩家] 加载状态失败:', e);
+                console.error('[Người Chơi] Tải trạng thái thất bại:', e);
             }
         }
         return false;
     },
-
-    // 更新状态栏显示
+    // Cập nhật hiển thị thanh trạng thái
     updateDisplay: function () {
         const setEl = (id, val) => {
             const el = document.getElementById(id);
             if (el) el.textContent = val;
         };
-
         const setElHtml = (id, html) => {
             const el = document.getElementById(id);
             if (el) el.innerHTML = html;
         };
-
-        // 🔧 获取诅咒效果修正
+        // 🔧 Lấy sửa đổi từ trạng thái hiệu ứng
         const mods = this.statusEffects || { energyMod: 0, attackMod: 0, defenseMod: 0, maxHpMod: 0, damageTakenMod: 0 };
-
-        // 计算实际值
+        // Tính giá trị thực tế
         const actualMaxHp = Math.max(1, this.maxHp + mods.maxHpMod);
         const actualHp = Math.min(this.hp, actualMaxHp);
         const actualEnergy = Math.max(0, this.energy + mods.energyMod);
         const actualAttack = Math.max(0, this.attack + mods.attackMod);
         const actualDefense = Math.max(0, this.defense + mods.defenseMod);
-
-        // 生成带修正的显示文本
+        // Định dạng hiển thị có sửa đổi
         const formatWithMod = (base, mod) => {
             if (mod === 0) return base.toString();
             const modStr = mod > 0 ? `<span style="color:#2ed573">+${mod}</span>` : `<span style="color:#ff4757">${mod}</span>`;
             return `${base + mod}(${modStr})`;
         };
-
-        // 更新隐藏数据容器（兼容旧逻辑）
+        // Cập nhật container dữ liệu ẩn (tương thích logic cũ)
         setEl('playerHp', `${actualHp}/${actualMaxHp}`);
         setEl('playerEnergy', actualEnergy);
         setEl('playerAttack', actualAttack);
@@ -1057,91 +1022,82 @@ const PlayerState = {
         setEl('playerGold', this.gold);
         setEl('playerFloor', this.floor);
         setEl('playerName', this.name);
-
-        // 更新内联状态栏显示（带修正）
+        // Cập nhật hiển thị thanh trạng thái nội tuyến (có sửa đổi)
         setEl('inlinePlayerName', this.name);
         setEl('inlinePlayerFloor', this.floor);
         setEl('inlinePlayerGold', this.gold);
-
-        // HP显示修正
+        // Hiển thị HP có sửa đổi
         if (mods.maxHpMod !== 0) {
             setElHtml('inlinePlayerHp', `${actualHp}/${actualMaxHp}<span style="color:#ff4757;font-size:10px">(${mods.maxHpMod})</span>`);
         } else {
             setEl('inlinePlayerHp', `${this.hp}/${this.maxHp}`);
         }
-
-        // 费用显示修正
+        // Hiển thị Năng lượng có sửa đổi
         if (mods.energyMod !== 0) {
             setElHtml('inlinePlayerEnergy', formatWithMod(this.energy, mods.energyMod));
         } else {
             setEl('inlinePlayerEnergy', this.energy);
         }
-
         setEl('inlinePlayerCorruption', this.corruption);
-
-        // 攻击显示修正
+        // Hiển thị Tấn công có sửa đổi
         if (mods.attackMod !== 0) {
             setElHtml('inlinePlayerAttack', formatWithMod(this.attack, mods.attackMod));
         } else {
             setEl('inlinePlayerAttack', this.attack);
         }
-
-        // 防御显示修正
+        // Hiển thị Phòng thủ có sửa đổi
         if (mods.defenseMod !== 0) {
             setElHtml('inlinePlayerDefense', formatWithMod(this.defense, mods.defenseMod));
         } else {
             setEl('inlinePlayerDefense', this.defense);
         }
-
         setEl('inlinePlayerArmor', this.baseArmor);
-
-        // 🔧 受伤加成显示（如果有）
+        // 🔧 Hiển thị thêm Sát thương nhận vào (nếu có)
         const damageTakenEl = document.getElementById('inlinePlayerDamageTaken');
         if (damageTakenEl) {
             if (mods.damageTakenMod > 0) {
-                damageTakenEl.innerHTML = `<span style="color:#ff4757">受伤+${mods.damageTakenMod}%</span>`;
+                damageTakenEl.innerHTML = `<span style="color:#ff4757">Nhận Sát Thương +${mods.damageTakenMod}%</span>`;
                 damageTakenEl.style.display = 'inline';
             } else {
                 damageTakenEl.style.display = 'none';
             }
         }
-
-        // 更新圣遗物数量显示
+        // Cập nhật số lượng Thánh di vật
         const relicCountEl = document.getElementById('relicCount');
         if (relicCountEl) {
             const count = this.relics?.length || 0;
-            relicCountEl.textContent = count > 0 ? `圣遗物(${count})` : '圣遗物';
+            relicCountEl.textContent = count > 0 ? `Thánh Di Vật(${count})` : 'Thánh Di Vật';
         }
-
-        // 更新城镇按钮状态（第0层可用）
+        // Cập nhật trạng thái nút Thành phố (Tầng 0 khả dụng)
         if (typeof TownSystem !== 'undefined') {
             TownSystem.updateButtons();
         }
     }
 };
 
-// ==================== 怪物配置 ====================
+
+// ==================== Cấu hình Quái vật ====================
 const MonsterConfig = {
-    // ========== 小怪 (12种) - 简单行为模式 ==========
+    // ========== Quái thường (12 loại) - Mô hình hành vi đơn giản ==========
     slime: {
-        id: 'slime', name: '史莱姆', icon: 'img/monster/monster_020.png',
+        id: 'slime', name: 'Slime', icon: 'img/monster/monster_020.png',
         hp: 30, attack: 6, defense: 1, type: 'monster',
         intentPattern: [
-            { type: 'attack', weight: 70 },
-            { type: 'defend', weight: 30 }
+            { type: 'attack', weight: 70 }, // Tấn công
+            { type: 'defend', weight: 30 }  // Phòng thủ
         ]
     },
     goblin: {
-        id: 'goblin', name: '哥布林', icon: 'img/monster/monster_017.png',
+        id: 'goblin', name: 'Goblin', icon: 'img/monster/monster_017.png',
         hp: 35, attack: 9, defense: 4, type: 'monster',
         intentPattern: [
             { type: 'attack', weight: 60 },
-            { type: 'buff', weight: 25 },
+            { type: 'buff', weight: 25 },   // Tăng ích
             { type: 'defend', weight: 15 }
         ]
     },
     skeleton: {
-        id: 'skeleton', name: '骷髅兵', icon: 'img/monster/monster_013.png',
+        id: 'skeleton', name: 'Binh xương', icon: 'img/monster/monster_013.png',
         hp: 33, attack: 10, defense: 3, type: 'monster',
         intentPattern: [
             { type: 'attack', weight: 75 },
@@ -1149,16 +1105,16 @@ const MonsterConfig = {
         ]
     },
     imp: {
-        id: 'imp', name: '小恶魔', icon: 'img/monster/monster_019.png',
+        id: 'imp', name: 'Tiểu ác quỷ', icon: 'img/monster/monster_019.png',
         hp: 27, attack: 11, defense: 2, type: 'monster',
         intentPattern: [
             { type: 'attack', weight: 65 },
-            { type: 'debuff', weight: 25 },
+            { type: 'debuff', weight: 25 }, // Giảm ích (gây hiệu ứng xấu)
             { type: 'buff', weight: 10 }
         ]
     },
     bat: {
-        id: 'bat', name: '蝙蝠群', icon: 'img/monster/monster_024.png',
+        id: 'bat', name: 'Đàn dơi', icon: 'img/monster/monster_024.png',
         hp: 23, attack: 8, defense: 2, type: 'monster',
         intentPattern: [
             { type: 'attack', weight: 80 },
@@ -1166,7 +1122,7 @@ const MonsterConfig = {
         ]
     },
     spider: {
-        id: 'spider', name: '巨型蜘蛛', icon: 'img/monster/monster_021.png',
+        id: 'spider', name: 'Nhện khổng lồ', icon: 'img/monster/monster_021.png',
         hp: 37, attack: 9, defense: 3, type: 'monster',
         intentPattern: [
             { type: 'attack', weight: 50 },
@@ -1175,16 +1131,16 @@ const MonsterConfig = {
         ]
     },
     zombie: {
-        id: 'zombie', name: '僵尸', icon: 'img/monster/monster_022.png',
+        id: 'zombie', name: 'Zombie', icon: 'img/monster/monster_022.png',
         hp: 40, attack: 8, defense: 4, type: 'monster',
         intentPattern: [
             { type: 'attack', weight: 70 },
-            { type: 'heal', weight: 20 },
+            { type: 'heal', weight: 20 },   // Hồi máu
             { type: 'defend', weight: 10 }
         ]
     },
     rat: {
-        id: 'rat', name: '鼠人', icon: 'img/monster/monster_023.png',
+        id: 'rat', name: 'Người chuột', icon: 'img/monster/monster_023.png',
         hp: 25, attack: 10, defense: 2, type: 'monster',
         intentPattern: [
             { type: 'attack', weight: 85 },
@@ -1192,7 +1148,7 @@ const MonsterConfig = {
         ]
     },
     mushroom: {
-        id: 'mushroom', name: '毒蘑菇', icon: 'img/monster/monster_025.png',
+        id: 'mushroom', name: 'Nấm độc', icon: 'img/monster/monster_025.png',
         hp: 29, attack: 7, defense: 5, type: 'monster',
         intentPattern: [
             { type: 'attack', weight: 40 },
@@ -1201,7 +1157,7 @@ const MonsterConfig = {
         ]
     },
     ghost: {
-        id: 'ghost', name: '幽灵', icon: 'img/monster/monster_026.png',
+        id: 'ghost', name: 'U linh', icon: 'img/monster/monster_026.png',
         hp: 27, attack: 12, defense: 2, type: 'monster',
         intentPattern: [
             { type: 'attack', weight: 60 },
@@ -1210,16 +1166,16 @@ const MonsterConfig = {
         ]
     },
     wolf: {
-        id: 'wolf', name: '饿狼', icon: 'img/monster/monster_027.png',
+        id: 'wolf', name: 'Sói đói', icon: 'img/monster/monster_027.png',
         hp: 33, attack: 11, defense: 3, type: 'monster',
         intentPattern: [
             { type: 'attack', weight: 70 },
-            { type: 'charge', weight: 20 },
+            { type: 'charge', weight: 20 }, // Tích lực/Vận công
             { type: 'buff', weight: 10 }
         ]
     },
     tentacle: {
-        id: 'tentacle', name: '触手怪', icon: 'img/monster/monster_028.png',
+        id: 'tentacle', name: 'Quái xúc tu', icon: 'img/monster/monster_028.png',
         hp: 35, attack: 9, defense: 4, type: 'monster', special: 'grab',
         intentPattern: [
             { type: 'attack', weight: 50 },
@@ -1228,7 +1184,7 @@ const MonsterConfig = {
         ]
     },
     minghuiMage: {
-        id: 'minghuiMage', name: '明慧法师（欢喜禅/男性）', icon: 'img/monster/monster_046.png',
+        id: 'minghuiMage', name: 'Pháp sư Minh Huệ (Hoan Hỷ Thiền/Nam)', icon: 'img/monster/monster_046.png',
         hp: 109, attack: 99, defense: 20, type: 'monster',
         intentPattern: [
             { type: 'attack', weight: 55 },
@@ -1238,9 +1194,9 @@ const MonsterConfig = {
         ]
     },
 
-    // ========== 精英怪 (15种) - 更复杂的行为模式 ==========
+    // ========== Quái tinh anh (15 loại) - Mô hình hành vi phức tạp hơn ==========
     orc: {
-        id: 'orc', name: '兽人战士', icon: 'img/monster/monster_029.png',
+        id: 'orc', name: 'Chiến binh Orc', icon: 'img/monster/monster_029.png',
         hp: 55, attack: 14, defense: 7, type: 'elite',
         intentPattern: [
             { type: 'attack', weight: 50 },
@@ -1250,7 +1206,7 @@ const MonsterConfig = {
         ]
     },
     darkMage: {
-        id: 'darkMage', name: '黑暗法师', icon: 'img/monster/monster_030.png',
+        id: 'darkMage', name: 'Pháp sư bóng tối', icon: 'img/monster/monster_030.png',
         hp: 45, attack: 17, defense: 5, type: 'elite',
         intentPattern: [
             { type: 'attack', weight: 40 },
@@ -1260,7 +1216,7 @@ const MonsterConfig = {
         ]
     },
     succubus: {
-        id: 'succubus', name: '魅魔', icon: 'img/monster/monster_001.png',
+        id: 'succubus', name: 'Succubus (Mị ma)', icon: 'img/monster/monster_001.png',
         hp: 50, attack: 12, defense: 6, type: 'elite', special: 'seduce',
         intentPattern: [
             { type: 'attack', weight: 35 },
@@ -1270,7 +1226,7 @@ const MonsterConfig = {
         ]
     },
     minotaur: {
-        id: 'minotaur', name: '牛头人', icon: 'img/monster/monster_031.png',
+        id: 'minotaur', name: 'Minotaur (Ngưu đầu nhân)', icon: 'img/monster/monster_031.png',
         hp: 65, attack: 16, defense: 8, type: 'elite',
         intentPattern: [
             { type: 'attack', weight: 45 },
@@ -1280,7 +1236,7 @@ const MonsterConfig = {
         ]
     },
     vampire: {
-        id: 'vampire', name: '吸血鬼', icon: 'img/monster/monster_032.png',
+        id: 'vampire', name: 'Ma cà rồng', icon: 'img/monster/monster_032.png',
         hp: 53, attack: 13, defense: 6, type: 'elite', special: 'lifesteal',
         intentPattern: [
             { type: 'attack', weight: 50 },
@@ -1290,7 +1246,7 @@ const MonsterConfig = {
         ]
     },
     harpy: {
-        id: 'harpy', name: '鹰身女妖', icon: 'img/monster/monster_002.png',
+        id: 'harpy', name: 'Harpy (Yêu nữ chim ưng)', icon: 'img/monster/monster_002.png',
         hp: 43, attack: 15, defense: 4, type: 'elite',
         intentPattern: [
             { type: 'attack', weight: 55 },
@@ -1299,7 +1255,7 @@ const MonsterConfig = {
         ]
     },
     golem: {
-        id: 'golem', name: '石像鬼', icon: 'img/monster/monster_003.png',
+        id: 'golem', name: 'Gargoyle (Ác quỷ đá)', icon: 'img/monster/monster_003.png',
         hp: 75, attack: 12, defense: 10, type: 'elite',
         intentPattern: [
             { type: 'attack', weight: 40 },
@@ -1308,7 +1264,7 @@ const MonsterConfig = {
         ]
     },
     slimeQueen: {
-        id: 'slimeQueen', name: '史莱姆女王', icon: 'img/monster/monster_004.png',
+        id: 'slimeQueen', name: 'Nữ hoàng Slime', icon: 'img/monster/monster_004.png',
         hp: 60, attack: 11, defense: 7, type: 'elite', special: 'split',
         intentPattern: [
             { type: 'attack', weight: 40 },
@@ -1318,7 +1274,7 @@ const MonsterConfig = {
         ]
     },
     darkKnight: {
-        id: 'darkKnight', name: '黑暗骑士', icon: 'img/monster/monster_005.png',
+        id: 'darkKnight', name: 'Kỵ sĩ bóng đêm', icon: 'img/monster/monster_005.png',
         hp: 63, attack: 15, defense: 9, type: 'elite',
         intentPattern: [
             { type: 'attack', weight: 45 },
@@ -1328,7 +1284,7 @@ const MonsterConfig = {
         ]
     },
     lamia: {
-        id: 'lamia', name: '蛇女', icon: 'img/monster/monster_006.png',
+        id: 'lamia', name: 'Lamia (Xà nữ)', icon: 'img/monster/monster_006.png',
         hp: 57, attack: 13, defense: 6, type: 'elite', special: 'poison',
         intentPattern: [
             { type: 'attack', weight: 40 },
@@ -1337,7 +1293,7 @@ const MonsterConfig = {
         ]
     },
     werewolf: {
-        id: 'werewolf', name: '狼人', icon: 'img/monster/monster_007.png',
+        id: 'werewolf', name: 'Người sói', icon: 'img/monster/monster_007.png',
         hp: 60, attack: 16, defense: 6, type: 'elite',
         intentPattern: [
             { type: 'attack', weight: 50 },
@@ -1346,7 +1302,7 @@ const MonsterConfig = {
         ]
     },
     dullahan: {
-        id: 'dullahan', name: '无头骑士', icon: 'img/monster/monster_008.png',
+        id: 'dullahan', name: 'Kỵ sĩ không đầu', icon: 'img/monster/monster_008.png',
         hp: 67, attack: 14, defense: 8, type: 'elite',
         intentPattern: [
             { type: 'attack', weight: 45 },
@@ -1355,7 +1311,7 @@ const MonsterConfig = {
         ]
     },
     banshee: {
-        id: 'banshee', name: '报丧女妖', icon: 'img/monster/monster_009.png',
+        id: 'banshee', name: 'Banshee (Yêu nữ báo tử)', icon: 'img/monster/monster_009.png',
         hp: 47, attack: 18, defense: 4, type: 'elite', special: 'fear',
         intentPattern: [
             { type: 'attack', weight: 40 },
@@ -1364,7 +1320,7 @@ const MonsterConfig = {
         ]
     },
     darkElf: {
-        id: 'darkElf', name: '暗精灵', icon: 'img/monster/monster_010.png',
+        id: 'darkElf', name: 'Hắc Tinh Linh', icon: 'img/monster/monster_010.png',
         hp: 50, attack: 15, defense: 5, type: 'elite',
         intentPattern: [
             { type: 'attack', weight: 50 },
@@ -1373,7 +1329,7 @@ const MonsterConfig = {
         ]
     },
     demonGuard: {
-        id: 'demonGuard', name: '恶魔守卫', icon: 'img/monster/monster_011.png',
+        id: 'demonGuard', name: 'Vệ binh ác quỷ', icon: 'img/monster/monster_011.png',
         hp: 70, attack: 13, defense: 9, type: 'elite',
         intentPattern: [
             { type: 'attack', weight: 40 },
@@ -1383,7 +1339,7 @@ const MonsterConfig = {
         ]
     },
     rotRootFiend: {
-        id: 'rotRootFiend', name: '腐根节肢魔', icon: 'img/monster/monster_049.png',
+        id: 'rotRootFiend', name: 'Ma chân đốt rễ thối', icon: 'img/monster/monster_049.png',
         hp: 62, attack: 14, defense: 8, type: 'elite', special: 'poison',
         intentPattern: [
             { type: 'attack', weight: 40 },
@@ -1393,30 +1349,30 @@ const MonsterConfig = {
         ]
     },
 
-    // ========== Boss (12种) - 复杂行为 + 特殊机制 ==========
-    // 魔族系
+    // ========== Boss (12 loại) - Hành vi phức tạp + Cơ chế đặc biệt ==========
+    // Hệ Ma tộc
     demonLord: {
-        id: 'demonLord', name: '恶魔领主', icon: 'img/monster/monster_033.png',
+        id: 'demonLord', name: 'Ma Vương', icon: 'img/monster/monster_033.png',
         hp: 105, attack: 20, defense: 10, type: 'boss',
-        desc: '地狱的统治者，掌控黑暗之力',
+        desc: 'Kẻ thống trị địa ngục, thao túng sức mạnh bóng tối',
         intentPattern: [
             { type: 'attack', weight: 40 },
             { type: 'charge', weight: 25 },
             { type: 'buff', weight: 20 },
-            { type: 'special', weight: 15 }
+            { type: 'special', weight: 15 } // Kỹ năng đặc biệt
         ],
         specialMechanic: {
             id: 'enrage',
-            name: '地狱狂怒',
-            description: '血量低于50%时进入狂暴状态，攻击力+50%',
+            name: 'Địa Ngục Cuồng Nộ',
+            description: 'Khi HP dưới 50% sẽ vào trạng thái cuồng bạo, tấn công +50%',
             trigger: 'hpBelow50',
             effect: { attackBonus: 0.5 }
         }
     },
     lilith: {
-        id: 'lilith', name: '高等魅魔', icon: 'img/monster/monster_034.png',
+        id: 'lilith', name: 'Succubus Cao Cấp (Lilith)', icon: 'img/monster/monster_034.png',
         hp: 115, attack: 24, defense: 10, type: 'boss', special: 'charm',
-        desc: '最初的魅魔，诱惑之母',
+        desc: 'Mị ma nguyên thủy, mẹ của mọi sự cám dỗ',
         intentPattern: [
             { type: 'attack', weight: 30 },
             { type: 'debuff', weight: 30 },
@@ -1425,17 +1381,17 @@ const MonsterConfig = {
         ],
         specialMechanic: {
             id: 'charm',
-            name: '魅惑',
-            description: '每3回合释放魅惑，随机打出玩家1张手牌',
+            name: 'Mê Hoặc',
+            description: 'Mỗi 3 lượt giải phóng mê hoặc, buộc người chơi đánh ra 1 lá bài ngẫu nhiên',
             trigger: 'turnCooldown',
             cooldown: 3,
             effect: { type: 'forcePlayCard' }
         }
     },
     succubusQueen: {
-        id: 'succubusQueen', name: '魅魔女王', icon: 'img/monster/monster_035.png',
+        id: 'succubusQueen', name: 'Nữ Hoàng Mị Ma', icon: 'img/monster/monster_035.png',
         hp: 100, attack: 22, defense: 8, type: 'boss', special: 'drain',
-        desc: '魅魔一族的统领，吸取生命精华',
+        desc: 'Thống lĩnh tộc Mị ma, chuyên hấp thụ tinh hoa sinh mệnh',
         intentPattern: [
             { type: 'attack', weight: 35 },
             { type: 'debuff', weight: 25 },
@@ -1444,18 +1400,18 @@ const MonsterConfig = {
         ],
         specialMechanic: {
             id: 'lifeSteal',
-            name: '生命汲取',
-            description: '每次攻击恢复造成伤害的30%生命',
+            name: 'Hút Sinh Mệnh',
+            description: 'Mỗi đòn tấn công hồi máu bằng 30% sát thương gây ra',
             trigger: 'onAttack',
             effect: { healPercent: 0.3 }
         }
     },
 
-    // 龙族系
+    // Hệ Long tộc
     dragonQueen: {
-        id: 'dragonQueen', name: '龙族女王', icon: 'img/monster/monster_036.png',
+        id: 'dragonQueen', name: 'Long Hậu', icon: 'img/monster/monster_036.png',
         hp: 155, attack: 22, defense: 14, type: 'boss',
-        desc: '古老龙族的女王，威严无双',
+        desc: 'Nữ hoàng của tộc rồng cổ xưa, uy nghiêm vô song',
         intentPattern: [
             { type: 'attack', weight: 35 },
             { type: 'charge', weight: 30 },
@@ -1464,16 +1420,16 @@ const MonsterConfig = {
         ],
         specialMechanic: {
             id: 'dragonBreath',
-            name: '龙息',
-            description: '血量低于50%时释放龙息，造成基础攻击200%伤害',
+            name: 'Hơi Thở Của Rồng',
+            description: 'Khi HP dưới 50% sẽ phun lửa, gây 200% sát thương tấn công cơ bản',
             trigger: 'hpBelow50',
             effect: { damageMultiplier: 2.0 }
         }
     },
     ancientDragon: {
-        id: 'ancientDragon', name: '远古巨龙', icon: 'img/monster/monster_037.png',
+        id: 'ancientDragon', name: 'Viễn Cổ Cự Long', icon: 'img/monster/monster_037.png',
         hp: 185, attack: 27, defense: 17, type: 'boss',
-        desc: '沉睡万年的远古存在',
+        desc: 'Thực thể cổ xưa đã ngủ say vạn năm',
         intentPattern: [
             { type: 'attack', weight: 30 },
             { type: 'charge', weight: 35 },
@@ -1482,19 +1438,19 @@ const MonsterConfig = {
         ],
         specialMechanic: {
             id: 'ancientRoar',
-            name: '远古咆哮',
-            description: '每5回合释放咆哮，使玩家下回合无法使用卡牌',
+            name: 'Viễn Cổ Tiếng Gầm',
+            description: 'Mỗi 5 lượt gầm lên khiến người chơi không thể sử dụng thẻ bài ở lượt sau',
             trigger: 'turnCooldown',
             cooldown: 5,
             effect: { type: 'silence', duration: 1 }
         }
     },
 
-    // 天界/堕落系
+    // Hệ Thiên giới/Đọa lạc
     fallenAngel: {
-        id: 'fallenAngel', name: '堕落天使', icon: 'img/monster/monster_038.png',
+        id: 'fallenAngel', name: 'Thiên Thần Đọa Lạc', icon: 'img/monster/monster_038.png',
         hp: 125, attack: 17, defense: 12, type: 'boss', special: 'corrupt',
-        desc: '从天堂堕落的天使，渴望堕落',
+        desc: 'Thiên thần sa ngã từ thiên đường, khao khát sự đồi bại',
         intentPattern: [
             { type: 'attack', weight: 30 },
             { type: 'debuff', weight: 35 },
@@ -1503,16 +1459,16 @@ const MonsterConfig = {
         ],
         specialMechanic: {
             id: 'corruptionAura',
-            name: '堕落光环',
-            description: '每次被攻击时增加玩家5点堕落值',
+            name: 'Hào Quang Đọa Lạc',
+            description: 'Mỗi khi bị tấn công sẽ tăng 5 điểm đọa lạc cho người chơi',
             trigger: 'onHit',
             effect: { corruptionGain: 5 }
         }
     },
     darkSeraph: {
-        id: 'darkSeraph', name: '黑暗炽天使', icon: 'img/monster/monster_039.png',
+        id: 'darkSeraph', name: 'Hỏa Thần Seraph Bóng Tối', icon: 'img/monster/monster_039.png',
         hp: 140, attack: 20, defense: 14, type: 'boss', special: 'holy',
-        desc: '被黑暗侵蚀的最高天使',
+        desc: 'Thiên thần cấp cao nhất bị bóng tối ăn mòn',
         intentPattern: [
             { type: 'attack', weight: 35 },
             { type: 'buff', weight: 25 },
@@ -1521,18 +1477,18 @@ const MonsterConfig = {
         ],
         specialMechanic: {
             id: 'divineJudgment',
-            name: '神圣审判',
-            description: '血量低于30%时释放神圣审判，造成50点固定伤害',
+            name: 'Thần Thánh Phán Quyết',
+            description: 'Khi HP dưới 30% sẽ tung phán quyết, gây 50 điểm sát thương cố định',
             trigger: 'hpBelow30',
             effect: { fixedDamage: 50 }
         }
     },
 
-    // 深渊系
+    // Hệ Thâm uyên (Vực thẳm)
     abyssMother: {
-        id: 'abyssMother', name: '深渊之母', icon: 'img/monster/monster_040.png',
+        id: 'abyssMother', name: 'Mẫu Thân Thâm Uyên', icon: 'img/monster/monster_040.png',
         hp: 135, attack: 18, defense: 17, type: 'boss', special: 'spawn',
-        desc: '深渊的孕育者，无尽的子嗣',
+        desc: 'Kẻ sinh sản của vực thẳm với đàn con vô tận',
         intentPattern: [
             { type: 'attack', weight: 30 },
             { type: 'defend', weight: 25 },
@@ -1541,17 +1497,17 @@ const MonsterConfig = {
         ],
         specialMechanic: {
             id: 'spawn',
-            name: '孕育',
-            description: '每4回合召唤1只触手幼体(15HP,5攻击)',
+            name: 'Thai Nghén',
+            description: 'Mỗi 4 lượt triệu hồi 1 ấu thể xúc tu (15 HP, 5 Tấn công)',
             trigger: 'turnCooldown',
             cooldown: 4,
             effect: { type: 'summon', minionHp: 15, minionAttack: 5 }
         }
     },
     voidEmpress: {
-        id: 'voidEmpress', name: '虚空女皇', icon: 'img/monster/monster_041.png',
+        id: 'voidEmpress', name: 'Hư Không Nữ Hoàng', icon: 'img/monster/monster_041.png',
         hp: 145, attack: 21, defense: 13, type: 'boss', special: 'void',
-        desc: '来自虚空的存在，扭曲现实',
+        desc: 'Thực thể đến từ hư không, bẻ cong thực tại',
         intentPattern: [
             { type: 'attack', weight: 35 },
             { type: 'debuff', weight: 30 },
@@ -1560,16 +1516,16 @@ const MonsterConfig = {
         ],
         specialMechanic: {
             id: 'voidRift',
-            name: '虚空裂隙',
-            description: '每次攻击20%几率移除玩家弃牌堆1张牌',
+            name: 'Vết Nứt Hư Không',
+            description: 'Mỗi đòn tấn công có 20% cơ hội xóa 1 lá bài trong chồng bài bỏ của người chơi',
             trigger: 'onAttack',
             effect: { type: 'removeCard', chance: 0.2 }
         }
     },
     tentacleHorror: {
-        id: 'tentacleHorror', name: '触手恐魔', icon: 'img/monster/monster_042.png',
+        id: 'tentacleHorror', name: 'Kinh Hoàng Xúc Tu', icon: 'img/monster/monster_042.png',
         hp: 130, attack: 16, defense: 10, type: 'boss', special: 'bind',
-        desc: '深渊的使者，无数触手',
+        desc: 'Sứ giả của vực thẳm với vô số xúc tu',
         intentPattern: [
             { type: 'attack', weight: 35 },
             { type: 'debuff', weight: 30 },
@@ -1578,18 +1534,18 @@ const MonsterConfig = {
         ],
         specialMechanic: {
             id: 'bind',
-            name: '触手束缚',
-            description: '每回合封锁玩家1张随机手牌2回合',
+            name: 'Xúc Tu Trói Buộc',
+            description: 'Mỗi lượt khóa 1 lá bài ngẫu nhiên trên tay người chơi trong 2 lượt',
             trigger: 'everyTurn',
             effect: { type: 'lockCard', duration: 2 }
         }
     },
 
-    // 自然/精灵系
+    // Hệ Tự nhiên/Tinh linh
     darkDryad: {
-        id: 'darkDryad', name: '堕落树精', icon: 'img/monster/monster_043.png',
+        id: 'darkDryad', name: 'Khô Diệp Tinh Đọa Lạc', icon: 'img/monster/monster_043.png',
         hp: 110, attack: 18, defense: 12, type: 'boss', special: 'regen',
-        desc: '被邪恶侵蚀的森林之灵',
+        desc: 'Linh hồn rừng xanh bị tà ác ăn mòn',
         intentPattern: [
             { type: 'attack', weight: 30 },
             { type: 'heal', weight: 30 },
@@ -1598,16 +1554,16 @@ const MonsterConfig = {
         ],
         specialMechanic: {
             id: 'regeneration',
-            name: '自然再生',
-            description: '每回合恢复最大生命值5%',
+            name: 'Tự Nhiên Tái Sinh',
+            description: 'Mỗi lượt hồi 5% HP tối đa',
             trigger: 'everyTurn',
             effect: { healPercent: 0.05 }
         }
     },
     spiderQueen: {
-        id: 'spiderQueen', name: '蜘蛛女皇', icon: 'img/monster/monster_044.png',
+        id: 'spiderQueen', name: 'Nhện Chúa', icon: 'img/monster/monster_044.png',
         hp: 120, attack: 19, defense: 11, type: 'boss', special: 'web',
-        desc: '黑暗森林的统治者，织网为巢',
+        desc: 'Kẻ thống trị rừng đen, dệt lưới làm hang',
         intentPattern: [
             { type: 'attack', weight: 35 },
             { type: 'debuff', weight: 35 },
@@ -1616,19 +1572,19 @@ const MonsterConfig = {
         ],
         specialMechanic: {
             id: 'webTrap',
-            name: '蛛网陷阱',
-            description: '每3回合释放蛛网，使玩家下回合抽牌-2',
+            name: 'Bẫy Tơ Nhện',
+            description: 'Mỗi 3 lượt tung lưới khiến lượt sau người chơi rút bài -2',
             trigger: 'turnCooldown',
             cooldown: 3,
             effect: { type: 'reduceDraw', value: 2, duration: 1 }
         }
     },
 
-    // 猩红/怨念系
+    // Hệ Huyết sắc/Oán niệm
     crimsonGrudge: {
-        id: 'crimsonGrudge', name: '残躯聚合体・猩红怨主', icon: 'img/monster/monster_047.png',
+        id: 'crimsonGrudge', name: 'Thực Thể Xác Gộp - Huyết Sắc Oán Chủ', icon: 'img/monster/monster_047.png',
         hp: 160, attack: 24, defense: 12, type: 'boss', special: 'aggregate',
-        desc: '无数怨念凝聚而成的猩红巨躯，它由无数残缺的尸骸组成，每一块血肉都在哀嚎',
+        desc: 'Khối thân xác đỏ thẫm tụ hợp từ vô số oán niệm và hài cốt không nguyên vẹn, mỗi tảng thịt đều đang gào thét',
         intentPattern: [
             { type: 'attack', weight: 40 },
             { type: 'charge', weight: 25 },
@@ -1637,18 +1593,18 @@ const MonsterConfig = {
         ],
         specialMechanic: {
             id: 'crimsonAggregate',
-            name: '猩红聚合',
-            description: '每次受到伤害时,有30%几率吸收残骸恢复10点生命并永久增加2点攻击力',
+            name: 'Huyết Sắc Tụ Hợp',
+            description: 'Mỗi khi chịu sát thương, có 30% cơ hội hấp thụ tàn cốt để hồi 10 HP và tăng vĩnh viễn 2 điểm Tấn công',
             trigger: 'onHit',
             effect: { chance: 0.3, healAmount: 10, attackBonus: 2 }
         }
     },
 
-    // 暗影/诅咒系
+    // Hệ Ánh ảnh/Nguyền rủa
     shadowWraith: {
-        id: 'shadowWraith', name: '幽影触眸・裹尸巫', icon: 'img/monster/monster_048.png',
+        id: 'shadowWraith', name: 'U Ảnh Xúc Mục - Phù Thủy Liệm Xác', icon: 'img/monster/monster_048.png',
         hp: 140, attack: 20, defense: 14, type: 'boss', special: 'curse',
-        desc: '游荡于墓地深处的恐怖存在，它的双眸是无尽的深渊，以死者的裹尸布为衣，凝视它的人会被诅咒缠身',
+        desc: 'Thực thể kinh hoàng lang thang sâu trong nghĩa địa, đôi mắt là vực thẳm vô tận, mặc vải liệm người chết làm áo, ai nhìn vào sẽ bị nguyền rủa',
         intentPattern: [
             { type: 'attack', weight: 30 },
             { type: 'debuff', weight: 35 },
@@ -1657,18 +1613,18 @@ const MonsterConfig = {
         ],
         specialMechanic: {
             id: 'shroudCurse',
-            name: '裹尸诅咒',
-            description: '每回合对玩家施加一层诅咒，每层诅咒使玩家受到的伤害增加5%，最多叠加10层',
+            name: 'Lời Nguyền Vải Liệm',
+            description: 'Mỗi lượt gây 1 tầng nguyền rủa lên người chơi, mỗi tầng tăng 5% sát thương người chơi phải nhận, cộng dồn tối đa 10 tầng',
             trigger: 'everyTurn',
             effect: { type: 'stackingDebuff', damageIncreasePerStack: 5, maxStacks: 10 }
         }
     },
 
-    // 自然/暗翼系
+    // Hệ Tự nhiên/Dực tộc
     jadeWitch: {
-        id: 'jadeWitch', name: '翠须暗翼巫女', icon: 'img/monster/monster_051.png',
+        id: 'jadeWitch', name: 'Phù Thủy Ám Dực Râu Xanh', icon: 'img/monster/monster_051.png',
         hp: 130, attack: 22, defense: 10, type: 'boss', special: 'toxin',
-        desc: '身披翠绿羽翼的神秘巫女，她的触须散发着致命的毒雾，暗翼扇动时会释放让人迷幻的孢子',
+        desc: 'Nữ phù thủy bí ẩn mang đôi cánh xanh biếc, các xúc tu tỏa sương độc chết người, khi vỗ cánh sẽ giải phóng bào tử gây ảo giác',
         intentPattern: [
             { type: 'attack', weight: 35 },
             { type: 'debuff', weight: 30 },
@@ -1677,18 +1633,18 @@ const MonsterConfig = {
         ],
         specialMechanic: {
             id: 'jadeCorrosion',
-            name: '翠羽暗蚀',
-            description: '每次攻击时施加2层中毒(每层每回合3点伤害)，并有25%几率使玩家下回合无法使用技能卡',
+            name: 'Thanh Dực Ám Thực',
+            description: 'Mỗi đòn tấn công gây 2 tầng trúng độc (3 sát thương/tầng/lượt), và có 25% cơ hội khiến người chơi không thể dùng thẻ kỹ năng ở lượt sau',
             trigger: 'onAttack',
             effect: { poisonStacks: 2, poisonDamage: 3, silenceChance: 0.25, silenceDuration: 1 }
         }
     },
 
-    // 猩红/深渊系
+    // Hệ Huyết sắc/Thâm uyên
     crimsonVortex: {
-        id: 'crimsonVortex', name: '猩红涡齿怪', icon: 'img/monster/monster_050.png',
+        id: 'crimsonVortex', name: 'Quái Răng Xoáy Huyết Sắc', icon: 'img/monster/monster_050.png',
         hp: 150, attack: 25, defense: 8, type: 'boss', special: 'rend',
-        desc: '从猩红深渊中爬出的恐怖生物，它的口器如同旋转的涡轮，布满无数尖锐的齿轮状獠牙',
+        desc: 'Sinh vật kinh dị bò ra từ vực thẳm đỏ thẫm, miệng nó như một tuabin xoay tròn với vô số răng nanh sắc nhọn như bánh răng',
         intentPattern: [
             { type: 'attack', weight: 45 },
             { type: 'charge', weight: 25 },
@@ -1697,18 +1653,18 @@ const MonsterConfig = {
         ],
         specialMechanic: {
             id: 'vortexRend',
-            name: '涡旋撕咬',
-            description: '每次攻击有40%几率撕裂玩家护甲(减少5点护甲)，并施加流血效果(每回合损失当前HP的8%)',
+            name: 'Xoáy Nuốt Xé Xác',
+            description: 'Mỗi đòn tấn công có 40% cơ hội xé rách giáp người chơi (-5 giáp) và gây hiệu ứng chảy máu (mất 8% HP hiện tại mỗi lượt)',
             trigger: 'onAttack',
             effect: { armorRendChance: 0.4, armorRendAmount: 5, bleedPercent: 8 }
         }
     },
 
-    // 邪神/祭祀系
+    // Hệ Tà thần/Tế tự
     darkRitualLord: {
-        id: 'darkRitualLord', name: '黑纹魇祭主・角翼从神者（女）', icon: 'img/monster/monster_052.png',
+        id: 'darkRitualLord', name: 'Hắc Văn Yểm Tế Chủ - Giác Dực Tòng Thần (Nữ)', icon: 'img/monster/monster_052.png',
         hp: 170, attack: 23, defense: 13, type: 'boss', special: 'ritual',
-        desc: '侍奉邪神的高阶祭司，头戴角翼冠冕，身刻黑色纹路，它以献祭为乐，召唤来自虚空的恐怖力量',
+        desc: 'Tế tư cao cấp phụng sự tà thần, đầu đội vương miện cánh sừng, thân khắc văn tự đen, lấy việc hiến tế làm vui để triệu hồi sức mạnh hư không',
         intentPattern: [
             { type: 'attack', weight: 30 },
             { type: 'debuff', weight: 25 },
@@ -1717,19 +1673,19 @@ const MonsterConfig = {
         ],
         specialMechanic: {
             id: 'nightmareRitual',
-            name: '魇祭仪式',
-            description: '每4回合召唤邪神之力，对玩家造成30点固定伤害并增加15点堕落值，同时自身获得20%攻击力加成持续2回合',
+            name: 'Nghi Lễ Yểm Tế',
+            description: 'Mỗi 4 lượt triệu hồi sức mạnh tà thần, gây 30 sát thương cố định và tăng 15 điểm đọa lạc cho người chơi, đồng thời bản thân tăng 20% Tấn công trong 2 lượt',
             trigger: 'turnCooldown',
             cooldown: 4,
             effect: { fixedDamage: 30, corruptionGain: 15, selfAttackBonus: 0.2, buffDuration: 2 }
         }
     },
 
-    // 龙族/自然系
+    // Hệ Long tộc/Tự nhiên
     dragonRootWitch: {
-        id: 'dragonRootWitch', name: '龙冠涡根巫姬', icon: 'img/monster/monster_053.png',
+        id: 'dragonRootWitch', name: 'Long Quán Oa Căn Vu Cơ', icon: 'img/monster/monster_053.png',
         hp: 145, attack: 21, defense: 11, type: 'boss', special: 'entangle',
-        desc: '头戴龙角王冠的神秘巫姬，她的身下缠绕着无数涡旋状的根须，这些根须如活物般蠕动，渴望将猎物拖入深渊',
+        desc: 'Vu cơ bí ẩn đội vương miện gạc rồng, phía dưới quấn quanh vô số rễ cây xoắn ốc như sinh vật sống, luôn muốn kéo con mồi xuống vực sâu',
         intentPattern: [
             { type: 'attack', weight: 30 },
             { type: 'debuff', weight: 30 },
@@ -1738,18 +1694,18 @@ const MonsterConfig = {
         ],
         specialMechanic: {
             id: 'vortexEntangle',
-            name: '涡根缠绕',
-            description: '每回合有35%几率用根须束缚玩家，使其下回合费用-1；同时每回合恢复自身最大HP的3%',
+            name: 'Rễ Xoáy Quấn Thân',
+            description: 'Mỗi lượt có 35% cơ hội dùng rễ cây trói buộc người chơi làm giảm 1 năng lượng lượt sau; đồng thời mỗi lượt hồi 3% HP tối đa của bản thân',
             trigger: 'everyTurn',
             effect: { entangleChance: 0.35, energyReduction: 1, healPercent: 0.03 }
         }
     },
 
-    // 鬼族系
+    // Hệ Quỷ tộc
     crimsonDemonHorns: {
-        id: 'crimsonDemonHorns', name: '赤绦鬼角武姬', icon: 'img/monster/monster_054.png',
+        id: 'crimsonDemonHorns', name: 'Xích Điều Quỷ Giác Võ Cơ', icon: 'img/monster/monster_054.png',
         hp: 155, attack: 24, defense: 12, type: 'boss', special: 'demonRage',
-        desc: '身披赤红战甲的鬼族武姬，头顶双角如焰，手持鬼刃，战意滔天，传说她曾以一己之力屠灭整座城池',
+        desc: 'Võ cơ tộc Quỷ mặc giáp đỏ rực, đôi sừng như lửa, tay cầm quỷ nhận với chiến ý ngút trời, truyền thuyết nói cô từng một mình tàn sát cả tòa thành',
         intentPattern: [
             { type: 'attack', weight: 40 },
             { type: 'buff', weight: 20 },
@@ -1758,18 +1714,18 @@ const MonsterConfig = {
         ],
         specialMechanic: {
             id: 'demonRage',
-            name: '鬼角狂怒',
-            description: '当HP低于50%时进入狂怒状态，攻击力+8，每次攻击附带2层易伤；每3回合释放一次"赤焰斩"，造成1.5倍伤害并使玩家下回合费用-1',
+            name: 'Quỷ Giác Cuồng Nộ',
+            description: 'Khi HP dưới 50% vào trạng thái cuồng nộ, Tấn công +8, mỗi đòn đánh kèm 2 tầng Dễ Thương Tổn; mỗi 3 lượt tung "Xích Diễm Trảm" gây 1.5 lần sát thương và giảm 1 năng lượng người chơi lượt sau',
             trigger: 'hpBelow50',
             effect: { attackBonus: 8, vulnerableStacks: 2, specialDamageMultiplier: 1.5, energyReduction: 1 }
         }
     },
 
-    // 咒术系
+    // Hệ Chú thuật
     darkCurseMatriarch: {
-        id: 'darkCurseMatriarch', name: '玄缠咒角主母', icon: 'img/monster/monster_055.png',
+        id: 'darkCurseMatriarch', name: 'Huyền Triền Chú Giác Chủ Mẫu', icon: 'img/monster/monster_055.png',
         hp: 140, attack: 19, defense: 14, type: 'boss', special: 'curseWeave',
-        desc: '身缠玄黑咒纹的邪祟主母，双角刻满禁忌符文，她以诅咒为食，以怨念为衣，凡被她凝视者皆会陷入无尽噩梦',
+        desc: 'Chủ mẫu tà ác quấn quanh bởi chú văn đen, đôi sừng khắc đầy bùa chú cấm kỵ, bà ta ăn lời nguyền và mặc oán niệm, kẻ bị bà nhìn thấu sẽ sa vào ác mộng vĩnh hằng',
         intentPattern: [
             { type: 'debuff', weight: 35 },
             { type: 'attack', weight: 25 },
@@ -1778,18 +1734,18 @@ const MonsterConfig = {
         ],
         specialMechanic: {
             id: 'curseWeave',
-            name: '玄缠咒织',
-            description: '每回合对玩家施加1层诅咒（每层诅咒使受到伤害+5%）；每4回合释放"咒角噬魂"，根据玩家身上的诅咒层数造成额外伤害并恢复自身HP',
+            name: 'Huyền Triền Chú Dệt',
+            description: 'Mỗi lượt gây 1 tầng lời nguyền lên người chơi (tăng 5% sát thương nhận vào); mỗi 4 lượt tung "Chú Giác Phệ Hồn" gây thêm sát thương dựa trên số tầng nguyền rủa và hồi HP cho bản thân',
             trigger: 'everyTurn',
             effect: { curseStacks: 1, curseDamageBonus: 0.05, soulDevourHealPercent: 0.1 }
         }
     },
 
-    // 忍者系
+    // Hệ Ninja
     uzumakiNaruto: {
-        id: 'uzumakiNaruto', name: '旋涡鸣人', icon: 'img/monster/monster_056.png',
+        id: 'uzumakiNaruto', name: 'Uzumaki Naruto', icon: 'img/monster/monster_056.png',
         hp: 180, attack: 22, defense: 10, type: 'boss', special: 'kyuubi',
-        desc: '木叶村的金发忍者，体内封印着九尾妖狐，拥有无穷的查克拉与不屈的意志，口头禅是"我要成为火影！"',
+        desc: 'Ninja tóc vàng làng Lá, trong người phong ấn Cửu Vĩ Yêu Hồ, sở hữu Chakra vô tận và ý chí bất khuất, câu cửa miệng là "Tôi sẽ trở thành Hokage!"',
         intentPattern: [
             { type: 'attack', weight: 35 },
             { type: 'charge', weight: 25 },
@@ -1798,8 +1754,8 @@ const MonsterConfig = {
         ],
         specialMechanic: {
             id: 'kyuubi',
-            name: '九尾查克拉',
-            description: '每3回合召唤一个影分身（HP30，攻击8）；当HP低于30%时觉醒九尾模式，攻击力翻倍，每回合恢复5%最大HP；蓄力后释放"螺旋丸"造成2倍伤害',
+            name: 'Chakra Cửu Vĩ',
+            description: 'Mỗi 3 lượt triệu hồi 1 Ảnh phân thân (30 HP, 8 Tấn công); khi HP dưới 30% thức tỉnh chế độ Cửu Vĩ, Tấn công gấp đôi, mỗi lượt hồi 5% HP tối đa; sau khi tích lực sẽ tung "Rasengan" gây x2 sát thương',
             trigger: 'hpBelow30',
             effect: { attackMultiplier: 2, healPercent: 0.05, rasenganDamage: 2, shadowCloneHp: 30, shadowCloneAttack: 8 }
         }
@@ -1807,213 +1763,208 @@ const MonsterConfig = {
 };
 
 
-// ==================== 圣遗物配置 (72种) ====================
+// ==================== Cấu hình Thánh Di Vật (72 loại) ====================
 const RelicConfig = {
-    // 生命类
-    holyRing: { id: 'holyRing', name: '圣光戒指', icon: '💍', price: 150, effect: { maxHp: 10 }, desc: '最大生命值+10' },
-    bloodPendant: { id: 'bloodPendant', name: '鲜血吊坠', icon: '🩸', price: 180, effect: { maxHp: 15 }, desc: '最大生命值+15' },
-    heartOfGiant: { id: 'heartOfGiant', name: '巨人之心', icon: '❤️', price: 250, effect: { maxHp: 25 }, desc: '最大生命值+25' },
-    lifeStone: { id: 'lifeStone', name: '生命之石', icon: '💚', price: 200, effect: { maxHp: 20, defense: -1 }, desc: '最大HP+20，防御-1' },
-    phoenixFeather: { id: 'phoenixFeather', name: '凤凰羽毛', icon: '🪶', price: 350, effect: { maxHp: 30 }, desc: '最大生命值+30' },
-    vitalityOrb: { id: 'vitalityOrb', name: '活力宝珠', icon: '🟢', price: 120, effect: { maxHp: 8 }, desc: '最大生命值+8' },
+    // Nhóm Sinh mệnh
+    holyRing: { id: 'holyRing', name: 'Nhẫn Thánh Quang', icon: '💍', price: 150, effect: { maxHp: 10 }, desc: 'HP tối đa +10' },
+    bloodPendant: { id: 'bloodPendant', name: 'Dây Chuyền Tươi Máu', icon: '🩸', price: 180, effect: { maxHp: 15 }, desc: 'HP tối đa +15' },
+    heartOfGiant: { id: 'heartOfGiant', name: 'Trái Tim Người Khổng Lồ', icon: '❤️', price: 250, effect: { maxHp: 25 }, desc: 'HP tối đa +25' },
+    lifeStone: { id: 'lifeStone', name: 'Đá Sinh Mệnh', icon: '💚', price: 200, effect: { maxHp: 20, defense: -1 }, desc: 'HP tối đa +20, Phòng thủ -1' },
+    phoenixFeather: { id: 'phoenixFeather', name: 'Lông Vũ Phượng Hoàng', icon: '🪶', price: 350, effect: { maxHp: 30 }, desc: 'HP tối đa +30' },
+    vitalityOrb: { id: 'vitalityOrb', name: 'Bảo Châu Sinh Lực', icon: '🟢', price: 120, effect: { maxHp: 8 }, desc: 'HP tối đa +8' },
 
-    // 攻击类
-    powerGem: { id: 'powerGem', name: '力量宝石', icon: '💎', price: 200, effect: { attack: 3 }, desc: '攻击力+3' },
-    demonClaw: { id: 'demonClaw', name: '恶魔之爪', icon: '🦷', price: 280, effect: { attack: 5 }, desc: '攻击力+5' },
-    thunderBlade: { id: 'thunderBlade', name: '雷霆刃', icon: '⚡', price: 320, effect: { attack: 6 }, desc: '攻击力+6' },
-    berserkerMask: { id: 'berserkerMask', name: '狂战士面具', icon: '🎭', price: 180, effect: { attack: 4, defense: -2 }, desc: '攻击+4，防御-2' },
-    dragonFang: { id: 'dragonFang', name: '龙牙', icon: '🐉', price: 400, effect: { attack: 8 }, desc: '攻击力+8' },
-    wrathEmblem: { id: 'wrathEmblem', name: '愤怒徽记', icon: '😡', price: 150, effect: { attack: 2 }, desc: '攻击力+2' },
+    // Nhóm Tấn công
+    powerGem: { id: 'powerGem', name: 'Đá Sức Mạnh', icon: '💎', price: 200, effect: { attack: 3 }, desc: 'Tấn công +3' },
+    demonClaw: { id: 'demonClaw', name: 'Móng Vuốt Ác Quỷ', icon: '🦷', price: 280, effect: { attack: 5 }, desc: 'Tấn công +5' },
+    thunderBlade: { id: 'thunderBlade', name: 'Lôi Đình Nhận', icon: '⚡', price: 320, effect: { attack: 6 }, desc: 'Tấn công +6' },
+    berserkerMask: { id: 'berserkerMask', name: 'Mặt Nạ Cuồng Chiến', icon: '🎭', price: 180, effect: { attack: 4, defense: -2 }, desc: 'Tấn công +4, Phòng thủ -2' },
+    dragonFang: { id: 'dragonFang', name: 'Răng Rồng', icon: '🐉', price: 400, effect: { attack: 8 }, desc: 'Tấn công +8' },
+    wrathEmblem: { id: 'wrathEmblem', name: 'Huy Hiệu Phẫn Nộ', icon: '😡', price: 150, effect: { attack: 2 }, desc: 'Tấn công +2' },
 
-    // 防御类
-    shieldAmulet: { id: 'shieldAmulet', name: '护盾护符', icon: '🛡️', price: 180, effect: { baseArmor: 5 }, desc: '初始护甲+5' },
-    defenseCloak: { id: 'defenseCloak', name: '防御斗篷', icon: '🧥', price: 150, effect: { defense: 3 }, desc: '防御力+3' },
-    ironSkin: { id: 'ironSkin', name: '铁皮护符', icon: '🔩', price: 220, effect: { defense: 5 }, desc: '防御力+5' },
-    turtleShell: { id: 'turtleShell', name: '龟甲', icon: '🐢', price: 200, effect: { baseArmor: 8, attack: -1 }, desc: '初始护甲+8，攻击-1' },
-    guardianRing: { id: 'guardianRing', name: '守护之戒', icon: '⭕', price: 180, effect: { defense: 4 }, desc: '防御力+4' },
-    steelPlate: { id: 'steelPlate', name: '钢铁胸甲', icon: '🪖', price: 250, effect: { baseArmor: 10 }, desc: '初始护甲+10' },
+    // Nhóm Phòng thủ
+    shieldAmulet: { id: 'shieldAmulet', name: 'Hộ Phù Khiên', icon: '🛡️', price: 180, effect: { baseArmor: 5 }, desc: 'Giáp khởi đầu +5' },
+    defenseCloak: { id: 'defenseCloak', name: 'Áo Choàng Phòng Ngự', icon: '🧥', price: 150, effect: { defense: 3 }, desc: 'Phòng thủ +3' },
+    ironSkin: { id: 'ironSkin', name: 'Hộ Phù Da Sắt', icon: '🔩', price: 220, effect: { defense: 5 }, desc: 'Phòng thủ +5' },
+    turtleShell: { id: 'turtleShell', name: 'Mai Rùa', icon: '🐢', price: 200, effect: { baseArmor: 8, attack: -1 }, desc: 'Giáp khởi đầu +8, Tấn công -1' },
+    guardianRing: { id: 'guardianRing', name: 'Nhẫn Hộ Vệ', icon: '⭕', price: 180, effect: { defense: 4 }, desc: 'Phòng thủ +4' },
+    steelPlate: { id: 'steelPlate', name: 'Giáp Ngực Thép', icon: '🪖', price: 250, effect: { baseArmor: 10 }, desc: 'Giáp khởi đầu +10' },
 
-    // 能量类
-    energyCrystal: { id: 'energyCrystal', name: '能量水晶', icon: '🔮', price: 300, effect: { energy: 1 }, desc: '每回合费用+1' },
-    manaGem: { id: 'manaGem', name: '法力宝石', icon: '💠', price: 350, effect: { energy: 1 }, desc: '每回合费用+1' },
-    spiritBead: { id: 'spiritBead', name: '灵力珠', icon: '🔵', price: 280, effect: { energy: 1, maxHp: -5 }, desc: '费用+1，最大HP-5' },
+    // Nhóm Năng lượng
+    energyCrystal: { id: 'energyCrystal', name: 'Pha Lê Năng Lượng', icon: '🔮', price: 300, effect: { energy: 1 }, desc: 'Năng lượng mỗi lượt +1' },
+    manaGem: { id: 'manaGem', name: 'Đá Pháp Lực', icon: '💠', price: 350, effect: { energy: 1 }, desc: 'Năng lượng mỗi lượt +1' },
+    spiritBead: { id: 'spiritBead', name: 'Linh Lực Châu', icon: '🔵', price: 280, effect: { energy: 1, maxHp: -5 }, desc: 'Năng lượng +1, HP tối đa -5' },
 
-    // 堕落/诅咒类
-    corruptedHeart: { id: 'corruptedHeart', name: '堕落之心', icon: '🖤', price: 100, effect: { attack: 5, corruption: 10 }, desc: '攻击+5，堕落值+10' },
-    darkPact: { id: 'darkPact', name: '黑暗契约', icon: '📜', price: 80, effect: { attack: 7, corruption: 15 }, desc: '攻击+7，堕落值+15' },
-    sinfulGem: { id: 'sinfulGem', name: '罪恶宝石', icon: '💜', price: 120, effect: { energy: 1, corruption: 20 }, desc: '费用+1，堕落值+20' },
-    lustRing: { id: 'lustRing', name: '欲望之戒', icon: '💋', price: 90, effect: { maxHp: 15, corruption: 8 }, desc: 'HP+15，堕落+8' },
-    demonSeal: { id: 'demonSeal', name: '恶魔封印', icon: '🔴', price: 150, effect: { attack: 4, defense: 2, corruption: 12 }, desc: '攻防+4/+2，堕落+12' },
-    abyssalTear: { id: 'abyssalTear', name: '深渊之泪', icon: '💧', price: 100, effect: { defense: 5, corruption: 10 }, desc: '防御+5，堕落+10' },
+    // Nhóm Đọa lạc / Nguyền rủa
+    corruptedHeart: { id: 'corruptedHeart', name: 'Trái Tim Đọa Lạc', icon: '🖤', price: 100, effect: { attack: 5, corruption: 10 }, desc: 'Tấn công +5, Đọa lạc +10' },
+    darkPact: { id: 'darkPact', name: 'Khế Ước Bóng Tối', icon: '📜', price: 80, effect: { attack: 7, corruption: 15 }, desc: 'Tấn công +7, Đọa lạc +15' },
+    sinfulGem: { id: 'sinfulGem', name: 'Đá Tội Lỗi', icon: '💜', price: 120, effect: { energy: 1, corruption: 20 }, desc: 'Năng lượng +1, Đọa lạc +20' },
+    lustRing: { id: 'lustRing', name: 'Nhẫn Dục Vọng', icon: '💋', price: 90, effect: { maxHp: 15, corruption: 8 }, desc: 'HP +15, Đọa lạc +8' },
+    demonSeal: { id: 'demonSeal', name: 'Ấn Chú Ác Quỷ', icon: '🔴', price: 150, effect: { attack: 4, defense: 2, corruption: 12 }, desc: 'Công/Thủ +4/+2, Đọa lạc +12' },
+    abyssTear: { id: 'abyssTear', name: 'Nước Mắt Vực Thẳm', icon: '💧', price: 100, effect: { defense: 5, corruption: 10 }, desc: 'Phòng thủ +5, Đọa lạc +10' },
 
-    // 特殊效果类
-    luckyCharm: { id: 'luckyCharm', name: '幸运护符', icon: '🍀', price: 200, effect: { goldBonus: 20 }, desc: '战斗金币奖励+20%' },
-    healingTotem: { id: 'healingTotem', name: '治愈图腾', icon: '🗿', price: 220, effect: { healBonus: 3 }, desc: '所有治疗效果+3' },
-    vampireFang: { id: 'vampireFang', name: '吸血鬼獠牙', icon: '🦷', price: 280, effect: { lifesteal: 2 }, desc: '攻击时回复2点HP' },
-    windBoots: { id: 'windBoots', name: '疾风靴', icon: '👢', price: 180, effect: { drawBonus: 1 }, desc: '每回合额外抽1张牌' },
-    mirrorShard: { id: 'mirrorShard', name: '镜像碎片', icon: '🪞', price: 250, effect: { reflect: 2 }, desc: '受击时反弹2点伤害' },
-    ancientCoin: { id: 'ancientCoin', name: '古老金币', icon: '🪙', price: 150, effect: { shopDiscount: 15 }, desc: '商店价格-15%' },
+    // Nhóm Hiệu ứng đặc biệt
+    luckyCharm: { id: 'luckyCharm', name: 'Bùa May Mắn', icon: '🍀', price: 200, effect: { goldBonus: 20 }, desc: 'Vàng nhận từ trận chiến +20%' },
+    healingTotem: { id: 'healingTotem', name: 'Vật Tổ Trị Liệu', icon: '🗿', price: 220, effect: { healBonus: 3 }, desc: 'Tất cả hiệu ứng trị liệu +3' },
+    vampireFang: { id: 'vampireFang', name: 'Răng Nanh Ma Cà Rồng', icon: '🦷', price: 280, effect: { lifesteal: 2 }, desc: 'Hồi 2 HP khi tấn công' },
+    windBoots: { id: 'windBoots', name: 'Giày Tật Phong', icon: '👢', price: 180, effect: { drawBonus: 1 }, desc: 'Mỗi lượt rút thêm 1 lá bài' },
+    mirrorShard: { id: 'mirrorShard', name: 'Mảnh Gương', icon: '🪞', price: 250, effect: { reflect: 2 }, desc: 'Phản lại 2 sát thương khi bị đánh' },
+    ancientCoin: { id: 'ancientCoin', name: 'Đồng Tiền Cổ', icon: '🪙', price: 150, effect: { shopDiscount: 15 }, desc: 'Giá cửa hàng giảm 15%' },
 
-    // 色情系圣遗物 (20种) - hDamageBonus是直接加成数值
-    succubusKiss: { id: 'succubusKiss', name: '魅魔之吻', icon: '💋', price: 80, effect: { attack: 4, hDamageBonus: 3, corruption: 5 }, desc: '攻击+4，H伤害+3，堕落+5' },
-    lustChains: { id: 'lustChains', name: '欲望锁链', icon: '⛓️', price: 100, effect: { defense: 3, hDamageBonus: 2, corruption: 8 }, desc: '防御+3，H伤害+2，堕落+8' },
-    pinkCrystal: { id: 'pinkCrystal', name: '粉晶', icon: '💎', price: 120, effect: { hDamageBonus: 5, corruption: 10 }, desc: 'H伤害+5，堕落+10' },
-    aphrodisiac: { id: 'aphrodisiac', name: '永久媚药', icon: '🧪', price: 60, effect: { attack: 6, defense: -2, corruption: 12 }, desc: '攻击+6，防御-2，堕落+12' },
-    slutCollar: { id: 'slutCollar', name: '淫纹项圈', icon: '⭕', price: 90, effect: { energy: 1, corruption: 15 }, desc: '费用+1，堕落+15' },
-    breedingMark: { id: 'breedingMark', name: '繁殖印记', icon: '🔥', price: 70, effect: { maxHp: 20, corruption: 10 }, desc: 'HP+20，堕落+10' },
-    milkingCup: { id: 'milkingCup', name: '挤奶杯', icon: '🥛', price: 85, effect: { healBonus: 5, corruption: 8 }, desc: '治疗+5，堕落+8' },
-    vibrator: { id: 'vibrator', name: '魔法振动棒', icon: '🔔', price: 95, effect: { hDamageBonus: 4, drawBonus: 1, corruption: 6 }, desc: 'H伤害+4，抽牌+1，堕落+6' },
-    lewdTattoo: { id: 'lewdTattoo', name: '淫纹刺青', icon: '🌸', price: 110, effect: { attack: 3, hDamageBonus: 3, corruption: 12 }, desc: '攻击+3，H伤害+3，堕落+12' },
-    tentacleSeed: { id: 'tentacleSeed', name: '触手种子', icon: '🐙', price: 130, effect: { attack: 5, reflect: 2, corruption: 15 }, desc: '攻击+5，反伤2，堕落+15' },
-    demonWomb: { id: 'demonWomb', name: '恶魔子宫', icon: '💜', price: 150, effect: { maxHp: 30, hDamageBonus: 6, corruption: 20 }, desc: 'HP+30，H伤害+6，堕落+20' },
-    slaveRing: { id: 'slaveRing', name: '奴隶戒指', icon: '💍', price: 75, effect: { defense: 4, corruption: 10 }, desc: '防御+4，堕落+10' },
-    chastityKey: { id: 'chastityKey', name: '贞操带钥匙', icon: '🔑', price: 140, effect: { energy: 1, healBonus: 3, corruption: 8 }, desc: '费用+1，治疗+3，堕落+8' },
-    brokenHeart: { id: 'brokenHeart', name: '破碎的心', icon: '💔', price: 65, effect: { attack: 5, maxHp: -10, corruption: 5 }, desc: '攻击+5，HP-10，堕落+5' },
-    sinfulMirror: { id: 'sinfulMirror', name: '淫欲之镜', icon: '🪞', price: 100, effect: { hDamageBonus: 7, reflect: 1, corruption: 10 }, desc: 'H伤害+7，反伤1，堕落+10' },
-    pleasureBell: { id: 'pleasureBell', name: '快感铃铛', icon: '🔔', price: 88, effect: { drawBonus: 1, hDamageBonus: 2, corruption: 6 }, desc: '抽牌+1，H伤害+2，堕落+6' },
-    corruptedHalo: { id: 'corruptedHalo', name: '堕落光环', icon: '😇', price: 160, effect: { attack: 4, defense: 4, corruption: 18 }, desc: '攻防+4，堕落+18' },
-    wombMark: { id: 'wombMark', name: '子宫印记', icon: '❤️', price: 115, effect: { hDamageBonus: 8, corruption: 15 }, desc: 'H伤害+8，堕落+15' },
-    petEars: { id: 'petEars', name: '宠物耳朵', icon: '🐱', price: 70, effect: { defense: 2, goldBonus: 15, corruption: 5 }, desc: '防御+2，金币+15%，堕落+5' },
-    tailPlug: { id: 'tailPlug', name: '尾巴塞', icon: '🐕', price: 95, effect: { attack: 3, hDamageBonus: 4, corruption: 10 }, desc: '攻击+3，H伤害+4，堕落+10' },
+    // Thánh di vật Sắc dục (20 loại)
+    succubusKiss: { id: 'succubusKiss', name: 'Nụ Hôn Mị Ma', icon: '💋', price: 80, effect: { attack: 4, hDamageBonus: 3, corruption: 5 }, desc: 'Tấn công +4, Sát thương H +3, Đọa lạc +5' },
+    lustChains: { id: 'lustChains', name: 'Xiềng Xích Dục Vọng', icon: '⛓️', price: 100, effect: { defense: 3, hDamageBonus: 2, corruption: 8 }, desc: 'Phòng thủ +3, Sát thương H +2, Đọa lạc +8' },
+    pinkCrystal: { id: 'pinkCrystal', name: 'Thạch Anh Hồng', icon: '💎', price: 120, effect: { hDamageBonus: 5, corruption: 10 }, desc: 'Sát thương H +5, Đọa lạc +10' },
+    aphrodisiac: { id: 'aphrodisiac', name: 'Mị Dược Vĩnh Cửu', icon: '🧪', price: 60, effect: { attack: 6, defense: -2, corruption: 12 }, desc: 'Tấn công +6, Phòng thủ -2, Đọa lạc +12' },
+    slutCollar: { id: 'slutCollar', name: 'Vòng Cổ Dâm Văn', icon: '⭕', price: 90, effect: { energy: 1, corruption: 15 }, desc: 'Năng lượng +1, Đọa lạc +15' },
+    breedingMark: { id: 'breedingMark', name: 'Ấn Ký Sinh Sản', icon: '🔥', price: 70, effect: { maxHp: 20, corruption: 10 }, desc: 'HP +20, Đọa lạc +10' },
+    milkingCup: { id: 'milkingCup', name: 'Cốc Vắt Sữa', icon: '🥛', price: 85, effect: { healBonus: 5, corruption: 8 }, desc: 'Trị liệu +5, Đọa lạc +8' },
+    vibrator: { id: 'vibrator', name: 'Gậy Rung Ma Pháp', icon: '🔔', price: 95, effect: { hDamageBonus: 4, drawBonus: 1, corruption: 6 }, desc: 'Sát thương H +4, Rút bài +1, Đọa lạc +6' },
+    lewdTattoo: { id: 'lewdTattoo', name: 'Hình Xăm Dâm Văn', icon: '🌸', price: 110, effect: { attack: 3, hDamageBonus: 3, corruption: 12 }, desc: 'Tấn công +3, Sát thương H +3, Đọa lạc +12' },
+    tentacleSeed: { id: 'tentacleSeed', name: 'Hạt Giống Xúc Tu', icon: '🐙', price: 130, effect: { attack: 5, reflect: 2, corruption: 15 }, desc: 'Tấn công +5, Phản sát thương 2, Đọa lạc +15' },
+    demonWomb: { id: 'demonWomb', name: 'Tử Cung Ác Quỷ', icon: '💜', price: 150, effect: { maxHp: 30, hDamageBonus: 6, corruption: 20 }, desc: 'HP +30, Sát thương H +6, Đọa lạc +20' },
+    slaveRing: { id: 'slaveRing', name: 'Nhẫn Nô Lệ', icon: '💍', price: 75, effect: { defense: 4, corruption: 10 }, desc: 'Phòng thủ +4, Đọa lạc +10' },
+    chastityKey: { id: 'chastityKey', name: 'Chìa Khóa Đai Trinh Tiết', icon: '🔑', price: 140, effect: { energy: 1, healBonus: 3, corruption: 8 }, desc: 'Năng lượng +1, Trị liệu +3, Đọa lạc +8' },
+    brokenHeart: { id: 'brokenHeart', name: 'Trái Tim Tan Vỡ', icon: '💔', price: 65, effect: { attack: 5, maxHp: -10, corruption: 5 }, desc: 'Tấn công +5, HP -10, Đọa lạc +5' },
+    sinfulMirror: { id: 'sinfulMirror', name: 'Gương Dâm Dục', icon: '🪞', price: 100, effect: { hDamageBonus: 7, reflect: 1, corruption: 10 }, desc: 'Sát thương H +7, Phản sát thương 1, Đọa lạc +10' },
+    pleasureBell: { id: 'pleasureBell', name: 'Chuông Khoái Cảm', icon: '🔔', price: 88, effect: { drawBonus: 1, hDamageBonus: 2, corruption: 6 }, desc: 'Rút bài +1, Sát thương H +2, Đọa lạc +6' },
+    corruptedHalo: { id: 'corruptedHalo', name: 'Vòng Thánh Đọa Lạc', icon: '😇', price: 160, effect: { attack: 4, defense: 4, corruption: 18 }, desc: 'Công/Thủ +4, Đọa lạc +18' },
+    wombMark: { id: 'wombMark', name: 'Ấn Ký Tử Cung', icon: '❤️', price: 115, effect: { hDamageBonus: 8, corruption: 15 }, desc: 'Sát thương H +8, Đọa lạc +15' },
+    petEars: { id: 'petEars', name: 'Tai Thú Cưng', icon: '🐱', price: 70, effect: { defense: 2, goldBonus: 15, corruption: 5 }, desc: 'Phòng thủ +2, Vàng +15%, Đọa lạc +5' },
+    tailPlug: { id: 'tailPlug', name: 'Nút Đuôi', icon: '🐕', price: 95, effect: { attack: 3, hDamageBonus: 4, corruption: 10 }, desc: 'Tấn công +3, Sát thương H +4, Đọa lạc +10' },
 
-    // ==================== 新增普通圣遗物 (18种) ====================
-    // 生命类
-    angelTear: { id: 'angelTear', name: '天使之泪', icon: '💧', price: 280, effect: { maxHp: 20, healBonus: 2 }, desc: 'HP+20，治疗+2' },
-    soulGem: { id: 'soulGem', name: '灵魂宝石', icon: '🔷', price: 320, effect: { maxHp: 35 }, desc: '最大生命值+35' },
-    lifebloodAmulet: { id: 'lifebloodAmulet', name: '命脉护符', icon: '❣️', price: 180, effect: { maxHp: 12, defense: 1 }, desc: 'HP+12，防御+1' },
+    // Thánh di vật thường bổ sung
+    angelTear: { id: 'angelTear', name: 'Nước Mắt Thiên Thần', icon: '💧', price: 280, effect: { maxHp: 20, healBonus: 2 }, desc: 'HP +20, Trị liệu +2' },
+    soulGem: { id: 'soulGem', name: 'Ngọc Linh Hồn', icon: '🔷', price: 320, effect: { maxHp: 35 }, desc: 'HP tối đa +35' },
+    lifebloodAmulet: { id: 'lifebloodAmulet', name: 'Hộ Phù Huyết Mạch', icon: '❣️', price: 180, effect: { maxHp: 12, defense: 1 }, desc: 'HP +12, Phòng thủ +1' },
 
-    // 攻击类
-    shadowDagger: { id: 'shadowDagger', name: '暗影匕首', icon: '🗡️', price: 220, effect: { attack: 4, drawBonus: 1 }, desc: '攻击+4，抽牌+1' },
-    flameSword: { id: 'flameSword', name: '烈焰剑', icon: '🔥', price: 350, effect: { attack: 7 }, desc: '攻击力+7' },
-    venomFang: { id: 'venomFang', name: '毒蛇之牙', icon: '🐍', price: 200, effect: { attack: 3, lifesteal: 1 }, desc: '攻击+3，吸血1' },
-    warBanner: { id: 'warBanner', name: '战旗', icon: '🚩', price: 160, effect: { attack: 2, defense: 2 }, desc: '攻防各+2' },
+    shadowDagger: { id: 'shadowDagger', name: 'Dao Găm Ám Ảnh', icon: '🗡️', price: 220, effect: { attack: 4, drawBonus: 1 }, desc: 'Tấn công +4, Rút bài +1' },
+    flameSword: { id: 'flameSword', name: 'Kiếm Rực Lửa', icon: '🔥', price: 350, effect: { attack: 7 }, desc: 'Tấn công +7' },
+    venomFang: { id: 'venomFang', name: 'Răng Độc', icon: '🐍', price: 200, effect: { attack: 3, lifesteal: 1 }, desc: 'Tấn công +3, Hút máu 1' },
+    warBanner: { id: 'warBanner', name: 'Cờ Chiến', icon: '🚩', price: 160, effect: { attack: 2, defense: 2 }, desc: 'Công/Thủ +2' },
 
-    // 防御类
-    diamondShield: { id: 'diamondShield', name: '钻石盾', icon: '💎', price: 300, effect: { baseArmor: 12 }, desc: '初始护甲+12' },
-    frostArmor: { id: 'frostArmor', name: '霜冻护甲', icon: '❄️', price: 240, effect: { defense: 6, attack: -1 }, desc: '防御+6，攻击-1' },
-    holyShield: { id: 'holyShield', name: '圣盾', icon: '✝️', price: 280, effect: { defense: 5, maxHp: 10 }, desc: '防御+5，HP+10' },
+    diamondShield: { id: 'diamondShield', name: 'Khiên Kim Cương', icon: '💎', price: 300, effect: { baseArmor: 12 }, desc: 'Giáp khởi đầu +12' },
+    frostArmor: { id: 'frostArmor', name: 'Giáp Băng Giá', icon: '❄️', price: 240, effect: { defense: 6, attack: -1 }, desc: 'Phòng thủ +6, Tấn công -1' },
+    holyShield: { id: 'holyShield', name: 'Thánh Thuẫn', icon: '✝️', price: 280, effect: { defense: 5, maxHp: 10 }, desc: 'Phòng thủ +5, HP +10' },
 
-    // 能量类
-    arcaneOrb: { id: 'arcaneOrb', name: '奥术宝珠', icon: '🟣', price: 380, effect: { energy: 1, attack: 2 }, desc: '费用+1，攻击+2' },
-    wisdomCrown: { id: 'wisdomCrown', name: '智慧王冠', icon: '👑', price: 400, effect: { energy: 1, drawBonus: 1 }, desc: '费用+1，抽牌+1' },
+    arcaneOrb: { id: 'arcaneOrb', name: 'Cầu Pháp Thuật', icon: '🟣', price: 380, effect: { energy: 1, attack: 2 }, desc: 'Năng lượng +1, Tấn công +2' },
+    wisdomCrown: { id: 'wisdomCrown', name: 'Vương Miện Trí Tuệ', icon: '👑', price: 400, effect: { energy: 1, drawBonus: 1 }, desc: 'Năng lượng +1, Rút bài +1' },
 
-    // 特殊效果类
-    treasureMap: { id: 'treasureMap', name: '藏宝图', icon: '🗺️', price: 180, effect: { goldBonus: 30 }, desc: '金币奖励+30%' },
-    healingSpring: { id: 'healingSpring', name: '治愈之泉', icon: '⛲', price: 250, effect: { healBonus: 5 }, desc: '治疗效果+5' },
-    thornyVine: { id: 'thornyVine', name: '荆棘藤蔓', icon: '🌿', price: 220, effect: { reflect: 3 }, desc: '反伤3点' },
-    swiftBoots: { id: 'swiftBoots', name: '迅捷之靴', icon: '🥾', price: 200, effect: { drawBonus: 1, defense: 1 }, desc: '抽牌+1，防御+1' },
-    merchantBadge: { id: 'merchantBadge', name: '商人徽章', icon: '🏷️', price: 120, effect: { shopDiscount: 20 }, desc: '商店折扣20%' },
-    vampireCape: { id: 'vampireCape', name: '吸血鬼披风', icon: '🦇', price: 320, effect: { lifesteal: 3, maxHp: -10 }, desc: '吸血3，HP-10' },
+    treasureMap: { id: 'treasureMap', name: 'Bản Đồ Kho Báu', icon: '🗺️', price: 180, effect: { goldBonus: 30 }, desc: 'Vàng thưởng +30%' },
+    healingSpring: { id: 'healingSpring', name: 'Suối Trị Liệu', icon: '⛲', price: 250, effect: { healBonus: 5 }, desc: 'Hiệu quả trị liệu +5' },
+    thornyVine: { id: 'thornyVine', name: 'Dây Leo Gai Góc', icon: '🌿', price: 220, effect: { reflect: 3 }, desc: 'Phản sát thương 3 điểm' },
+    swiftBoots: { id: 'swiftBoots', name: 'Ủng Tốc Độ', icon: '🥾', price: 200, effect: { drawBonus: 1, defense: 1 }, desc: 'Rút bài +1, Phòng thủ +1' },
+    merchantBadge: { id: 'merchantBadge', name: 'Huy Hiệu Thương Nhân', icon: '🏷️', price: 120, effect: { shopDiscount: 20 }, desc: 'Giảm giá cửa hàng 20%' },
+    vampireCape: { id: 'vampireCape', name: 'Áo Choàng Ma Cà Rồng', icon: 'BAT', price: 320, effect: { lifesteal: 3, maxHp: -10 }, desc: 'Hút máu 3, HP -10' },
 
-    // ==================== 新增色情系圣遗物 (18种) ====================
-    darkFeather: { id: 'darkFeather', name: '暗夜羽翼', icon: '🦋', price: 180, effect: { attack: 6, hDamageBonus: 5, corruption: 15 }, desc: '攻击+6，H伤害+5，堕落+15' },
-    seductiveGaze: { id: 'seductiveGaze', name: '勾魂眼', icon: '👁️', price: 90, effect: { hDamageBonus: 6, corruption: 8 }, desc: 'H伤害+6，堕落+8' },
-    sinfulTongue: { id: 'sinfulTongue', name: '淫舌', icon: '👅', price: 100, effect: { hDamageBonus: 4, healBonus: 2, corruption: 10 }, desc: 'H伤害+4，治疗+2，堕落+10' },
-    pleasureNeedle: { id: 'pleasureNeedle', name: '快感针', icon: '💉', price: 75, effect: { attack: 3, hDamageBonus: 3, corruption: 6 }, desc: '攻击+3，H伤害+3，堕落+6' },
-    lewdBracelet: { id: 'lewdBracelet', name: '淫欲手镯', icon: '📿', price: 85, effect: { defense: 3, hDamageBonus: 2, corruption: 7 }, desc: '防御+3，H伤害+2，堕落+7' },
-    corruptedCrown: { id: 'corruptedCrown', name: '堕落王冠', icon: '👸', price: 200, effect: { energy: 1, hDamageBonus: 4, corruption: 18 }, desc: '费用+1，H伤害+4，堕落+18' },
-    infernalCrown: { id: 'infernalCrown', name: '炼狱之冠', icon: '😈', price: 150, effect: { attack: 5, hDamageBonus: 5, corruption: 12 }, desc: '攻击+5，H伤害+5，堕落+12' },
-    sinChains: { id: 'sinChains', name: '罪孽锁链', icon: '🔗', price: 110, effect: { defense: 4, hDamageBonus: 3, corruption: 9 }, desc: '防御+4，H伤害+3，堕落+9' },
-    fleshRose: { id: 'fleshRose', name: '肉欲玫瑰', icon: '🌹', price: 95, effect: { maxHp: 15, hDamageBonus: 4, corruption: 8 }, desc: 'HP+15，H伤害+4，堕落+8' },
-    hellfire: { id: 'hellfire', name: '地狱之火', icon: '🔥', price: 170, effect: { attack: 7, corruption: 20 }, desc: '攻击+7，堕落+20' },
-    abyssalMark: { id: 'abyssalMark', name: '深渊印记', icon: '🌀', price: 130, effect: { hDamageBonus: 8, maxHp: -5, corruption: 12 }, desc: 'H伤害+8，HP-5，堕落+12' },
-    serpentTail: { id: 'serpentTail', name: '蛇妖尾', icon: '🦎', price: 120, effect: { attack: 4, hDamageBonus: 4, corruption: 10 }, desc: '攻击+4，H伤害+4，堕落+10' },
-    lustPotion: { id: 'lustPotion', name: '永恒媚药', icon: '🍷', price: 80, effect: { hDamageBonus: 5, defense: -1, corruption: 8 }, desc: 'H伤害+5，防御-1，堕落+8' },
-    pleasureOrb: { id: 'pleasureOrb', name: '快感宝珠', icon: '🔮', price: 140, effect: { hDamageBonus: 6, drawBonus: 1, corruption: 10 }, desc: 'H伤害+6，抽牌+1，堕落+10' },
-    sinfulNecklace: { id: 'sinfulNecklace', name: '罪恶项链', icon: '📿', price: 105, effect: { maxHp: 10, hDamageBonus: 5, corruption: 9 }, desc: 'HP+10，H伤害+5，堕落+9' },
-    corruptedWomb: { id: 'corruptedWomb', name: '堕胎之子', icon: '🖤', price: 160, effect: { hDamageBonus: 10, corruption: 25 }, desc: 'H伤害+10，堕落+25' },
-    succubusHeart: { id: 'succubusHeart', name: '魅魔之心', icon: '💗', price: 190, effect: { attack: 5, hDamageBonus: 7, lifesteal: 2, corruption: 15 }, desc: '攻击+5，H伤害+7，吸血2，堕落+15' },
-    lustGem: { id: 'lustGem', name: '欲望晶石', icon: '💠', price: 145, effect: { hDamageBonus: 9, reflect: 1, corruption: 12 }, desc: 'H伤害+9，反伤1，堕落+12' }
+    // Thánh di vật Sắc dục bổ sung
+    darkFeather: { id: 'darkFeather', name: 'Lông Vũ Bóng Đêm', icon: '🦋', price: 180, effect: { attack: 6, hDamageBonus: 5, corruption: 15 }, desc: 'Tấn công +6, Sát thương H +5, Đọa lạc +15' },
+    seductiveGaze: { id: 'seductiveGaze', name: 'Ánh Nhìn Quyến Rũ', icon: '👁️', price: 90, effect: { hDamageBonus: 6, corruption: 8 }, desc: 'Sát thương H +6, Đọa lạc +8' },
+    sinfulTongue: { id: 'sinfulTongue', name: 'Lưỡi Dâm Dục', icon: '👅', price: 100, effect: { hDamageBonus: 4, healBonus: 2, corruption: 10 }, desc: 'Sát thương H +4, Trị liệu +2, Đọa lạc +10' },
+    pleasureNeedle: { id: 'pleasureNeedle', name: 'Kim Khoái Cảm', icon: '💉', price: 75, effect: { attack: 3, hDamageBonus: 3, corruption: 6 }, desc: 'Tấn công +3, Sát thương H +3, Đọa lạc +6' },
+    lewdBracelet: { id: 'lewdBracelet', name: 'Vòng Tay Dâm Dục', icon: '📿', price: 85, effect: { defense: 3, hDamageBonus: 2, corruption: 7 }, desc: 'Phòng thủ +3, Sát thương H +2, Đọa lạc +7' },
+    corruptedCrown: { id: 'corruptedCrown', name: 'Vương Miện Đọa Lạc', icon: '👸', price: 200, effect: { energy: 1, hDamageBonus: 4, corruption: 18 }, desc: 'Năng lượng +1, Sát thương H +4, Đọa lạc +18' },
+    infernalCrown: { id: 'infernalCrown', name: 'Vương Miện Luyện Ngục', icon: '😈', price: 150, effect: { attack: 5, hDamageBonus: 5, corruption: 12 }, desc: 'Tấn công +5, Sát thương H +5, Đọa lạc +12' },
+    sinChains: { id: 'sinChains', name: 'Xiềng Xích Tội Lỗi', icon: '🔗', price: 110, effect: { defense: 4, hDamageBonus: 3, corruption: 9 }, desc: 'Phòng thủ +4, Sát thương H +3, Đọa lạc +9' },
+    fleshRose: { id: 'fleshRose', name: 'Hoa Hồng Nhục Dục', icon: '🌹', price: 95, effect: { maxHp: 15, hDamageBonus: 4, corruption: 8 }, desc: 'HP +15, Sát thương H +4, Đọa lạc +8' },
+    hellfire: { id: 'hellfire', name: 'Hỏa Ngục', icon: '🔥', price: 170, effect: { attack: 7, corruption: 20 }, desc: 'Tấn công +7, Đọa lạc +20' },
+    abyssMark: { id: 'abyssMark', name: 'Ấn Ký Vực Thẳm', icon: '🌀', price: 130, effect: { hDamageBonus: 8, maxHp: -5, corruption: 12 }, desc: 'Sát thương H +8, HP -5, Đọa lạc +12' },
+    serpentTail: { id: 'serpentTail', name: 'Đuôi Xà Yêu', icon: '🦎', price: 120, effect: { attack: 4, hDamageBonus: 4, corruption: 10 }, desc: 'Tấn công +4, Sát thương H +4, Đọa lạc +10' },
+    lustPotion: { id: 'lustPotion', name: 'Mị Dược Vĩnh Hằng', icon: '🍷', price: 80, effect: { hDamageBonus: 5, defense: -1, corruption: 8 }, desc: 'Sát thương H +5, Phòng thủ -1, Đọa lạc +8' },
+    pleasureOrb: { id: 'pleasureOrb', name: 'Bảo Châu Khoái Cảm', icon: '🔮', price: 140, effect: { hDamageBonus: 6, drawBonus: 1, corruption: 10 }, desc: 'Sát thương H +6, Rút bài +1, Đọa lạc +10' },
+    sinfulNecklace: { id: 'sinfulNecklace', name: 'Vòng Cổ Tội Lỗi', icon: '📿', price: 105, effect: { maxHp: 10, hDamageBonus: 5, corruption: 9 }, desc: 'HP +10, Sát thương H +5, Đọa lạc +9' },
+    corruptedWomb: { id: 'corruptedWomb', name: 'Bào Thai Đọa Lạc', icon: '🖤', price: 160, effect: { hDamageBonus: 10, corruption: 25 }, desc: 'Sát thương H +10, Đọa lạc +25' },
+    succubusHeart: { id: 'succubusHeart', name: 'Trái Tim Mị Ma', icon: '💗', price: 190, effect: { attack: 5, hDamageBonus: 7, lifesteal: 2, corruption: 15 }, desc: 'Tấn công +5, Sát thương H +7, Hút máu 2, Đọa lạc +15' },
+    lustGem: { id: 'lustGem', name: 'Tinh Thạch Dục Vọng', icon: '💠', price: 145, effect: { hDamageBonus: 9, reflect: 1, corruption: 12 }, desc: 'Sát thương H +9, Phản sát thương 1, Đọa lạc +12' }
 };
 
-// ==================== 特殊状态配置 (24种) ====================
+// ==================== Cấu hình Trạng thái Đặc biệt (24 loại) ====================
 const SpecialStatusConfig = {
-    // 能量/费用影响
-    跳蛋: { id: '跳蛋', icon: '🔔', effect: 'energy', value: -1, desc: '每场战斗开始时费用点-1', fullDesc: '体内被植入了震动的跳蛋，无法集中精神' },
-    束缚锁链: { id: '束缚锁链', icon: '⛓️', effect: 'energy', value: -1, desc: '费用点-1', fullDesc: '手腕上的锁链限制了行动，难以施展全力' },
-    精神污染: { id: '精神污染', icon: '🌀', effect: 'energy', value: -2, desc: '费用点-2', fullDesc: '深渊的低语不断侵蚀着意识，难以集中精神' },
+    // Ảnh hưởng Năng lượng / Chi phí
+    跳蛋: { id: 'Trứng rung', icon: '🔔', effect: 'energy', value: -1, desc: 'Giảm 1 năng lượng khi bắt đầu trận chiến', fullDesc: 'Một quả trứng rung đã được cấy vào cơ thể, khiến bạn không thể tập trung tinh thần.' },
+    束缚锁链: { id: 'Xiềng xích trói buộc', icon: '⛓️', effect: 'energy', value: -1, desc: 'Giảm 1 năng lượng', fullDesc: 'Xiềng xích trên cổ tay hạn chế hành động, khiến bạn khó lòng dốc toàn lực.' },
+    精神污染: { id: 'Ô nhiễm tinh thần', icon: '🌀', effect: 'energy', value: -2, desc: 'Giảm 2 năng lượng', fullDesc: 'Những tiếng thì thầm từ vực thẳm liên tục ăn mòn ý thức, khiến bạn khó lòng tập trung.' },
 
-    // 堕落值增加
-    淫纹: { id: '淫纹', icon: '🔮', effect: 'corruptionPerRest', value: 5, desc: '每次休息堕落值+5', fullDesc: '身上被刻下了淫靡的魔纹，身体变得更加敏感' },
-    羞耻衣: { id: '羞耻衣', icon: '👙', effect: 'corruptionPerBattle', value: 3, desc: '每场战斗开始堕落值+3', fullDesc: '被迫穿着暴露的羞耻服装' },
-    魅魔契约: { id: '魅魔契约', icon: '💋', effect: 'corruptionPerRest', value: 8, desc: '休息时堕落值+8', fullDesc: '与魅魔签订了契约，每次休息都会被侵犯梦境' },
-    淫欲诅咒: { id: '淫欲诅咒', icon: '💜', effect: 'corruptionPerBattle', value: 5, desc: '战斗开始堕落值+5', fullDesc: '被施加了淫欲诅咒，战斗时身体异常兴奋' },
-    堕落种子: { id: '堕落种子', icon: '🌱', effect: 'corruptionPerRest', value: 10, desc: '休息时堕落值+10', fullDesc: '体内被植入了堕落的种子，正在缓慢侵蚀心智' },
+    // Tăng giá trị Đọa lạc
+    淫纹: { id: 'Dâm văn', icon: '🔮', effect: 'corruptionPerRest', value: 5, desc: 'Tăng 5 đọa lạc mỗi khi nghỉ ngơi', fullDesc: 'Một ma văn dâm mị đã được khắc lên người, khiến cơ thể trở nên nhạy cảm hơn.' },
+    羞耻衣: { id: 'Y phục nhục nhã', icon: '👙', effect: 'corruptionPerBattle', value: 3, desc: 'Tăng 3 đọa lạc khi bắt đầu trận chiến', fullDesc: 'Bị ép buộc phải mặc những bộ trang phục thiếu vải đầy nhục nhã.' },
+    魅魔契约: { id: 'Khế ước Mị Ma', icon: '💋', effect: 'corruptionPerRest', value: 8, desc: 'Tăng 8 đọa lạc khi nghỉ ngơi', fullDesc: 'Đã ký khế ước với Mị Ma, mỗi khi nghỉ ngơi sẽ bị xâm chiếm vào trong giấc mơ.' },
+    淫欲诅咒: { id: 'Lời nguyền dâm dục', icon: '💜', effect: 'corruptionPerBattle', value: 5, desc: 'Tăng 5 đọa lạc khi bắt đầu trận chiến', fullDesc: 'Bị trúng lời nguyền dâm dục, khiến cơ thể hưng phấn bất thường khi chiến đấu.' },
+    堕落种子: { id: 'Hạt giống đọa lạc', icon: '🌱', effect: 'corruptionPerRest', value: 10, desc: 'Tăng 10 đọa lạc khi nghỉ ngơi', fullDesc: 'Một hạt giống đọa lạc đã được cấy vào trong người, đang âm thầm ăn mòn tâm trí.' },
 
-    // 防御力影响
-    乳环: { id: '乳环', icon: '⭕', effect: 'defense', value: -2, desc: '防御力-2', fullDesc: '乳头被穿上了银色的环，隐隐作痛' },
-    肚脐钉: { id: '肚脐钉', icon: '📍', effect: 'defense', value: -1, desc: '防御力-1', fullDesc: '肚脐上的穿孔装饰，行动时会感到不适' },
-    脚铐: { id: '脚铐', icon: '🔗', effect: 'defense', value: -3, desc: '防御力-3', fullDesc: '脚踝上的铁铐让移动变得困难' },
+    // Ảnh hưởng Phòng thủ
+    乳环: { id: 'Khuyên ngực', icon: '⭕', effect: 'defense', value: -2, desc: 'Phòng thủ -2', fullDesc: 'Đầu ngực bị xuyên qua bởi những chiếc vòng bạc, gây ra những cơn đau âm ỉ.' },
+    肚脐钉: { id: 'Khuyên rốn', icon: '📍', effect: 'defense', value: -1, desc: 'Phòng thủ -1', fullDesc: 'Trang sức xuyên qua rốn gây khó chịu mỗi khi cử động.' },
+    脚铐: { id: 'Xiềng chân', icon: '🔗', effect: 'defense', value: -3, desc: 'Phòng thủ -3', fullDesc: 'Xiềng xích sắt trên cổ chân khiến việc di chuyển trở nên khó khăn.' },
 
-    // 生命值影响
-    项圈: { id: '项圈', icon: '⚫', effect: 'maxHp', value: -10, desc: '最大HP-10', fullDesc: '脖子上被套上了奴隶项圈，象征着屈辱' },
-    虚弱诅咒: { id: '虚弱诅咒', icon: '💀', effect: 'maxHp', value: -15, desc: '最大HP-15', fullDesc: '被施加了虚弱诅咒，生命力被不断抽取' },
-    生命吸取: { id: '生命吸取', icon: '🩸', effect: 'maxHp', value: -20, desc: '最大HP-20', fullDesc: '有什么东西在持续吸取你的生命力' },
+    // Ảnh hưởng HP
+    项圈: { id: 'Vòng cổ', icon: '⚫', effect: 'maxHp', value: -10, desc: 'HP tối đa -10', fullDesc: 'Bị đeo vòng cổ nô lệ, biểu tượng của sự khuất phục.' },
+    虚弱诅咒: { id: 'Lời nguyền suy nhược', icon: '💀', effect: 'maxHp', value: -15, desc: 'HP tối đa -15', fullDesc: 'Bị trúng lời nguyền suy nhược, khiến sinh lực liên tục bị rút cạn.' },
+    生命吸取: { id: 'Hút sinh mệnh', icon: '🩸', effect: 'maxHp', value: -20, desc: 'HP tối đa -20', fullDesc: 'Có thứ gì đó đang liên tục hút lấy sinh mạng của bạn.' },
 
-    // 治疗限制
-    贞操带: { id: '贞操带', icon: '🔒', effect: 'healLimit', value: 50, desc: '无法恢复HP超过50%', fullDesc: '被锁上了贞操带，无法自由触碰自己' },
-    诅咒伤口: { id: '诅咒伤口', icon: '🩹', effect: 'healLimit', value: 30, desc: '无法恢复HP超过30%', fullDesc: '身上的伤口被诅咒，无法正常愈合' },
+    // Giới hạn Trị liệu
+    贞操带: { id: 'Đai trinh tiết', icon: '🔒', effect: 'healLimit', value: 50, desc: 'Không thể hồi phục HP vượt quá 50%', fullDesc: 'Bị khóa bởi đai trinh tiết, không thể tự do chạm vào cơ thể mình.' },
+    诅咒伤口: { id: 'Vết thương nguyền rủa', icon: '🩹', effect: 'healLimit', value: 30, desc: 'Không thể hồi phục HP vượt quá 30%', fullDesc: 'Vết thương trên người bị nguyền rủa, không thể chữa lành bình thường.' },
 
-    // 攻击力影响
-    催情药: { id: '催情药', icon: '💊', effect: 'attack', value: -3, desc: '攻击力-3', fullDesc: '体内残留着催情药效，身体酥软无力' },
-    媚药中毒: { id: '媚药中毒', icon: '🧪', effect: 'attack', value: -5, desc: '攻击力-5', fullDesc: '持续的媚药效果让身体无法用力' },
-    肌肉萎缩: { id: '肌肉萎缩', icon: '💪', effect: 'attack', value: -4, desc: '攻击力-4', fullDesc: '长期囚禁导致肌肉萎缩，力量大减' },
+    // Ảnh hưởng Tấn công
+    催情药: { id: 'Thuốc kích dục', icon: '💊', effect: 'attack', value: -3, desc: 'Tấn công -3', fullDesc: 'Dược lực của thuốc kích dục còn sót lại khiến cơ thể bủn rủn, vô lực.' },
+    媚药中毒: { id: 'Trúng độc mị dược', icon: '🧪', effect: 'attack', value: -5, desc: 'Tấn công -5', fullDesc: 'Hiệu ứng mị dược duy trì khiến cơ thể không thể phát lực.' },
+    肌肉萎缩: { id: 'Teo cơ', icon: '💪', effect: 'attack', value: -4, desc: 'Tấn công -4', fullDesc: 'Bị giam cầm lâu ngày dẫn đến teo cơ, sức mạnh giảm sút nghiêm trọng.' },
 
-    // 受伤增加
-    烙印: { id: '烙印', icon: '🔥', effect: 'damageTaken', value: 50, desc: '受到的伤害+50%', fullDesc: '身上被烙上了主人的印记' },
-    脆弱印记: { id: '脆弱印记', icon: '❌', effect: 'damageTaken', value: 30, desc: '受伤+30%', fullDesc: '被刻下了脆弱印记，防御力下降' },
-    诅咒标记: { id: '诅咒标记', icon: '☠️', effect: 'damageTaken', value: 100, desc: '受伤+100%', fullDesc: '被深渊诅咒标记，伤害翻倍' },
+    // Tăng sát thương nhận vào
+    烙印: { id: 'Nung dấu', icon: '🔥', effect: 'damageTaken', value: 50, desc: 'Sát thương nhận vào +50%', fullDesc: 'Trên người bị nung dấu ấn ký của chủ nhân.' },
+    脆弱印记: { id: 'Ấn ký mong manh', icon: '❌', effect: 'damageTaken', value: 30, desc: 'Sát thương nhận vào +30%', fullDesc: 'Bị khắc lên ấn ký mong manh, khiến khả năng chịu đựng giảm sút.' },
+    诅咒标记: { id: 'Dấu ấn nguyền rủa', icon: '☠️', effect: 'damageTaken', value: 100, desc: 'Sát thương nhận vào +100%', fullDesc: 'Bị đánh dấu bởi lời nguyền vực thẳm, sát thương nhận vào gấp đôi.' },
 
-    // 复合效果
-    完全支配: { id: '完全支配', icon: '👑', effect: 'multiple', value: 0, desc: '攻击-2，防御-2，堕落+5/战斗', fullDesc: '已被完全支配，身心都不属于自己', effects: { attack: -2, defense: -2, corruptionPerBattle: 5 } },
-    奴隶烙印: { id: '奴隶烙印', icon: '🔥', effect: 'multiple', value: 0, desc: 'HP-10，受伤+25%', fullDesc: '被烙上了奴隶烙印，标志着你的身份', effects: { maxHp: -10, damageTaken: 25 } },
+    // Hiệu ứng hỗn hợp
+    完全支配: { id: 'Chi phối hoàn toàn', icon: '👑', effect: 'multiple', value: 0, desc: 'Công -2, Thủ -2, Đọa lạc +5/trận chiến', fullDesc: 'Đã bị chi phối hoàn toàn, cả thân xác và linh hồn đều không còn thuộc về mình.', effects: { attack: -2, defense: -2, corruptionPerBattle: 5 } },
+    奴隶烙印: { id: 'Dấu ấn nô lệ', icon: '🔥', effect: 'multiple', value: 0, desc: 'HP -10, Sát thương nhận vào +25%', fullDesc: 'Bị nung dấu nô lệ, đánh dấu danh tính thấp kém của bạn.', effects: { maxHp: -10, damageTaken: 25 } },
 
-    // 身体变化类
-    小便失禁: { id: '小便失禁', icon: '💦', effect: 'multiple', value: 0, desc: '防御-2，战斗堕落+3', fullDesc: '无法控制尿意，战斗中经常失禁，羞耻不已', effects: { defense: -2, corruptionPerBattle: 3 } },
-    大便失禁: { id: '大便失禁', icon: '💩', effect: 'multiple', value: 0, desc: '防御-3，战斗堕落+5', fullDesc: '括约肌已被调教到无法收缩，随时可能失禁', effects: { defense: -3, corruptionPerBattle: 5 } },
-    巨乳化: { id: '巨乳化', icon: '🍈', effect: 'multiple', value: 0, desc: '费用-1，防御-2', fullDesc: '胸部被改造成I罩杯巨乳，大到行动受限，战斗时摇晃不已', effects: { energy: -1, defense: -2 } },
-    子宫纹身: { id: '子宫纹身', icon: '❤️', effect: 'corruptionPerRest', value: 8, desc: '休息堕落+8', fullDesc: '小腹上被刻上了心形子宫纹身，象征着性奴身份' },
-    敏感体质: { id: '敏感体质', icon: '💗', effect: 'damageTaken', value: 40, desc: '受伤+40%', fullDesc: '全身变得极度敏感，轻轻触碰就会颜抖' },
-    发情期: { id: '发情期', icon: '🔥', effect: 'multiple', value: 0, desc: '攻击-2，战斗堕落+4', fullDesc: '被迭加了永久发情状态，身体持续燥热', effects: { attack: -2, corruptionPerBattle: 4 } },
-    乳头肥大: { id: '乳头肥大', icon: '⭕', effect: 'defense', value: -2, desc: '防御-2', fullDesc: '乳头被改造得异常肥大，衣物都遮不住' },
-    阴蒂肥大: { id: '阴蒂肥大', icon: '💎', effect: 'corruptionPerBattle', value: 5, desc: '战斗堕落+5', fullDesc: '阴蒂被改造得如拇指大小，稍有动作就会兴奋' },
-    精神支配: { id: '精神支配', icon: '🧠', effect: 'energy', value: -2, desc: '费用-2', fullDesc: '精神被完全支配，无法自主思考' },
-    性奴调教: { id: '性奴调教', icon: '👑', effect: 'multiple', value: 0, desc: '攻击-3，防御-3', fullDesc: '被调教成了顺从的性奴，失去了反抗的意志', effects: { attack: -3, defense: -3 } },
-    子宫下垂: { id: '子宫下垂', icon: '⬇️', effect: 'maxHp', value: -20, desc: 'HP-20', fullDesc: '子宫被过度使用导致下垂，身体虚弱' },
-    乳汁分泌: { id: '乳汁分泌', icon: '🍼', effect: 'corruptionPerRest', value: 6, desc: '休息堕落+6', fullDesc: '胸部持续分泌乳汁，无法止住' },
-    永久发情: { id: '永久发情', icon: '💯', effect: 'multiple', value: 0, desc: '攻击-3，堕落+8/休息', fullDesc: '被施加了永久发情诅咒，无时无刻不在渴望', effects: { attack: -3, corruptionPerRest: 8 } },
+    // Biến đổi cơ thể
+    小便失禁: { id: 'Tiểu tiện không tự chủ', icon: '💦', effect: 'multiple', value: 0, desc: 'Phòng thủ -2, Đọa lạc +3/trận chiến', fullDesc: 'Không thể kiểm soát việc đi tiểu, thường xuyên bị són khi chiến đấu, vô cùng nhục nhã.', effects: { defense: -2, corruptionPerBattle: 3 } },
+    大便失禁: { id: 'Đại tiện không tự chủ', icon: '💩', effect: 'multiple', value: 0, desc: 'Phòng thủ -3, Đọa lạc +5/trận chiến', fullDesc: 'Cơ thắt đã bị huấn luyện đến mức không thể co bóp, có thể mất kiểm soát bất cứ lúc nào.', effects: { defense: -3, corruptionPerBattle: 5 } },
+    巨乳化: { id: 'Ngực khổng lồ hóa', icon: '🍈', effect: 'multiple', value: 0, desc: 'Năng lượng -1, Phòng thủ -2', fullDesc: 'Bộ ngực bị cải tạo thành cỡ I cup khổng lồ, to đến mức hạn chế hành động, rung lắc dữ dội khi chiến đấu.', effects: { energy: -1, defense: -2 } },
+    子宫纹身: { id: 'Xăm hình tử cung', icon: '❤️', effect: 'corruptionPerRest', value: 8, desc: 'Đọa lạc nghỉ ngơi +8', fullDesc: 'Phần bụng dưới bị khắc hình xăm tử cung hình trái tim, tượng trưng cho thân phận nô lệ tình dục.' },
+    敏感体质: { id: 'Thể chất nhạy cảm', icon: '💗', effect: 'damageTaken', value: 40, desc: 'Sát thương nhận vào +40%', fullDesc: 'Toàn thân trở nên cực kỳ nhạy cảm, chỉ cần chạm nhẹ cũng đủ khiến bạn run rẩy.' },
+    发情期: { id: 'Thời kỳ phát tình', icon: '🔥', effect: 'multiple', value: 0, desc: 'Tấn công -2, Đọa lạc +4/trận chiến', fullDesc: 'Bị đưa vào trạng thái phát tình vĩnh viễn, cơ thể luôn trong tình trạng nóng rực.', effects: { attack: -2, corruptionPerBattle: 4 } },
+    乳头肥大: { id: 'Đầu ngực phì đại', icon: '⭕', effect: 'defense', value: -2, desc: 'Phòng thủ -2', fullDesc: 'Đầu ngực bị cải tạo trở nên to bất thường, quần áo không thể che giấu nổi.' },
+    阴蒂肥大: { id: 'Âm vật phì đại', icon: '💎', effect: 'corruptionPerBattle', value: 5, desc: 'Đọa lạc chiến đấu +5', fullDesc: 'Âm vật bị cải tạo to như ngón tay cái, chỉ cần cử động nhẹ cũng thấy hưng phấn.' },
+    精神支配: { id: 'Chi phối tinh thần', icon: '🧠', effect: 'energy', value: -2, desc: 'Năng lượng -2', fullDesc: 'Tinh thần bị chi phối hoàn toàn, không thể tự suy nghĩ độc lập.' },
+    性奴调教: { id: 'Huấn luyện nô lệ tình dục', icon: '👑', effect: 'multiple', value: 0, desc: 'Tấn công -3, Phòng thủ -3', fullDesc: 'Đã bị huấn luyện thành một nô lệ tình dục phục tùng, mất đi ý chí phản kháng.', effects: { attack: -3, defense: -3 } },
+    子宫下垂: { id: 'Sa tử cung', icon: '⬇️', effect: 'maxHp', value: -20, desc: 'HP -20', fullDesc: 'Tử cung bị sử dụng quá mức dẫn đến bị sa, cơ thể trở nên suy yếu.' },
+    乳汁分泌: { id: 'Tiết sữa', icon: '🍼', effect: 'corruptionPerRest', value: 6, desc: 'Đọa lạc nghỉ ngơi +6', fullDesc: 'Bộ ngực liên tục tiết ra sữa, không cách nào dừng lại được.' },
+    永久发情: { id: 'Phát tình vĩnh viễn', icon: '💯', effect: 'multiple', value: 0, desc: 'Tấn công -3, Đọa lạc +8/nghỉ ngơi', fullDesc: 'Bị dính lời nguyền phát tình vĩnh viễn, khao khát không lúc nào nguôi.', effects: { attack: -3, corruptionPerRest: 8 } },
 
-    // 兽化类
-    触手寄生: { id: '触手寄生', icon: '🐙', effect: 'multiple', value: 0, desc: '费用-2，战斗堕落+6', fullDesc: '体内被植入了触手生物，随时会从体内伸出触手', effects: { energy: -2, corruptionPerBattle: 6 } },
-    史莱姆化: { id: '史莱姆化', icon: '🧫', effect: 'multiple', value: 0, desc: '防御-4，受伤+30%', fullDesc: '身体变得像史莱姆一样柔软，可以被随意揉捷', effects: { defense: -4, damageTaken: 30 } },
+    // Thú hóa
+    触手寄生: { id: 'Ký sinh xúc tu', icon: '🐙', effect: 'multiple', value: 0, desc: 'Năng lượng -2, Đọa lạc +6/trận chiến', fullDesc: 'Bên trong cơ thể bị cấy sinh vật xúc tu, có thể thò ra ngoài bất cứ lúc nào.', effects: { energy: -2, corruptionPerBattle: 6 } },
+    史莱姆化: { id: 'Slime hóa', icon: '🧫', effect: 'multiple', value: 0, desc: 'Phòng thủ -4, Sát thương nhận vào +30%', fullDesc: 'Cơ thể trở nên mềm mại như Slime, có thể bị nhào nặn tùy ý.', effects: { defense: -4, damageTaken: 30 } },
 
-    // 特殊变化类
-    扶她化: { id: '扶她化', icon: '🍆', effect: 'multiple', value: 0, desc: '攻击+3，战斗堕落+6', fullDesc: '小腹下方长出了肉棒，战斗时会异常兴奋', effects: { attack: 3, corruptionPerBattle: 6 } },
-    小穴脱出: { id: '小穴脱出', icon: '🌸', effect: 'multiple', value: 0, desc: '防御-3，休息堕落+8', fullDesc: '阴道壁脱出了，粉嫩的肉壁露在外面', effects: { defense: -3, corruptionPerRest: 8 } },
-    肛门脱出: { id: '肛门脱出', icon: '🔴', effect: 'multiple', value: 0, desc: '防御-4，休息堕落+10', fullDesc: '肛门脱出了，红色的肉花露在外面，行走都困难', effects: { defense: -4, corruptionPerRest: 10 } },
-    子宫脱出: { id: '子宫脱出', icon: '❤️', effect: 'multiple', value: 0, desc: 'HP-25，休息堕落+12', fullDesc: '子宫完全脱出了，垂在两腿之间，身体极度虚弱', effects: { maxHp: -25, corruptionPerRest: 12 } },
+    // Biến đổi đặc biệt
+    扶她化: { id: 'Futanari hóa', icon: '🍆', effect: 'multiple', value: 0, desc: 'Tấn công +3, Đọa lạc +6/trận chiến', fullDesc: 'Phần bụng dưới mọc thêm nhục bổng, sẽ trở nên hưng phấn bất thường khi chiến đấu.', effects: { attack: 3, corruptionPerBattle: 6 } },
+    小穴脱出: { id: 'Sa âm đạo', icon: '🌸', effect: 'multiple', value: 0, desc: 'Phòng thủ -3, Đọa lạc nghỉ ngơi +8', fullDesc: 'Thành âm đạo bị lộn ra ngoài, lộ ra lớp niêm mạc hồng hào nhạy cảm.', effects: { defense: -3, corruptionPerRest: 8 } },
+    肛门脱出: { id: 'Sa trực tràng', icon: '🔴', effect: 'multiple', value: 0, desc: 'Phòng thủ -4, Đọa lạc nghỉ ngơi +10', fullDesc: 'Hậu môn bị lộn ra ngoài, lộ ra khối thịt đỏ hực khiến việc đi lại cũng khó khăn.', effects: { defense: -4, corruptionPerRest: 10 } },
+    子宫脱出: { id: 'Sa tử cung hoàn toàn', icon: '❤️', effect: 'multiple', value: 0, desc: 'HP -25, Đọa lạc nghỉ ngơi +12', fullDesc: 'Tử cung đã hoàn toàn bị lộn ra ngoài, treo lủng lẳng giữa hai chân, cơ thể cực kỳ suy nhược.', effects: { maxHp: -25, corruptionPerRest: 12 } },
 
-    // 催眠/常识改造类 (12种)
-    裸体常识: { id: '裸体常识', icon: '👗', effect: 'multiple', value: 0, desc: '防御-3，战斗堕落+4', fullDesc: '被催眠植入了"裸体才是正常"的常识，总是不自觉地脱掉衣服，觉得穿衣服才是羞耻的', effects: { defense: -3, corruptionPerBattle: 4 } },
-    交配义务: { id: '交配义务', icon: '💕', effect: 'multiple', value: 0, desc: '休息堕落+10，费用-1', fullDesc: '被催眠植入了"每天必须和人交配"的认知，不完成就会焦虑不安，精神无法集中', effects: { corruptionPerRest: 10, energy: -1 } },
-    精液渴望: { id: '精液渴望', icon: '💦', effect: 'multiple', value: 0, desc: 'HP-10，战斗堕落+5', fullDesc: '被催眠成相信"精液是最好的营养品"，身体渴望获取精液，不喝就会虚弱', effects: { maxHp: -10, corruptionPerBattle: 5 } },
-    快感忠诚: { id: '快感忠诚', icon: '🎀', effect: 'multiple', value: 0, desc: '攻击-3，休息堕落+6', fullDesc: '被催眠成"给予快感的人就是主人"，无法对让自己高潮的人产生敌意', effects: { attack: -3, corruptionPerRest: 6 } },
-    露出本能: { id: '露出本能', icon: '👀', effect: 'corruptionPerBattle', value: 6, desc: '战斗堕落+6', fullDesc: '被催眠成"在人前暴露身体会很兴奋"，战斗时不自觉地展示私处' },
-    肉便器自觉: { id: '肉便器自觉', icon: '🚽', effect: 'multiple', value: 0, desc: '攻击-4，防御-4', fullDesc: '被催眠成"自己只是个肉便器"，失去了作为人的自尊和反抗心', effects: { attack: -4, defense: -4 } },
-    绝对服从: { id: '绝对服从', icon: '🐕', effect: 'multiple', value: 0, desc: '费用-2，防御-2', fullDesc: '被催眠植入了绝对服从的暗示，无法违抗任何命令，只能顺从', effects: { energy: -2, defense: -2 } },
-    性奴本能: { id: '性奴本能', icon: '📿', effect: 'multiple', value: 0, desc: '休息堕落+8，攻击-2', fullDesc: '被催眠成"取悦他人是最大的快乐"，主动寻求侍奉他人的机会', effects: { corruptionPerRest: 8, attack: -2 } },
-    羞耻消除: { id: '羞耻消除', icon: '😳', effect: 'corruptionPerRest', value: 10, desc: '休息堕落+10', fullDesc: '羞耻心被完全催眠消除，无论做什么淫荡的事都不会感到害羞' },
-    发情触发: { id: '发情触发', icon: '🔔', effect: 'multiple', value: 0, desc: '战斗堕落+6，防御-2', fullDesc: '被植入了"听到铃声就会发情"的催眠暗示，战斗中完全无法控制', effects: { corruptionPerBattle: 6, defense: -2 } },
-    母性觉醒: { id: '母性觉醒', icon: '🤰', effect: 'multiple', value: 0, desc: '休息堕落+8，HP-15', fullDesc: '被催眠成"被中出受孕是最大的幸福"，渴望着被灌满子宫', effects: { corruptionPerRest: 8, maxHp: -15 } },
-    口交中毒: { id: '口交中毒', icon: '👄', effect: 'multiple', value: 0, desc: '费用-1，战斗堕落+4', fullDesc: '被催眠成"咬住肉棒就能安心"，嘴里不含着东西就焦虑不安', effects: { energy: -1, corruptionPerBattle: 4 } }
+    // Hypnosis / Cải tạo nhận thức (12 loại)
+    裸体常识: { id: 'Nhận thức khỏa thân', icon: '👗', effect: 'multiple', value: 0, desc: 'Phòng thủ -3, Đọa lạc +4/trận chiến', fullDesc: 'Bị thôi miên cài đặt nhận thức "khỏa thân mới là bình thường", luôn vô thức cởi bỏ quần áo và cảm thấy mặc đồ mới là nhục nhã.', effects: { defense: -3, corruptionPerBattle: 4 } },
+    交配义务: { id: 'Nghĩa vụ giao phối', icon: '💕', effect: 'multiple', value: 0, desc: 'Đọa lạc nghỉ ngơi +10, Năng lượng -1', fullDesc: 'Bị thôi miên cài đặt nhận thức "mỗi ngày bắt buộc phải giao phối", nếu không hoàn thành sẽ lo âu bồn chồn, không thể tập trung.', effects: { corruptionPerRest: 10, energy: -1 } },
+    精液渴望: { id: 'Khao khát tinh dịch', icon: '💦', effect: 'multiple', value: 0, desc: 'HP -10, Đọa lạc +5/trận chiến', fullDesc: 'Bị thôi miên tin rằng "tinh dịch là chất dinh dưỡng tốt nhất", cơ thể khao khát có được nó, nếu không uống sẽ suy nhược.', effects: { maxHp: -10, corruptionPerBattle: 5 } },
+    快感忠诚: { id: 'Trung thành với khoái cảm', icon: '🎀', effect: 'multiple', value: 0, desc: 'Tấn công -3, Đọa lạc nghỉ ngơi +6', fullDesc: 'Bị thôi miên rằng "kẻ ban cho khoái cảm chính là chủ nhân", không thể nảy sinh ác ý với kẻ vừa khiến mình đạt cực khoái.', effects: { attack: -3, corruptionPerRest: 6 } },
+    露出本能: { id: 'Bản năng phô bày', icon: '👀', effect: 'corruptionPerBattle', value: 6, desc: 'Đọa lạc chiến đấu +6', fullDesc: 'Bị thôi miên rằng "phô bày cơ thể trước mặt người khác sẽ rất hưng phấn", vô thức phô bày vùng kín khi chiến đấu.' },
+    肉便器自觉: { id: 'Tự giác làm bồn chứa tinh', icon: '🚽', effect: 'multiple', value: 0, desc: 'Tấn công -4, Phòng thủ -4', fullDesc: 'Bị thôi miên rằng "mình chỉ là một cái bồn chứa tinh", đánh mất lòng tự trọng và ý chí phản kháng của con người.', effects: { attack: -4, defense: -4 } },
+    绝对服从: { id: 'Phục tùng tuyệt đối', icon: '🐕', effect: 'multiple', value: 0, desc: 'Năng lượng -2, Phòng thủ -2', fullDesc: 'Bị thôi miên cài đặt ám thị phục tùng tuyệt đối, không thể làm trái bất kỳ mệnh lệnh nào, chỉ biết vâng lời.', effects: { energy: -2, defense: -2 } },
+    性奴本能: { id: 'Bản năng nô lệ tình dục', icon: '📿', effect: 'multiple', value: 0, desc: 'Đọa lạc nghỉ ngơi +8, Tấn công -2', fullDesc: 'Bị thôi miên rằng "làm vui lòng người khác là hạnh phúc lớn nhất", chủ động tìm kiếm cơ hội để hầu hạ kẻ khác.', effects: { corruptionPerRest: 8, attack: -2 } },
+    羞耻消除: { id: 'Loại bỏ xấu hổ', icon: '😳', effect: 'corruptionPerRest', value: 10, desc: 'Đọa lạc nghỉ ngơi +10', fullDesc: 'Sự xấu hổ đã bị thôi miên loại bỏ hoàn toàn, dù làm bất kỳ việc dâm loạn nào cũng không thấy hổ thẹn.' },
+    发情触发: { id: 'Kích hoạt phát tình', icon: '🔔', effect: 'multiple', value: 0, desc: 'Đọa lạc chiến đấu +6, Phòng thủ -2', fullDesc: 'Bị cài đặt ám thị thôi miên "nghe thấy tiếng chuông là sẽ phát tình", hoàn toàn không thể kiểm soát khi chiến đấu.', effects: { corruptionPerBattle: 6, defense: -2 } },
+    母性觉醒: { id: 'Thức tỉnh mẫu tính', icon: '🤰', effect: 'multiple', value: 0, desc: 'Đọa lạc nghỉ ngơi +8, HP -15', fullDesc: 'Bị thôi miên rằng "được xuất tinh vào trong và mang thai là hạnh phúc tột cùng", luôn khao khát tử cung được lấp đầy.', effects: { corruptionPerRest: 8, maxHp: -15 } },
+    口交中毒: { id: 'Nghiện khẩu giao', icon: '👄', effect: 'multiple', value: 0, desc: 'Năng lượng -1, Đọa lạc +4/trận chiến', fullDesc: 'Bị thôi miên rằng "ngậm nhục bổng mới thấy an tâm", miệng không ngậm thứ gì đó sẽ thấy bồn chồn lo âu.', effects: { energy: -1, corruptionPerBattle: 4 } }
 };
 
-// 特殊状态管理器
+// Trình quản lý trạng thái đặc biệt
 const SpecialStatusManager = {
-    // 当前激活的特殊状态
+    // Các trạng thái đặc biệt hiện đang kích hoạt
     statuses: {},
 
-    // 初始化
+    // Khởi tạo
     init: function (savedStatuses = null) {
         if (savedStatuses) {
             this.statuses = { ...savedStatuses };
@@ -2023,8 +1974,8 @@ const SpecialStatusManager = {
         this.updateDisplay();
     },
 
-    // 添加特殊状态
-    // source: 'curse'(诅咒卡), 'starting'(开局选择), 'blackmarket'(黑市)
+    // Thêm trạng thái đặc biệt
+    // source: 'curse' (thẻ nguyền rủa), 'starting' (chọn lúc bắt đầu), 'blackmarket' (chợ đen)
     add: function (statusId, source = 'curse') {
         const config = SpecialStatusConfig[statusId];
         if (!config) return false;
@@ -2036,8 +1987,8 @@ const SpecialStatusManager = {
             value: config.value,
             desc: config.desc,
             fullDesc: config.fullDesc,
-            effects: config.effects || null, // 🔧 保存复合效果
-            source: source, // 🔧 记录来源
+            effects: config.effects || null, // 🔧 Lưu trữ các hiệu ứng phức hợp
+            source: source, // 🔧 Ghi lại nguồn gốc
             addedAt: Date.now()
         };
 
@@ -2045,23 +1996,23 @@ const SpecialStatusManager = {
         this.updateDisplay();
         this.applyEffects();
 
-        // 🔧 更新状态栏显示
+        // 🔧 Cập nhật hiển thị trên thanh trạng thái
         if (typeof PlayerState !== 'undefined') {
             PlayerState.updateDisplay();
         }
 
-        // 🔧 如果添加的是催眠类状态，应用覆盖隐藏输入框
+        // 🔧 Nếu trạng thái được thêm thuộc loại thôi miên, áp dụng ghi đè để ẩn khung nhập liệu
         if (window.HypnosisOptionOverride && window.HypnosisOptionOverride.hypnosisStatusIds.includes(statusId)) {
             window.HypnosisOptionOverride.applyOverride();
             window.HypnosisOptionOverride.modifyOptionButtons();
-            console.log('[特殊状态] 添加催眠状态，隐藏输入框:', statusId);
+            console.log('[Trạng thái đặc biệt] Đã thêm trạng thái thôi miên, ẩn khung nhập liệu:', statusId);
         }
 
-        console.log('[特殊状态] 添加:', statusId, '来源:', source);
+        console.log('[Trạng thái đặc biệt] Đã thêm:', statusId, 'Nguồn:', source);
         return true;
     },
 
-    // 移除特殊状态
+    // Loại bỏ trạng thái đặc biệt
     remove: function (statusId) {
         if (this.statuses[statusId]) {
             delete this.statuses[statusId];
@@ -2069,42 +2020,42 @@ const SpecialStatusManager = {
             this.updateDisplay();
             this.applyEffects();
 
-            // 🔧 同时从 gameState.variables.specialStatus 中移除（防止 load 时被同步回来）
+            // 🔧 Đồng thời loại bỏ khỏi gameState.variables.specialStatus (tránh việc bị đồng bộ ngược lại khi tải game)
             if (typeof gameState !== 'undefined' && gameState.variables && gameState.variables.specialStatus && gameState.variables.specialStatus[statusId]) {
                 delete gameState.variables.specialStatus[statusId];
-                console.log('[特殊状态] 同步清除 gameState 中的:', statusId);
+                console.log('[Trạng thái đặc biệt] Đồng bộ xóa trong gameState:', statusId);
             }
 
-            // 🔧 更新状态栏显示
+            // 🔧 Cập nhật hiển thị thanh trạng thái
             if (typeof PlayerState !== 'undefined') {
                 PlayerState.updateDisplay();
             }
 
-            // 🔧 检查是否还有催眠状态，如果没有了就恢复输入框
+            // 🔧 Kiểm tra xem còn trạng thái thôi miên nào không, nếu không còn thì khôi phục khung nhập liệu
             if (window.HypnosisOptionOverride && !window.HypnosisOptionOverride.shouldOverride()) {
                 window.HypnosisOptionOverride.removeOverride();
-                console.log('[特殊状态] 催眠状态已清除，恢复输入框');
+                console.log('[Trạng thái đặc biệt] Trạng thái thôi miên đã được xóa, khôi phục khung nhập liệu');
             }
 
-            console.log('[特殊状态] 移除:', statusId);
+            console.log('[Trạng thái đặc biệt] Đã loại bỏ:', statusId);
             return true;
         }
         return false;
     },
 
-    // 获取所有激活状态
+    // Lấy tất cả các trạng thái đang kích hoạt
     getActive: function () {
         return Object.values(this.statuses);
     },
 
-    // 检查是否有某状态
+    // Kiểm tra xem có trạng thái cụ thể nào không
     has: function (statusId) {
         return !!this.statuses[statusId];
     },
 
-    // 应用状态效果到玩家属性
+    // Áp dụng hiệu ứng trạng thái lên thuộc tính người chơi
     applyEffects: function () {
-        // 重置受状态影响的属性
+        // Đặt lại các chỉ số hiệu chỉnh bị ảnh hưởng bởi trạng thái
         let energyMod = 0;
         let attackMod = 0;
         let defenseMod = 0;
@@ -2112,7 +2063,7 @@ const SpecialStatusManager = {
         let damageTakenMod = 0;
 
         Object.values(this.statuses).forEach(status => {
-            // 处理单一效果
+            // Xử lý hiệu ứng đơn lẻ
             switch (status.effect) {
                 case 'energy': energyMod += status.value; break;
                 case 'attack': attackMod += status.value; break;
@@ -2121,7 +2072,7 @@ const SpecialStatusManager = {
                 case 'damageTaken': damageTakenMod += status.value; break;
             }
 
-            // 🔧 处理复合效果（multiple类型）
+            // 🔧 Xử lý hiệu ứng phức hợp (loại 'multiple')
             if (status.effect === 'multiple' && status.effects) {
                 if (status.effects.energy) energyMod += status.effects.energy;
                 if (status.effects.attack) attackMod += status.effects.attack;
@@ -2131,22 +2082,22 @@ const SpecialStatusManager = {
             }
         });
 
-        // 更新玩家属性（如果PlayerState已加载）
+        // Cập nhật thuộc tính người chơi (nếu PlayerState đã tải)
         if (typeof PlayerState !== 'undefined' && PlayerState.profession) {
             PlayerState.statusEffects = {
                 energyMod, attackMod, defenseMod, maxHpMod, damageTakenMod
             };
-            console.log('[特殊状态] 应用效果:', PlayerState.statusEffects);
+            console.log('[Trạng thái đặc biệt] Áp dụng hiệu ứng:', PlayerState.statusEffects);
         }
     },
 
-    // 战斗开始时应用效果
+    // Áp dụng hiệu ứng khi bắt đầu trận chiến
     onBattleStart: function () {
         let corruptionGain = 0;
         let energyLoss = 0;
 
         Object.values(this.statuses).forEach(status => {
-            // 单一效果
+            // Hiệu ứng đơn lẻ
             if (status.effect === 'corruptionPerBattle') {
                 corruptionGain += status.value;
             }
@@ -2154,7 +2105,7 @@ const SpecialStatusManager = {
                 energyLoss += Math.abs(status.value);
             }
 
-            // 🔧 复合效果
+            // 🔧 Hiệu ứng phức hợp
             if (status.effect === 'multiple' && status.effects) {
                 if (status.effects.corruptionPerBattle) {
                     corruptionGain += status.effects.corruptionPerBattle;
@@ -2168,23 +2119,23 @@ const SpecialStatusManager = {
         if (corruptionGain > 0) {
             PlayerState.corruption += corruptionGain;
             PlayerState.save();
-            console.log('[特殊状态] 战斗开始，堕落值+' + corruptionGain);
+            console.log('[Trạng thái đặc biệt] Bắt đầu trận chiến, đọa lạc +' + corruptionGain);
         }
 
         return { energyLoss };
     },
 
-    // 休息时应用效果
+    // Áp dụng hiệu ứng khi nghỉ ngơi
     onRest: function () {
         let corruptionGain = 0;
 
         Object.values(this.statuses).forEach(status => {
-            // 单一效果
+            // Hiệu ứng đơn lẻ
             if (status.effect === 'corruptionPerRest') {
                 corruptionGain += status.value;
             }
 
-            // 🔧 复合效果
+            // 🔧 Hiệu ứng phức hợp
             if (status.effect === 'multiple' && status.effects) {
                 if (status.effects.corruptionPerRest) {
                     corruptionGain += status.effects.corruptionPerRest;
@@ -2195,24 +2146,24 @@ const SpecialStatusManager = {
         if (corruptionGain > 0) {
             PlayerState.corruption += corruptionGain;
             PlayerState.save();
-            console.log('[特殊状态] 休息时，堕落值+' + corruptionGain);
+            console.log('[Trạng thái đặc biệt] Khi nghỉ ngơi, đọa lạc +' + corruptionGain);
         }
     },
 
-    // 更新状态栏显示
+    // Cập nhật hiển thị trên thanh trạng thái
     updateDisplay: function () {
         const container = document.getElementById('specialStatusList');
         if (!container) return;
 
         const statuses = this.getActive();
         if (statuses.length === 0) {
-            container.innerHTML = '<div style="text-align: center; color: #666; padding: 10px;">暂无异常状态</div>';
+            container.innerHTML = '<div style="text-align: center; color: #666; padding: 10px;">Tạm thời không có trạng thái bất thường</div>';
             return;
         }
 
         let html = '';
         statuses.forEach(status => {
-            // 🔧 兼容两种格式：普通状态用desc，身体改造用description
+            // 🔧 Tương thích cả hai định dạng: trạng thái thường dùng 'desc', cải tạo cơ thể dùng 'description'
             const displayName = status.name || status.id;
             const displayDesc = status.desc || status.description || '';
             const displayFullDesc = status.fullDesc || status.description || '';
@@ -2234,7 +2185,7 @@ const SpecialStatusManager = {
         container.innerHTML = html;
     },
 
-    // 显示状态详情
+    // Hiển thị chi tiết trạng thái
     showDetail: function (statusId) {
         const status = this.statuses[statusId];
         if (!status) return;
@@ -2242,17 +2193,17 @@ const SpecialStatusManager = {
         const displayName = status.name || status.id;
         const displayDesc = status.desc || status.description || '';
         const displayFullDesc = status.fullDesc || status.description || '';
-        const isPermanent = status.permanent ? '\n\n（永久改造，无法清除）' : '\n\n（在温泉休息时可以选择清除此状态）';
+        const isPermanent = status.permanent ? '\n\n（Cải tạo vĩnh viễn, không thể xóa bỏ）' : '\n\n（Có thể chọn xóa trạng thái này khi nghỉ ngơi tại suối nước nóng）';
 
-        alert(`${status.icon} ${displayName}\n\n效果: ${displayDesc}\n\n${displayFullDesc}${isPermanent}`);
+        alert(`${status.icon} ${displayName}\n\nHiệu quả: ${displayDesc}\n\n${displayFullDesc}${isPermanent}`);
     },
 
-    // 保存
+    // Lưu dữ liệu
     save: function () {
         localStorage.setItem('acjt_special_status', JSON.stringify(this.statuses));
     },
 
-    // 加载
+    // Tải dữ liệu
     load: function () {
         const saved = localStorage.getItem('acjt_special_status');
         if (saved) {
@@ -2263,12 +2214,12 @@ const SpecialStatusManager = {
             }
         }
 
-        // 🔧 同步来自 gameState.variables.specialStatus 的数据
+        // 🔧 Đồng bộ dữ liệu từ gameState.variables.specialStatus
         if (typeof gameState !== 'undefined' && gameState.variables && gameState.variables.specialStatus) {
             const gameStateStatuses = gameState.variables.specialStatus;
             Object.keys(gameStateStatuses).forEach(key => {
                 if (gameStateStatuses[key].active && !this.statuses[key]) {
-                    // gameState 中有但 SpecialStatusManager 中没有，补充进来
+                    // Nếu gameState có mà SpecialStatusManager chưa có, hãy bổ sung vào
                     const config = SpecialStatusConfig[key];
                     if (config) {
                         this.statuses[key] = {
@@ -2283,53 +2234,53 @@ const SpecialStatusManager = {
                     }
                 }
             });
-            this.save(); // 保存同步后的数据
+            this.save(); // Lưu dữ liệu sau khi đồng bộ
         }
 
         this.updateDisplay();
         this.applyEffects();
     },
 
-    // 🔧 强制清除所有特殊状态（调试用）
+    // 🔧 Cưỡng ép xóa sạch tất cả trạng thái đặc biệt (Dùng để gỡ lỗi)
     clearAll: function () {
         this.statuses = {};
         this.save();
 
-        // 同时清除 gameState 中的数据
+        // Đồng thời xóa dữ liệu trong gameState
         if (typeof gameState !== 'undefined' && gameState.variables) {
             gameState.variables.specialStatus = {};
         }
 
         this.updateDisplay();
         this.applyEffects();
-        console.log('[特殊状态] 已清除所有特殊状态');
+        console.log('[Trạng thái đặc biệt] Đã xóa sạch tất cả trạng thái đặc biệt');
     }
 };
 
-// ==================== 催眠状态选项覆盖配置 ====================
-// 当玩家有催眠类特殊状态时，覆盖所有选项为固定内容
+// ==================== Cấu hình ghi đè tùy chọn trạng thái thôi miên ====================
+// Khi người chơi có trạng thái đặc biệt thuộc loại thôi miên, ghi đè tất cả tùy chọn thành nội dung cố định
 const HypnosisOptionOverride = {
-    // 催眠状态ID列表
+    // Danh sách ID trạng thái thôi miên
     hypnosisStatusIds: [
-        '裸体常识', '交配义务', '精液渴望', '快感忠诚',
-        '露出本能', '肉便器自觉', '绝对服从', '性奴本能',
-        '羞耻消除', '发情触发', '母性觉醒', '口交中毒'
+        'Nhận thức khỏa thân', 'Nghĩa vụ giao phối', 'Khao khát tinh dịch', 'Trung thành với khoái cảm',
+        'Bản năng phô bày', 'Tự giác làm bồn chứa tinh', 'Phục tùng tuyệt đối', 'Bản năng nô lệ tình dục',
+        'Loại bỏ xấu hổ', 'Kích hoạt phát tình', 'Thức tỉnh mẫu tính', 'Nghiện khẩu giao'
     ],
 
-    // 每种催眠状态对应的固定选项文本
+    // Văn bản tùy chọn cố định tương ứng với mỗi loại trạng thái thôi miên
     statusOptions: {
-        '裸体常识': '【裸体常识诅咒】脱光衣服到处转转',
-        '交配义务': '【交配义务诅咒】找人交配完成今天的义务',
-        '精液渴望': '【精液渴望诅咒】寻找可以获取精液的对象',
-        '快感忠诚': '【快感忠诚诅咒】主动向能给予快感的人献身',
-        '露出本能': '【露出本能诅咒】找个人多的地方暴露身体',
-        '肉便器自觉': '【肉便器自觉诅咒】找个地方等待被使用',
-        '绝对服从': '【绝对服从诅咒】寻找可以服从的主人',
-        '性奴本能': '【性奴本能诅咒】寻找可以侍奉的对象',
-        '羞耻消除': '【羞耻消除诅咒】做些平时羞耻的事情',
-        '发情触发': '【发情触发诅咒】寻找能满足发情需求的对象',
-        '母性觉醒': '【母性觉醒诅咒】寻找能让自己受孕的对象',
-        '口交中毒': '【口交中毒诅咒】寻找可以含住的肉棒'
+        'Nhận thức khỏa thân': '【Lời nguyền Nhận thức khỏa thân】 Thoát y và đi dạo quanh đây',
+        'Nghĩa vụ giao phối': '【Lời nguyền Nghĩa vụ giao phối】 Tìm người giao phối để hoàn thành nghĩa vụ hôm nay',
+        'Khao khát tinh dịch': '【Lời nguyền Khao khát tinh dịch】 Tìm kiếm đối tượng để có được tinh dịch',
+        'Trung thành với khoái cảm': '【Lời nguyền Trung thành với khoái cảm】 Chủ động hiến thân cho kẻ có thể ban phát khoái cảm',
+        'Bản năng phô bày': '【Lời nguyền Bản năng phô bày】 Tìm nơi đông người để phô bày thân thể',
+        'Tự giác làm bồn chứa tinh': '【Lời nguyền Tự giác làm bồn chứa tinh】 Tìm một nơi và chờ đợi được sử dụng',
+        'Phục tùng tuyệt đối': '【Lời nguyền Phục tùng tuyệt đối】 Tìm kiếm một người chủ để phục tùng',
+        'Bản năng nô lệ tình dục': '【Lời nguyền Bản năng nô lệ tình dục】 Tìm kiếm đối tượng để hầu hạ',
+        'Loại bỏ xấu hổ': '【Lời nguyền Loại bỏ xấu hổ】 Làm những việc mà bình thường sẽ thấy hổ thẹn',
+        'Kích hoạt phát tình': '【Lời nguyền Kích hoạt phát tình】 Tìm kiếm đối tượng có thể thỏa mãn nhu cầu phát tình',
+        'Thức tỉnh mẫu tính': '【Lời nguyền Thức tỉnh mẫu tính】 Tìm kiếm đối tượng có thể khiến bản thân thụ thai',
+        'Nghiện khẩu giao': '【Lời nguyền Nghiện khẩu giao】 Tìm kiếm nhục bổng để ngậm lấy'
     },
 
     // 检查是否有催眠状态并返回随机一个
@@ -2456,34 +2407,34 @@ const HypnosisOptionOverride = {
 // 全局暴露
 window.HypnosisOptionOverride = HypnosisOptionOverride;
 
-// ==================== 随机事件提示词 ====================
+// ==================== Từ khóa nhắc lệnh sự kiện ngẫu nhiên ====================
 const RandomEventPrompts = {
     erotic: [
-        '简单跳过之前的场景，生成新剧情：我在探索中发现了一个隐秘的洞穴，里面传来令人脸红的声音...',
-        '简单跳过之前的场景，生成新剧情：一个衣着暴露的神秘女子拦住了我的去路，她的眼神中带着诱惑...',
-        '简单跳过之前的场景，生成新剧情：我误入了魅魔的领地，空气中弥漫着令人迷醉的香气...'
+        'Bỏ qua các cảnh trước đó một cách đơn giản, tạo cốt truyện mới: Trong lúc thám hiểm, tôi phát hiện một hang động bí mật, bên trong truyền ra những âm thanh khiến người ta đỏ mặt...',
+        'Bỏ qua các cảnh trước đó một cách đơn giản, tạo cốt truyện mới: Một nữ tử bí ẩn ăn mặc hở hang chặn đường tôi, ánh mắt cô ấy tràn đầy sự quyến rũ...',
+        'Bỏ qua các cảnh trước đó một cách đơn giản, tạo cốt truyện mới: Tôi vô tình lạc vào lãnh địa của Mị ma, trong không khí tràn ngập mùi hương mê hoặc...'
     ],
     adventure: [
-        '简单跳过之前的场景，生成新剧情：我发现了一个被遗忘的宝箱，里面似乎有什么东西在发光...',
-        '简单跳过之前的场景，生成新剧情：一位受伤的旅行者向我求助，他说附近有一个藏宝地点...',
-        '简单跳过之前的场景，生成新剧情：我遇到了一位神秘的商人，他愿意用特殊的方式进行交易...'
+        'Bỏ qua các cảnh trước đó một cách đơn giản, tạo cốt truyện mới: Tôi tìm thấy một rương báu bị bỏ quên, bên trong dường như có thứ gì đó đang phát sáng...',
+        'Bỏ qua các cảnh trước đó một cách đơn giản, tạo cốt truyện mới: Một lữ khách bị thương cầu cứu tôi, anh ta nói gần đây có một địa điểm giấu kho báu...',
+        'Bỏ qua các cảnh trước đó một cách đơn giản, tạo cốt truyện mới: Tôi gặp một thương nhân bí ẩn, ông ta sẵn lòng giao dịch bằng một phương thức đặc biệt...'
     ],
     misfortune: [
-        '简单跳过之前的场景，生成新剧情：我不小心触发了一个陷阱，地面开始塌陷...',
-        '简单跳过之前的场景，生成新剧情：一群强盗从暗处冲了出来，将我团团围住...',
-        '简单跳过之前的场景，生成新剧情：我喝下的泉水似乎有问题，感觉身体开始发软...'
+        'Bỏ qua các cảnh trước đó một cách đơn giản, tạo cốt truyện mới: Tôi vô ý kích hoạt một cái bẫy, mặt đất bắt đầu sụp đổ...',
+        'Bỏ qua các cảnh trước đó một cách đơn giản, tạo cốt truyện mới: Một nhóm cướp từ trong bóng tối xông ra, bao vây lấy tôi...',
+        'Bỏ qua các cảnh trước đó một cách đơn giản, tạo cốt truyện mới: Nước suối tôi vừa uống dường như có vấn đề, cảm thấy cơ thể bắt đầu bủn rủn...'
     ]
 };
 
-// 卡牌类型显示名称
+// Tên hiển thị của các loại thẻ bài
 const CardTypeNames = {
-    [CardType.ATTACK]: '攻击',
-    [CardType.H_ATTACK]: 'H攻击',
-    [CardType.HEAL]: '治疗',
-    [CardType.BUFF]: '增益',
-    [CardType.DEBUFF]: '减益',
-    [CardType.ARMOR]: '护甲',
-    [CardType.CURSE]: '诅咒'
+    [CardType.ATTACK]: 'Tấn công',
+    [CardType.H_ATTACK]: 'Tấn công H',
+    [CardType.HEAL]: 'Trị liệu',
+    [CardType.BUFF]: 'Tăng ích',
+    [CardType.DEBUFF]: 'Giảm ích',
+    [CardType.ARMOR]: 'Giáp',
+    [CardType.CURSE]: 'Nguyền rủa'
 };
 
 // 卡牌类型颜色
@@ -2497,514 +2448,518 @@ const CardTypeColors = {
     [CardType.CURSE]: '#8b0000'         // 暗红色
 };
 
-// ==================== 诅咒卡牌库（敌人H技能）====================
+// ==================== Thư viện thẻ bài Nguyền rủa (Kỹ năng H của kẻ địch) ====================
 const CurseCardLibrary = [
-    { id: 'curse_跳蛋', name: '跳蛋', type: CardType.CURSE, damage: 3, statusId: '跳蛋', icon: '🔔', description: '费用点-1。被植入震动的跳蛋，无法集中精神。' },
-    { id: 'curse_束缚锁链', name: '束缚锁链', type: CardType.CURSE, damage: 4, statusId: '束缚锁链', icon: '⛓️', description: '费用点-1。手腕上的锁链限制行动。' },
-    { id: 'curse_精神污染', name: '精神污染', type: CardType.CURSE, damage: 6, statusId: '精神污染', icon: '🌀', description: '费用点-2。深渊低语侵蚀意识。' },
-    { id: 'curse_淫纹', name: '淫纹', type: CardType.CURSE, damage: 5, statusId: '淫纹', icon: '🔮', description: '每次休息堕落+5。身上被刻下淫靡魔纹。' },
-    { id: 'curse_羞耻衣', name: '羞耻衣', type: CardType.CURSE, damage: 3, statusId: '羞耻衣', icon: '👙', description: '每场战斗堕落+3。被迫穿暴露服装。' },
-    { id: 'curse_魅魔契约', name: '魅魔契约', type: CardType.CURSE, damage: 7, statusId: '魅魔契约', icon: '💋', description: '休息时堕落+8。与魅魔签订契约。' },
-    { id: 'curse_淫欲诅咒', name: '淫欲诅咒', type: CardType.CURSE, damage: 5, statusId: '淫欲诅咒', icon: '💜', description: '战斗开始堕落+5。身体异常兴奋。' },
-    { id: 'curse_堕落种子', name: '堕落种子', type: CardType.CURSE, damage: 8, statusId: '堕落种子', icon: '🌱', description: '休息时堕落+10。种子侵蚀心智。' },
-    { id: 'curse_乳环', name: '乳环', type: CardType.CURSE, damage: 4, statusId: '乳环', icon: '⭕', description: '防御力-2。乳头被穿上银环。' },
-    { id: 'curse_肚脐钉', name: '肚脐钉', type: CardType.CURSE, damage: 3, statusId: '肚脐钉', icon: '📍', description: '防御力-1。肚脐穿孔装饰。' },
-    { id: 'curse_脚铐', name: '脚铐', type: CardType.CURSE, damage: 5, statusId: '脚铐', icon: '🔗', description: '防御力-3。脚踝铁铐限制移动。' },
-    { id: 'curse_项圈', name: '项圈', type: CardType.CURSE, damage: 6, statusId: '项圈', icon: '⚫', description: '最大HP-10。被套上奴隶项圈。' },
-    { id: 'curse_虚弱诅咒', name: '虚弱诅咒', type: CardType.CURSE, damage: 7, statusId: '虚弱诅咒', icon: '💀', description: '最大HP-15。生命力被抽取。' },
-    { id: 'curse_生命吸取', name: '生命吸取', type: CardType.CURSE, damage: 9, statusId: '生命吸取', icon: '🩸', description: '最大HP-20。生命力持续流失。' },
-    { id: 'curse_贞操带', name: '贞操带', type: CardType.CURSE, damage: 4, statusId: '贞操带', icon: '🔒', description: 'HP无法超过50%。被锁上贞操带。' },
-    { id: 'curse_诅咒伤口', name: '诅咒伤口', type: CardType.CURSE, damage: 6, statusId: '诅咒伤口', icon: '🩹', description: 'HP无法超过30%。伤口无法愈合。' },
-    { id: 'curse_催情药', name: '催情药', type: CardType.CURSE, damage: 4, statusId: '催情药', icon: '💊', description: '攻击力-3。身体酥软无力。' },
-    { id: 'curse_媚药中毒', name: '媚药中毒', type: CardType.CURSE, damage: 6, statusId: '媚药中毒', icon: '🧪', description: '攻击力-5。无法用力。' },
-    { id: 'curse_肌肉萎缩', name: '肌肉萎缩', type: CardType.CURSE, damage: 5, statusId: '肌肉萎缩', icon: '💪', description: '攻击力-4。力量大减。' },
-    { id: 'curse_烙印', name: '烙印', type: CardType.CURSE, damage: 8, statusId: '烙印', icon: '🔥', description: '受伤+50%。被烙上主人印记。' },
-    { id: 'curse_脆弱印记', name: '脆弱印记', type: CardType.CURSE, damage: 5, statusId: '脆弱印记', icon: '❌', description: '受伤+30%。被刻下脆弱印记。' },
-    { id: 'curse_诅咒标记', name: '诅咒标记', type: CardType.CURSE, damage: 10, statusId: '诅咒标记', icon: '☠️', description: '受伤+100%。深渊诅咒标记。' },
-    { id: 'curse_完全支配', name: '完全支配', type: CardType.CURSE, damage: 9, statusId: '完全支配', icon: '👑', description: '攻击-2，防御-2，堕落+5/战斗。身心不属于自己。' },
-    { id: 'curse_奴隶烙印', name: '奴隶烙印', type: CardType.CURSE, damage: 7, statusId: '奴隶烙印', icon: '🔥', description: 'HP-10，受伤+25%。奴隶身份。' },
-    // 新增身体变化类
-    { id: 'curse_小便失禁', name: '小便失禁', type: CardType.CURSE, damage: 4, statusId: '小便失禁', icon: '💦', description: '防御-2，战斗堕落+3。无法控制尿意。' },
-    { id: 'curse_大便失禁', name: '大便失禁', type: CardType.CURSE, damage: 5, statusId: '大便失禁', icon: '💩', description: '防御-3，战斗堕落+5。括约肌无法收缩。' },
-    { id: 'curse_巨乳化', name: '巨乳化', type: CardType.CURSE, damage: 6, statusId: '巨乳化', icon: '🍈', description: '费用-1，防御-2。I罩杯巨乳，行动受限。' },
-    { id: 'curse_子宫纹身', name: '子宫纹身', type: CardType.CURSE, damage: 5, statusId: '子宫纹身', icon: '❤️', description: '休息堕落+8。性奴纹身。' },
-    { id: 'curse_敏感体质', name: '敏感体质', type: CardType.CURSE, damage: 6, statusId: '敏感体质', icon: '💗', description: '受伤+40%。全身极度敏感。' },
-    { id: 'curse_发情期', name: '发情期', type: CardType.CURSE, damage: 5, statusId: '发情期', icon: '🔥', description: '攻击-2，战斗堕落+4。永久发情。' },
-    { id: 'curse_乳头肥大', name: '乳头肥大', type: CardType.CURSE, damage: 4, statusId: '乳头肥大', icon: '⭕', description: '防御-2。乳头如葡萄大小。' },
-    { id: 'curse_阴蒂肥大', name: '阴蒂肥大', type: CardType.CURSE, damage: 5, statusId: '阴蒂肥大', icon: '💎', description: '战斗堕落+5。阴蒂如拇指大小。' },
-    { id: 'curse_精神支配', name: '精神支配', type: CardType.CURSE, damage: 8, statusId: '精神支配', icon: '🧠', description: '费用-2。无法自主思考。' },
-    { id: 'curse_性奴调教', name: '性奴调教', type: CardType.CURSE, damage: 7, statusId: '性奴调教', icon: '👑', description: '攻击-3，防御-3。失去反抗意志。' },
-    { id: 'curse_子宫下垂', name: '子宫下垂', type: CardType.CURSE, damage: 8, statusId: '子宫下垂', icon: '⬇️', description: 'HP-20。过度使用导致身体虚弱。' },
-    { id: 'curse_乳汁分泌', name: '乳汁分泌', type: CardType.CURSE, damage: 4, statusId: '乳汁分泌', icon: '🍼', description: '休息堕落+6。胸部持续溢出乳汁。' },
-    { id: 'curse_永久发情', name: '永久发情', type: CardType.CURSE, damage: 9, statusId: '永久发情', icon: '💯', description: '攻击-3，堕落+8/休息。无时无刻不在渴望。' },
-    // 兽化类
-    { id: 'curse_触手寄生', name: '触手寄生', type: CardType.CURSE, damage: 7, statusId: '触手寄生', icon: '🐙', description: '费用-2，战斗堕落+6。体内有触手生物。' },
-    { id: 'curse_史莱姆化', name: '史莱姆化', type: CardType.CURSE, damage: 7, statusId: '史莱姆化', icon: '🧫', description: '防御-4，受伤+30%。身体变得柔软。' },
-    // 特殊变化类
-    { id: 'curse_扶她化', name: '扶她化', type: CardType.CURSE, damage: 6, statusId: '扶她化', icon: '🍆', description: '攻击+3，战斗堕落+6。小腹长出肉棒。' },
-    { id: 'curse_小穴脱出', name: '小穴脱出', type: CardType.CURSE, damage: 7, statusId: '小穴脱出', icon: '🌸', description: '防御-3，休息堕落+8。阴道壁脱出。' },
-    { id: 'curse_肛门脱出', name: '肛门脱出', type: CardType.CURSE, damage: 8, statusId: '肛门脱出', icon: '🔴', description: '防御-4，休息堕落+10。肛门脱出。' },
-    { id: 'curse_子宫脱出', name: '子宫脱出', type: CardType.CURSE, damage: 10, statusId: '子宫脱出', icon: '❤️', description: 'HP-25，休息堕落+12。子宫完全脱出。' },
-    // 催眠/常识改造类
-    { id: 'curse_裸体常识', name: '裸体常识', type: CardType.CURSE, damage: 5, statusId: '裸体常识', icon: '👗', description: '防御-3，战斗堕落+4。被催眠认为裸体才正常。' },
-    { id: 'curse_交配义务', name: '交配义务', type: CardType.CURSE, damage: 7, statusId: '交配义务', icon: '💕', description: '休息堕落+10，费用-1。被催眠每天必须交配。' },
-    { id: 'curse_精液渴望', name: '精液渴望', type: CardType.CURSE, damage: 6, statusId: '精液渴望', icon: '💦', description: 'HP-10，战斗堕落+5。被催眠渴望精液。' },
-    { id: 'curse_快感忠诚', name: '快感忠诚', type: CardType.CURSE, damage: 6, statusId: '快感忠诚', icon: '🎀', description: '攻击-3，休息堕落+6。对给予快感者忠诚。' },
-    { id: 'curse_露出本能', name: '露出本能', type: CardType.CURSE, damage: 5, statusId: '露出本能', icon: '👀', description: '战斗堕落+6。被催眠喜欢暴露身体。' },
-    { id: 'curse_肉便器自觉', name: '肉便器自觉', type: CardType.CURSE, damage: 8, statusId: '肉便器自觉', icon: '🚽', description: '攻击-4，防御-4。被催眠认为自己是肉便器。' },
-    { id: 'curse_绝对服从', name: '绝对服从', type: CardType.CURSE, damage: 7, statusId: '绝对服从', icon: '🐕', description: '费用-2，防御-2。被催眠绝对服从命令。' },
-    { id: 'curse_性奴本能', name: '性奴本能', type: CardType.CURSE, damage: 6, statusId: '性奴本能', icon: '📿', description: '休息堕落+8，攻击-2。被催眠成性奴。' },
-    { id: 'curse_羞耻消除', name: '羞耻消除', type: CardType.CURSE, damage: 6, statusId: '羞耻消除', icon: '😳', description: '休息堕落+10。羞耻心被催眠消除。' },
-    { id: 'curse_发情触发', name: '发情触发', type: CardType.CURSE, damage: 6, statusId: '发情触发', icon: '🔔', description: '战斗堕落+6，防御-2。听到铃声就发情。' },
-    { id: 'curse_母性觉醒', name: '母性觉醒', type: CardType.CURSE, damage: 7, statusId: '母性觉醒', icon: '🤰', description: '休息堕落+8，HP-15。渴望受孕。' },
-    { id: 'curse_口交中毒', name: '口交中毒', type: CardType.CURSE, damage: 5, statusId: '口交中毒', icon: '👄', description: '费用-1，战斗堕落+4。被催眠口交成瘾。' }
+    { id: 'curse_跳蛋', name: 'Trứng rung', type: CardType.CURSE, damage: 3, statusId: 'Trứng rung', icon: '🔔', description: 'Năng lượng -1. Bị cấy trứng rung, không thể tập trung tinh thần.' },
+    { id: 'curse_束缚锁链', name: 'Xiềng xích trói buộc', type: CardType.CURSE, damage: 4, statusId: 'Xiềng xích trói buộc', icon: '⛓️', description: 'Năng lượng -1. Xiềng xích trên cổ tay hạn chế hành động.' },
+    { id: 'curse_精神污染', name: 'Ô nhiễm tinh thần', type: CardType.CURSE, damage: 6, statusId: 'Ô nhiễm tinh thần', icon: '🌀', description: 'Năng lượng -2. Tiếng thì thầm của vực thẳm ăn mòn ý thức.' },
+    { id: 'curse_淫纹', name: 'Dâm văn', type: CardType.CURSE, damage: 5, statusId: 'Dâm văn', icon: '🔮', description: 'Tăng 5 đọa lạc mỗi khi nghỉ ngơi. Trên người bị khắc ma văn dâm mị.' },
+    { id: 'curse_羞耻衣', name: 'Y phục nhục nhã', type: CardType.CURSE, damage: 3, statusId: 'Y phục nhục nhã', icon: '👙', description: 'Tăng 3 đọa lạc mỗi trận chiến. Bị ép mặc trang phục hở hang.' },
+    { id: 'curse_魅魔契约', name: 'Khế ước Mị Ma', type: CardType.CURSE, damage: 7, statusId: 'Khế ước Mị Ma', icon: '💋', description: 'Tăng 8 đọa lạc khi nghỉ ngơi. Đã ký khế ước với Mị Ma.' },
+    { id: 'curse_淫欲诅咒', name: 'Lời nguyền dâm dục', type: CardType.CURSE, damage: 5, statusId: 'Lời nguyền dâm dục', icon: '💜', description: 'Tăng 5 đọa lạc khi bắt đầu trận đấu. Cơ thể hưng phấn bất thường.' },
+    { id: 'curse_堕落种子', name: 'Hạt giống đọa lạc', type: CardType.CURSE, damage: 8, statusId: 'Hạt giống đọa lạc', icon: '🌱', description: 'Tăng 10 đọa lạc khi nghỉ ngơi. Hạt giống đang ăn mòn tâm trí.' },
+    { id: 'curse_乳环', name: 'Khuyên ngực', type: CardType.CURSE, damage: 4, statusId: 'Khuyên ngực', icon: '⭕', description: 'Phòng thủ -2. Đầu ngực bị xuyên vòng bạc.' },
+    { id: 'curse_肚脐钉', name: 'Khuyên rốn', type: CardType.CURSE, damage: 3, statusId: 'Khuyên rốn', icon: '📍', description: 'Phòng thủ -1. Trang sức xuyên qua lỗ rốn.' },
+    { id: 'curse_脚铐', name: 'Xiềng chân', type: CardType.CURSE, damage: 5, statusId: 'Xiềng chân', icon: '🔗', description: 'Phòng thủ -3. Xiềng xích sắt ở cổ chân hạn chế di chuyển.' },
+    { id: 'curse_项圈', name: 'Vòng cổ', type: CardType.CURSE, damage: 6, statusId: 'Vòng cổ', icon: '⚫', description: 'HP tối đa -10. Bị đeo vòng cổ nô lệ.' },
+    { id: 'curse_虚弱诅咒', name: 'Lời nguyền suy nhược', type: CardType.CURSE, damage: 7, statusId: 'Lời nguyền suy nhược', icon: '💀', description: 'HP tối đa -15. Sinh lực bị rút cạn.' },
+    { id: 'curse_生命吸取', name: 'Hút sinh mệnh', type: CardType.CURSE, damage: 9, statusId: 'Hút sinh mệnh', icon: '🩸', description: 'HP tối đa -20. Sinh lực liên tục bị thất thoát.' },
+    { id: 'curse_贞操带', name: 'Đai trinh tiết', type: CardType.CURSE, damage: 4, statusId: 'Đai trinh tiết', icon: '🔒', description: 'HP không thể vượt quá 50%. Bị khóa bởi đai trinh tiết.' },
+    { id: 'curse_诅咒伤口', name: 'Vết thương nguyền rủa', type: CardType.CURSE, damage: 6, statusId: 'Vết thương nguyền rủa', icon: '🩹', description: 'HP không thể vượt quá 30%. Vết thương không thể chữa lành.' },
+    { id: 'curse_催情药', name: 'Thuốc kích dục', type: CardType.CURSE, damage: 4, statusId: 'Thuốc kích dục', icon: '💊', description: 'Tấn công -3. Cơ thể bủn rủn vô lực.' },
+    { id: 'curse_媚药中毒', name: 'Trúng độc mị dược', type: CardType.CURSE, damage: 6, statusId: 'Trúng độc mị dược', icon: '🧪', description: 'Tấn công -5. Cơ thể không thể phát lực.' },
+    { id: 'curse_肌肉萎缩', name: 'Teo cơ', type: CardType.CURSE, damage: 5, statusId: 'Teo cơ', icon: '💪', description: 'Tấn công -4. Sức mạnh giảm mạnh.' },
+    { id: 'curse_烙印', name: 'Nung dấu', type: CardType.CURSE, damage: 8, statusId: 'Nung dấu', icon: '🔥', description: 'Sát thương nhận vào +50%. Bị nung dấu ấn ký của chủ nhân.' },
+    { id: 'curse_脆弱印记', name: 'Ấn ký mong manh', type: CardType.CURSE, damage: 5, statusId: 'Ấn ký mong manh', icon: '❌', description: 'Sát thương nhận vào +30%. Bị khắc lên ấn ký mong manh.' },
+    { id: 'curse_诅咒标记', name: 'Dấu ấn nguyền rủa', type: CardType.CURSE, damage: 10, statusId: 'Dấu ấn nguyền rủa', icon: '☠️', description: 'Sát thương nhận vào +100%. Dấu ấn nguyền rủa vực thẳm.' },
+    { id: 'curse_完全支配', name: 'Chi phối hoàn toàn', type: CardType.CURSE, damage: 9, statusId: 'Chi phối hoàn toàn', icon: '👑', description: 'Công -2, Thủ -2, Đọa lạc +5/trận chiến. Thân tâm không còn thuộc về mình.' },
+    { id: 'curse_奴隶烙印', name: 'Dấu ấn nô lệ', type: CardType.CURSE, damage: 7, statusId: 'Dấu ấn nô lệ', icon: '🔥', description: 'HP -10, Sát thương nhận vào +25%. Thân phận nô lệ.' },
+    
+    // Nhóm biến đổi cơ thể bổ sung
+    { id: 'curse_小便失禁', name: 'Tiểu tiện không tự chủ', type: CardType.CURSE, damage: 4, statusId: 'Tiểu tiện không tự chủ', icon: '💦', description: 'Phòng thủ -2, Đọa lạc chiến đấu +3. Không thể kiểm soát việc đi tiểu.' },
+    { id: 'curse_大便失禁', name: 'Đại tiện không tự chủ', type: CardType.CURSE, damage: 5, statusId: 'Đại tiện không tự chủ', icon: '💩', description: 'Phòng thủ -3, Đọa lạc chiến đấu +5. Cơ thắt không thể co bóp.' },
+    { id: 'curse_巨乳化', name: 'Ngực khổng lồ hóa', type: CardType.CURSE, damage: 6, statusId: 'Ngực khổng lồ hóa', icon: '🍈', description: 'Năng lượng -1, Phòng thủ -2. Ngực I-cup khổng lồ, hạn chế hành động.' },
+    { id: 'curse_子宫纹身', name: 'Xăm hình tử cung', type: CardType.CURSE, damage: 5, statusId: 'Xăm hình tử cung', icon: '❤️', description: 'Đọa lạc nghỉ ngơi +8. Hình xăm nô lệ tình dục.' },
+    { id: 'curse_敏感体质', name: 'Thể chất nhạy cảm', type: CardType.CURSE, damage: 6, statusId: 'Thể chất nhạy cảm', icon: '💗', description: 'Sát thương nhận vào +40%. Toàn thân cực kỳ nhạy cảm.' },
+    { id: 'curse_发情期', name: 'Thời kỳ phát tình', type: CardType.CURSE, damage: 5, statusId: 'Thời kỳ phát tình', icon: '🔥', description: 'Tấn công -2, Đọa lạc chiến đấu +4. Phát tình vĩnh viễn.' },
+    { id: 'curse_乳头肥大', name: 'Đầu ngực phì đại', type: CardType.CURSE, damage: 4, statusId: 'Đầu ngực phì đại', icon: '⭕', description: 'Phòng thủ -2. Đầu ngực to như quả nho.' },
+    { id: 'curse_阴蒂肥大', name: 'Âm vật phì đại', type: CardType.CURSE, damage: 5, statusId: 'Âm vật phì đại', icon: '💎', description: 'Đọa lạc chiến đấu +5. Âm vật to như ngón tay cái.' },
+    { id: 'curse_精神支配', name: 'Chi phối tinh thần', type: CardType.CURSE, damage: 8, statusId: 'Chi phối tinh thần', icon: '🧠', description: 'Năng lượng -2. Không thể tự suy nghĩ độc lập.' },
+    { id: 'curse_性奴调教', name: 'Huấn luyện nô lệ tình dục', type: CardType.CURSE, damage: 7, statusId: 'Huấn luyện nô lệ tình dục', icon: '👑', description: 'Tấn công -3, Phòng thủ -3. Mất đi ý chí phản kháng.' },
+    { id: 'curse_子宫下垂', name: 'Sa tử cung', type: CardType.CURSE, damage: 8, statusId: 'Sa tử cung', icon: '⬇️', description: 'HP -20. Sử dụng quá mức khiến cơ thể suy nhược.' },
+    { id: 'curse_乳汁分泌', name: 'Tiết sữa', type: CardType.CURSE, damage: 4, statusId: 'Tiết sữa', icon: '🍼', description: 'Đọa lạc nghỉ ngơi +6. Ngực liên tục tiết sữa.' },
+    { id: 'curse_永久发情', name: 'Phát tình vĩnh viễn', type: CardType.CURSE, damage: 9, statusId: 'Phát tình vĩnh viễn', icon: '💯', description: 'Tấn công -3, Đọa lạc +8/nghỉ ngơi. Khao khát không lúc nào nguôi.' },
+    
+    // Nhóm thú hóa
+    { id: 'curse_触手寄生', name: 'Ký sinh xúc tu', type: CardType.CURSE, damage: 7, statusId: 'Ký sinh xúc tu', icon: '🐙', description: 'Năng lượng -2, Đọa lạc chiến đấu +6. Có sinh vật xúc tu trong người.' },
+    { id: 'curse_史莱姆化', name: 'Slime hóa', type: CardType.CURSE, damage: 7, statusId: 'Slime hóa', icon: '🧫', description: 'Phòng thủ -4, Sát thương nhận vào +30%. Cơ thể trở nên mềm nhũn.' },
+    
+    // Nhóm biến đổi đặc biệt
+    { id: 'curse_扶她化', name: 'Futanari hóa', type: CardType.CURSE, damage: 6, statusId: 'Futanari hóa', icon: '🍆', description: 'Tấn công +3, Đọa lạc chiến đấu +6. Mọc thêm nhục bổng ở bụng dưới.' },
+    { id: 'curse_小穴脱出', name: 'Sa âm đạo', type: CardType.CURSE, damage: 7, statusId: 'Sa âm đạo', icon: '🌸', description: 'Phòng thủ -3, Đọa lạc nghỉ ngơi +8. Thành âm đạo bị lộn ra ngoài.' },
+    { id: 'curse_肛门脱出', name: 'Sa trực tràng', type: CardType.CURSE, damage: 8, statusId: 'Sa trực tràng', icon: '🔴', description: 'Phòng thủ -4, Đọa lạc nghỉ ngơi +10. Hậu môn bị sa ra ngoài.' },
+    { id: 'curse_子宫脱出', name: 'Sa tử cung hoàn toàn', type: CardType.CURSE, damage: 10, statusId: 'Sa tử cung hoàn toàn', icon: '❤️', description: 'HP -25, Đọa lạc nghỉ ngơi +12. Tử cung hoàn toàn sa ra ngoài.' },
+    
+    // Nhóm thôi miên / Cải tạo nhận thức
+    { id: 'curse_裸体常识', name: 'Nhận thức khỏa thân', type: CardType.CURSE, damage: 5, statusId: 'Nhận thức khỏa thân', icon: '👗', description: 'Phòng thủ -3, Đọa lạc chiến đấu +4. Bị thôi miên cho rằng khỏa thân mới là bình thường.' },
+    { id: 'curse_交配义务', name: 'Nghĩa vụ giao phối', type: CardType.CURSE, damage: 7, statusId: 'Nghĩa vụ giao phối', icon: '💕', description: 'Đọa lạc nghỉ ngơi +10, Năng lượng -1. Bị thôi miên bắt buộc phải giao phối mỗi ngày.' },
+    { id: 'curse_精液渴望', name: 'Khao khát tinh dịch', type: CardType.CURSE, damage: 6, statusId: 'Khao khát tinh dịch', icon: '💦', description: 'HP -10, Đọa lạc chiến đấu +5. Bị thôi miên khao khát tinh dịch.' },
+    { id: 'curse_快感忠诚', name: 'Trung thành với khoái cảm', type: CardType.CURSE, damage: 6, statusId: 'Trung thành với khoái cảm', icon: '🎀', description: 'Tấn công -3, Đọa lạc nghỉ ngơi +6. Trung thành với kẻ ban phát khoái cảm.' },
+    { id: 'curse_露出本能', name: 'Bản năng phô bày', type: CardType.CURSE, damage: 5, statusId: 'Bản năng phô bày', icon: '👀', description: 'Đọa lạc chiến đấu +6. Bị thôi miên yêu thích việc phô bày cơ thể.' },
+    { id: 'curse_肉便器自觉', name: 'Tự giác làm bồn chứa tinh', type: CardType.CURSE, damage: 8, statusId: 'Tự giác làm bồn chứa tinh', icon: '🚽', description: 'Tấn công -4, Phòng thủ -4. Bị thôi miên tự coi mình là bồn chứa tinh.' },
+    { id: 'curse_绝对服从', name: 'Phục tùng tuyệt đối', type: CardType.CURSE, damage: 7, statusId: 'Phục tùng tuyệt đối', icon: '🐕', description: 'Năng lượng -2, Phòng thủ -2. Bị thôi miên phục tùng mệnh lệnh tuyệt đối.' },
+    { id: 'curse_性奴本能', name: 'Bản năng nô lệ tình dục', type: CardType.CURSE, damage: 6, statusId: 'Bản năng nô lệ tình dục', icon: '📿', description: 'Đọa lạc nghỉ ngơi +8, Tấn công -2. Bị thôi miên trở thành nô lệ tình dục.' },
+    { id: 'curse_羞耻消除', name: 'Loại bỏ xấu hổ', type: CardType.CURSE, damage: 6, statusId: 'Loại bỏ xấu hổ', icon: '😳', description: 'Đọa lạc nghỉ ngơi +10. Sự xấu hổ đã bị thôi miên loại bỏ.' },
+    { id: 'curse_发情触发', name: 'Kích hoạt phát tình', type: CardType.CURSE, damage: 6, statusId: 'Kích hoạt phát tình', icon: '🔔', description: 'Đọa lạc chiến đấu +6, Phòng thủ -2. Nghe thấy tiếng chuông là phát tình.' },
+    { id: 'curse_母性觉醒', name: 'Thức tỉnh mẫu tính', type: CardType.CURSE, damage: 7, statusId: 'Thức tỉnh mẫu tính', icon: '🤰', description: 'Đọa lạc nghỉ ngơi +8, HP -15. Khao khát được thụ thai.' },
+    { id: 'curse_口交中毒', name: 'Nghiện khẩu giao', type: CardType.CURSE, damage: 5, statusId: 'Nghiện khẩu giao', icon: '👄', description: 'Năng lượng -1, Đọa lạc chiến đấu +4. Bị thôi miên nghiện khẩu giao.' }
 ];
 
 // 预设卡牌库 (75张)
 const CardLibrary = [
-    // ========== 攻击卡 (15张) ==========
-    { id: 'attack_001', name: '普通攻击', type: CardType.ATTACK, value: 5, cost: 1, description: '对敌方造成5点伤害。' },
-    { id: 'attack_002', name: '重击', type: CardType.ATTACK, value: 10, cost: 2, description: '蓄力一击，对敌方造成10点伤害。' },
-    { id: 'attack_003', name: '致命一击', type: CardType.ATTACK, value: 18, cost: 3, description: '精准打击要害，对敌方造成18点伤害。' },
-    { id: 'attack_004', name: '连击', type: CardType.ATTACK, value: 3, hitCount: 3, cost: 2, description: '连续攻击3次，每次造成3点伤害。' },
-    { id: 'attack_005', name: '穿刺', type: CardType.ATTACK, value: 8, ignoreArmor: true, cost: 2, description: '无视护甲，直接造成8点伤害。' },
-    { id: 'attack_006', name: '旋风斩', type: CardType.ATTACK, value: 7, cost: 1, description: '旋转攻击，造成7点伤害。' },
-    { id: 'attack_007', name: '雷霆一击', type: CardType.ATTACK, value: 14, cost: 2, description: '雷电附体，造成14点伤害。' },
-    { id: 'attack_008', name: '暴风连斩', type: CardType.ATTACK, value: 4, hitCount: 4, cost: 3, description: '狂风般的连续攻击，攻击4次，每次4点。' },
-    { id: 'attack_009', name: '破甲斩', type: CardType.ATTACK, value: 6, ignoreArmor: true, cost: 1, description: '无视护甲造成6点伤害。' },
-    { id: 'attack_010', name: '斩铁', type: CardType.ATTACK, value: 25, cost: 4, description: '凝聚全力的一击，造成25点伤害。' },
-    { id: 'attack_011', name: '快速突刺', type: CardType.ATTACK, value: 4, cost: 0, description: '迅速的一刺，造成4点伤害。' },
-    { id: 'attack_012', name: '双重打击', type: CardType.ATTACK, value: 5, hitCount: 2, cost: 1, description: '连续两次攻击，每次5点伤害。' },
-    { id: 'attack_013', name: '处刑', type: CardType.ATTACK, value: 12, ignoreArmor: true, cost: 3, description: '处决之击，无视护甲造成12点伤害。' },
-    { id: 'attack_014', name: '狂暴一击', type: CardType.ATTACK, value: 20, cost: 3, description: '疯狂的攻击，造成20点伤害。' },
-    { id: 'attack_015', name: '精准打击', type: CardType.ATTACK, value: 9, cost: 1, description: '精准的攻击，造成9点伤害。' },
+    // ========== Thẻ Tấn công (15 lá) ==========
+    { id: 'attack_001', name: 'Tấn Công Thường', type: CardType.ATTACK, value: 5, cost: 1, description: 'Gây 5 điểm sát thương lên kẻ địch.' },
+    { id: 'attack_002', name: 'Trọng Kích', type: CardType.ATTACK, value: 10, cost: 2, description: 'Tụ lực nhất kích, gây 10 điểm sát thương lên kẻ địch.' },
+    { id: 'attack_003', name: 'Chí Mạng Nhất Kích', type: CardType.ATTACK, value: 18, cost: 3, description: 'Đòn đánh chính xác vào yếu huyệt, gây 18 điểm sát thương.' },
+    { id: 'attack_004', name: 'Liên Kích', type: CardType.ATTACK, value: 3, hitCount: 3, cost: 2, description: 'Tấn công liên tiếp 3 lần, mỗi lần gây 3 điểm sát thương.' },
+    { id: 'attack_005', name: 'Xuyên Thấu', type: CardType.ATTACK, value: 8, ignoreArmor: true, cost: 2, description: 'Xuyên giáp, trực tiếp gây 8 điểm sát thương.' },
+    { id: 'attack_006', name: 'Toàn Phong Trảm', type: CardType.ATTACK, value: 7, cost: 1, description: 'Tấn công xoay vòng, gây 7 điểm sát thương.' },
+    { id: 'attack_007', name: 'Lôi Đình Nhất Kích', type: CardType.ATTACK, value: 14, cost: 2, description: 'Sấm sét hộ thân, gây 14 điểm sát thương.' },
+    { id: 'attack_008', name: 'Bạo Phong Liên Trảm', type: CardType.ATTACK, value: 4, hitCount: 4, cost: 3, description: 'Tấn công liên tục như cuồng phong, đánh 4 lần mỗi lần 4 điểm.' },
+    { id: 'attack_009', name: 'Phá Giáp Trảm', type: CardType.ATTACK, value: 6, ignoreArmor: true, cost: 1, description: 'Xuyên giáp gây 6 điểm sát thương.' },
+    { id: 'attack_010', name: 'Trảm Thiết', type: CardType.ATTACK, value: 25, cost: 4, description: 'Đòn đánh dốc toàn lực, gây 25 điểm sát thương.' },
+    { id: 'attack_011', name: 'Đột Kích Nhanh', type: CardType.ATTACK, value: 4, cost: 0, description: 'Một cú đâm chớp nhoáng, gây 4 điểm sát thương.' },
+    { id: 'attack_012', name: 'Đòn Đánh Kép', type: CardType.ATTACK, value: 5, hitCount: 2, cost: 1, description: 'Hai đòn tấn công liên tiếp, mỗi lần 5 điểm sát thương.' },
+    { id: 'attack_013', name: 'Xử Hình', type: CardType.ATTACK, value: 12, ignoreArmor: true, cost: 3, description: 'Nhát chém hành quyết, xuyên giáp gây 12 điểm sát thương.' },
+    { id: 'attack_014', name: 'Cuồng Bạo Nhất Kích', type: CardType.ATTACK, value: 20, cost: 3, description: 'Tấn công điên cuồng, gây 20 điểm sát thương.' },
+    { id: 'attack_015', name: 'Đòn Đánh Chính Xác', type: CardType.ATTACK, value: 9, cost: 1, description: 'Tấn công chuẩn xác, gây 9 điểm sát thương.' },
 
-    // ========== H攻击卡 (54张) - 带堕落值解锁条件 ==========
-    // corruptionRequired: 需要的堕落值才能解锁
-    // --- 基础诱惑系 (堕落0-15) ---
-    { id: 'h_attack_001', name: '媚眼', type: CardType.H_ATTACK, value: 5, cost: 0, debuffType: 'attack', debuffValue: 1, debuffDuration: 1, description: '抛个勾魂媚眼，連5伤害，敌人攻击-1(1回合)。', corruptionRequired: 0 },
-    { id: 'h_attack_002', name: '撩人姿态', type: CardType.H_ATTACK, value: 4, cost: 0, debuffType: 'defense', debuffValue: 2, debuffDuration: 1, description: '摆出撩人的姿势，連4伤害，敌人防御-2(1回合)。', corruptionRequired: 3 },
-    { id: 'h_attack_003', name: '娇喘', type: CardType.H_ATTACK, value: 6, cost: 1, debuffType: 'attack', debuffValue: 2, debuffDuration: 1, description: '发出诱人的娇喘声，連6伤害，敌人攻击-2(1回合)。', corruptionRequired: 5 },
-    { id: 'h_attack_004', name: '抛媚眼', type: CardType.H_ATTACK, value: 7, cost: 1, description: '连续抛出数个媚眼，造成7点伤害。', corruptionRequired: 8 },
-    { id: 'h_attack_005', name: '诱惑之舞', type: CardType.H_ATTACK, value: 8, cost: 1, debuffType: 'attack', debuffValue: 2, debuffDuration: 2, description: '扭动腰肢的色情舞蹈，連8伤害，敌人攻击-2(2回合)。', corruptionRequired: 10 },
-    { id: 'h_attack_006', name: '玉足践踏', type: CardType.H_ATTACK, value: 9, cost: 1, description: '用白嫩的玉足踩踏敌人，造成9点伤害。', corruptionRequired: 12 },
-    { id: 'h_attack_007', name: '轻抚挑逗', type: CardType.H_ATTACK, value: 6, cost: 1, description: '用纤细的手指轻轻抚摸，造成6点伤害。', corruptionRequired: 15 },
-    { id: 'h_attack_seduce_armor', name: '见龙卸甲', type: CardType.H_ATTACK, value: 8, cost: 2, debuffType: 'defenseZero', debuffDuration: 2, description: '妩媚地解开自己的衣衫，层层褪去直至赤身裸体，令敌人神魂颠倒，造成8点伤害，敌人防御归零(2回合)。', corruptionRequired: 12 },
+    // ========== Thẻ Tấn công H (54 lá) - Kèm điều kiện mở khóa theo giá trị đọa lạc ==========
+    // corruptionRequired: Yêu cầu giá trị đọa lạc để mở khóa
+    // --- Hệ Dẫn Dụ Cơ Bản (Đọa lạc 0-15) ---
+    { id: 'h_attack_001', name: 'Nháy Mắt', type: CardType.H_ATTACK, value: 5, cost: 0, debuffType: 'attack', debuffValue: 1, debuffDuration: 1, description: 'Nháy mắt đưa tình, gây 5 sát thương, công địch -1 (1 lượt).', corruptionRequired: 0 },
+    { id: 'h_attack_002', name: 'Tư Thế Gợi Cảm', type: CardType.H_ATTACK, value: 4, cost: 0, debuffType: 'defense', debuffValue: 2, debuffDuration: 1, description: 'Tạo dáng khiêu gợi, gây 4 sát thương, thủ địch -2 (1 lượt).', corruptionRequired: 3 },
+    { id: 'h_attack_003', name: 'Thở Dốc', type: CardType.H_ATTACK, value: 6, cost: 1, debuffType: 'attack', debuffValue: 2, debuffDuration: 1, description: 'Phát ra tiếng thở dốc mời gọi, gây 6 sát thương, công địch -2 (1 lượt).', corruptionRequired: 5 },
+    { id: 'h_attack_004', name: 'Đưa Tình', type: CardType.H_ATTACK, value: 7, cost: 1, description: 'Liên tục nháy mắt đưa tình, gây 7 điểm sát thương.', corruptionRequired: 8 },
+    { id: 'h_attack_005', name: 'Điệu Nhảy Quyến Rũ', type: CardType.H_ATTACK, value: 8, cost: 1, debuffType: 'attack', debuffValue: 2, debuffDuration: 2, description: 'Điệu nhảy khêu gợi lắc hông, gây 8 sát thương, công địch -2 (2 lượt).', corruptionRequired: 10 },
+    { id: 'h_attack_006', name: 'Ngọc Túc Chà Đạp', type: CardType.H_ATTACK, value: 9, cost: 1, description: 'Dùng bàn chân trắng nõn dẫm lên kẻ địch, gây 9 điểm sát thương.', corruptionRequired: 12 },
+    { id: 'h_attack_007', name: 'Vuốt Ve Trêu Chọc', type: CardType.H_ATTACK, value: 6, cost: 1, description: 'Dùng những ngón tay thon dài vuốt ve nhẹ nhàng, gây 6 điểm sát thương.', corruptionRequired: 15 },
+    { id: 'h_attack_seduce_armor', name: 'Kiến Long Giải Giáp', type: CardType.H_ATTACK, value: 8, cost: 2, debuffType: 'defenseZero', debuffDuration: 2, description: 'Khêu gợi cởi bỏ xiêm y từng lớp cho đến khi khỏa thân, khiến kẻ địch thần hồn điên đảo, gây 8 sát thương, phòng thủ địch về 0 (2 lượt).', corruptionRequired: 12 },
 
-    // --- 亲吻系 (堕落15-25) ---
-    { id: 'h_attack_008', name: '魅惑之吻', type: CardType.H_ATTACK, value: 8, cost: 1, dotDamage: 2, duration: 2, description: '湿润的嘴唇贴上去，連8伤害+持续2/回合。', corruptionRequired: 16 },
-    { id: 'h_attack_009', name: '堕落之吻', type: CardType.H_ATTACK, value: 9, cost: 1, dotDamage: 2, duration: 2, description: '舌尖缠绕的深吻，連9伤害+持续2/回合。', corruptionRequired: 18 },
-    { id: 'h_attack_010', name: '舌吻纠缠', type: CardType.H_ATTACK, value: 10, cost: 1, dotDamage: 3, duration: 2, debuffType: 'attack', debuffValue: 2, debuffDuration: 2, description: '用柔软的舌头深入纠缠，造成10点伤害+持续3点/回合，敌人攻击-2(2回合)。', corruptionRequired: 20 },
-    { id: 'h_attack_011', name: '吸吮之吻', type: CardType.H_ATTACK, value: 11, cost: 1, dotDamage: 3, duration: 2, debuffType: 'defense', debuffValue: 2, debuffDuration: 2, description: '用力吸吮对方嘴唇，造成11点伤害+持续3点/回合，敌人防御-2(2回合)。', corruptionRequired: 22 },
-    { id: 'h_attack_012', name: '淫靡低语', type: CardType.H_ATTACK, value: 10, duration: 2, dotDamage: 2, cost: 2, description: '在耳边吐出淫荡的话语，造成10点+持续2点/回合。', corruptionRequired: 25 },
+    // --- Hệ Hôn (Đọa lạc 15-25) ---
+    { id: 'h_attack_008', name: 'Nụ Hôn Mê Hoặc', type: CardType.H_ATTACK, value: 8, cost: 1, dotDamage: 2, duration: 2, description: 'Áp đôi môi ướt át lên, gây 8 sát thương + duy trì 2/lượt.', corruptionRequired: 16 },
+    { id: 'h_attack_009', name: 'Nụ Hôn Đọa Lạc', type: CardType.H_ATTACK, value: 9, cost: 1, dotDamage: 2, duration: 2, description: 'Nụ hôn sâu quấn quýt đầu lưỡi, gây 9 sát thương + duy trì 2/lượt.', corruptionRequired: 18 },
+    { id: 'h_attack_010', name: 'Thiệt Hôn Quấn Quýt', type: CardType.H_ATTACK, value: 10, cost: 1, dotDamage: 3, duration: 2, debuffType: 'attack', debuffValue: 2, debuffDuration: 2, description: 'Dùng lưỡi mềm mại quấn lấy sâu bên trong, gây 10 sát thương + duy trì 3/lượt, công địch -2 (2 lượt).', corruptionRequired: 20 },
+    { id: 'h_attack_011', name: 'Nụ Hôn Mút Mát', type: CardType.H_ATTACK, value: 11, cost: 1, dotDamage: 3, duration: 2, debuffType: 'defense', debuffValue: 2, debuffDuration: 2, description: 'Mút mạnh môi đối phương, gây 11 sát thương + duy trì 3/lượt, thủ địch -2 (2 lượt).', corruptionRequired: 22 },
+    { id: 'h_attack_012', name: 'Lời Thì Thầm Dâm Mị', type: CardType.H_ATTACK, value: 10, duration: 2, dotDamage: 2, cost: 2, description: 'Thì thầm những lời lăng loàn bên tai, gây 10 sát thương + duy trì 2/lượt.', corruptionRequired: 25 },
 
-    // --- 胸部系 (堕落20-45) ---
-    { id: 'h_attack_013', name: '乳头挑逗', type: CardType.H_ATTACK, value: 8, cost: 1, debuffType: 'defense', debuffValue: 2, debuffDuration: 2, description: '用挺立的乳头轻轻摩擦，連8伤害，敌人防御-2(2回合)。', corruptionRequired: 20 },
-    { id: 'h_attack_014', name: '乳摇诱惑', type: CardType.H_ATTACK, value: 10, cost: 1, description: '晃动饱满的双乳，造成10点伤害。', corruptionRequired: 24 },
-    { id: 'h_attack_015', name: '巨乳压制', type: CardType.H_ATTACK, value: 12, cost: 2, debuffType: 'attack', debuffValue: 3, debuffDuration: 2, description: '用丰满的胸部压住敌人，連12伤害，敌人攻击-3(2回合)。', corruptionRequired: 28 },
-    { id: 'h_attack_016', name: '乳首夹击', type: CardType.H_ATTACK, value: 6, hitCount: 2, cost: 2, description: '用硬挺的乳首攻击，攻击2次每次6点。', corruptionRequired: 32 },
-    { id: 'h_attack_017', name: '乳交攻势', type: CardType.H_ATTACK, value: 14, cost: 2, dotDamage: 3, duration: 2, description: '用丰满的双乳夹住摩擦，連14伤害+持续3/回合。', corruptionRequired: 38 },
-    { id: 'h_attack_018', name: '泌乳喷射', type: CardType.H_ATTACK, value: 8, hitCount: 2, cost: 2, description: '喷射出乳汁攻击，攻击2次每次8点。', corruptionRequired: 42 },
-    { id: 'h_attack_019', name: '乳肉绞杀', type: CardType.H_ATTACK, value: 16, cost: 2, description: '用柔软的乳肉紧紧包裹绞杀，造成16点伤害。', corruptionRequired: 45 },
+    // --- Hệ Ngực (Đọa lạc 20-45) ---
+    { id: 'h_attack_013', name: 'Trêu Chọc Đầu Vú', type: CardType.H_ATTACK, value: 8, cost: 1, debuffType: 'defense', debuffValue: 2, debuffDuration: 2, description: 'Dùng đầu vú cương cứng ma sát nhẹ nhàng, gây 8 sát thương, thủ địch -2 (2 lượt).', corruptionRequired: 20 },
+    { id: 'h_attack_014', name: 'Rung Vú Dẫn Dụ', type: CardType.H_ATTACK, value: 10, cost: 1, description: 'Rung lắc đôi gò bồng đảo căng tròn, gây 10 điểm sát thương.', corruptionRequired: 24 },
+    { id: 'h_attack_015', name: 'Cự Nhũ Áp Chế', type: CardType.H_ATTACK, value: 12, cost: 2, debuffType: 'attack', debuffValue: 3, debuffDuration: 2, description: 'Dùng bộ ngực đầy đặn đè ép kẻ địch, gây 12 sát thương, công địch -3 (2 lượt).', corruptionRequired: 28 },
+    { id: 'h_attack_016', name: 'Nhũ Thủ Kẹp Kích', type: CardType.H_ATTACK, value: 6, hitCount: 2, cost: 2, description: 'Tấn công bằng đầu vú cương cứng, đánh 2 lần mỗi lần 6 điểm.', corruptionRequired: 32 },
+    { id: 'h_attack_017', name: 'Công Thế Nhũ Giao', type: CardType.H_ATTACK, value: 14, cost: 2, dotDamage: 3, duration: 2, description: 'Kẹp và ma sát bằng đôi ngực đầy đặn, gây 14 sát thương + duy trì 3/lượt.', corruptionRequired: 38 },
+    { id: 'h_attack_018', name: 'Phun Sữa', type: CardType.H_ATTACK, value: 8, hitCount: 2, cost: 2, description: 'Phun sữa tươi tấn công, đánh 2 lần mỗi lần 8 điểm.', corruptionRequired: 42 },
+    { id: 'h_attack_019', name: 'Nhũ Nhục Giết Chóc', type: CardType.H_ATTACK, value: 16, cost: 2, description: 'Dùng lớp thịt ngực mềm mại bao bọc và siết chặt, gây 16 điểm sát thương.', corruptionRequired: 45 },
 
-    // --- 口舌系 (堕落25-50) ---
-    { id: 'h_attack_020', name: '口舌侍奉', type: CardType.H_ATTACK, value: 10, cost: 1, description: '用灵巧的舌头舔舐，造成10点伤害。', corruptionRequired: 26 },
-    { id: 'h_attack_021', name: '舔舐攻击', type: CardType.H_ATTACK, value: 11, cost: 2, description: '用舌头反复舔舐敏感处，造成11点伤害。', corruptionRequired: 30 },
-    { id: 'h_attack_022', name: '含吮吸取', type: CardType.H_ATTACK, value: 12, cost: 2, description: '将敌人含入口中用力吸吮，造成12点伤害。', corruptionRequired: 34 },
-    { id: 'h_attack_023', name: '深喉侵入', type: CardType.H_ATTACK, value: 15, cost: 2, description: '让敌人深入喉咙深处，造成15点伤害。', corruptionRequired: 40 },
-    { id: 'h_attack_024', name: '口内绞杀', type: CardType.H_ATTACK, value: 18, cost: 3, description: '用口腔内壁紧紧绞杀，造成18点伤害。', corruptionRequired: 48 },
+    // --- Hệ Miệng Lưỡi (Đọa lạc 25-50) ---
+    { id: 'h_attack_020', name: 'Khẩu Thiệt Thị Phụng', type: CardType.H_ATTACK, value: 10, cost: 1, description: 'Dùng lưỡi linh hoạt liếm láp, gây 10 điểm sát thương.', corruptionRequired: 26 },
+    { id: 'h_attack_021', name: 'Liếm Láp Tấn Công', type: CardType.H_ATTACK, value: 11, cost: 2, description: 'Dùng lưỡi liên tục liếm vào điểm nhạy cảm, gây 11 điểm sát thương.', corruptionRequired: 30 },
+    { id: 'h_attack_022', name: 'Ngậm Mút Hấp Thụ', type: CardType.H_ATTACK, value: 12, cost: 2, description: 'Ngậm kẻ địch vào miệng mút mạnh, gây 12 điểm sát thương.', corruptionRequired: 34 },
+    { id: 'h_attack_023', name: 'Thâm Hầu Xâm Nhập', type: CardType.H_ATTACK, value: 15, cost: 2, description: 'Để kẻ địch xâm nhập sâu vào cổ họng, gây 15 điểm sát thương.', corruptionRequired: 40 },
+    { id: 'h_attack_024', name: 'Khẩu Nội Giết Chóc', type: CardType.H_ATTACK, value: 18, cost: 3, description: 'Dùng khoang miệng siết chặt, gây 18 điểm sát thương.', corruptionRequired: 48 },
 
-    // --- 臀部系 (堕落30-55) ---
-    { id: 'h_attack_025', name: '臀部摩擦', type: CardType.H_ATTACK, value: 10, cost: 1, debuffType: 'defense', debuffValue: 2, debuffDuration: 1, description: '用丰满的臀部蹭向敌人，連10伤害，敌人防御-2(1回合)。', corruptionRequired: 28 },
-    { id: 'h_attack_026', name: '蜜臀诱惑', type: CardType.H_ATTACK, value: 11, cost: 2, description: '扭动蜜桃般的臀部，造成11点伤害。', corruptionRequired: 32 },
-    { id: 'h_attack_027', name: '臀击', type: CardType.H_ATTACK, value: 13, cost: 2, description: '用丰臀狠狠撞击敌人，造成13点伤害。', corruptionRequired: 36 },
-    { id: 'h_attack_028', name: '臀交夹击', type: CardType.H_ATTACK, value: 14, cost: 2, description: '用臀肉紧紧夹住摩擦，造成14点伤害。', corruptionRequired: 42 },
-    { id: 'h_attack_029', name: '骑脸窒息', type: CardType.H_ATTACK, value: 16, cost: 2, debuffType: 'attack', debuffValue: 4, debuffDuration: 2, description: '骑在敌人脸上让其窒息，連16伤害，敌人攻击-4(2回合)。', corruptionRequired: 50 },
+    // --- Hệ Mông (Đọa lạc 30-55) ---
+    { id: 'h_attack_025', name: 'Ma Sát Mông', type: CardType.H_ATTACK, value: 10, cost: 1, debuffType: 'defense', debuffValue: 2, debuffDuration: 1, description: 'Dùng vòng ba đầy đặn cọ vào kẻ địch, gây 10 sát thương, thủ địch -2 (1 lượt).', corruptionRequired: 28 },
+    { id: 'h_attack_026', name: 'Mật Đào Dẫn Dụ', type: CardType.H_ATTACK, value: 11, cost: 2, description: 'Lắc lư cặp mông hình quả đào, gây 11 điểm sát thương.', corruptionRequired: 32 },
+    { id: 'h_attack_027', name: 'Mông Kích', type: CardType.H_ATTACK, value: 13, cost: 2, description: 'Dùng mông đầy đặn va đập mạnh vào kẻ địch, gây 13 điểm sát thương.', corruptionRequired: 36 },
+    { id: 'h_attack_028', name: 'Mông Giao Kẹp Kích', type: CardType.H_ATTACK, value: 14, cost: 2, description: 'Dùng thịt mông kẹp chặt ma sát, gây 14 điểm sát thương.', corruptionRequired: 42 },
+    { id: 'h_attack_029', name: 'Cưỡi Mặt Nghẹt Thở', type: CardType.H_ATTACK, value: 16, cost: 2, debuffType: 'attack', debuffValue: 4, debuffDuration: 2, description: 'Cưỡi lên mặt kẻ địch khiến chúng ngạt thở, gây 16 sát thương, công địch -4 (2 lượt).', corruptionRequired: 50 },
 
-    // --- 腿足系 (堕落15-40) ---
-    { id: 'h_attack_030', name: '大腿夹击', type: CardType.H_ATTACK, value: 10, cost: 1, debuffType: 'attack', debuffValue: 2, debuffDuration: 1, description: '用白皙的大腿紧紧夹住，連10伤害，敌人攻击-2(1回合)。', corruptionRequired: 18 },
-    { id: 'h_attack_031', name: '足交羞辱', type: CardType.H_ATTACK, value: 12, cost: 2, description: '用玉足夹住敌人要害揉搓，造成12点伤害。', corruptionRequired: 28 },
-    { id: 'h_attack_032', name: '腿交缠绕', type: CardType.H_ATTACK, value: 14, cost: 2, description: '用双腿紧紧缠绕摩擦，造成14点伤害。', corruptionRequired: 35 },
-    { id: 'h_attack_033', name: '丝袜摩擦', type: CardType.H_ATTACK, value: 11, cost: 2, description: '用丝袜包裹的美腿摩擦，造成11点伤害。', corruptionRequired: 30 },
+    // --- Hệ Chân (Đọa lạc 15-40) ---
+    { id: 'h_attack_030', name: 'Đùi Kẹp Kích', type: CardType.H_ATTACK, value: 10, cost: 1, debuffType: 'attack', debuffValue: 2, debuffDuration: 1, description: 'Dùng đôi chân trắng ngần kẹp chặt, gây 10 sát thương, công địch -2 (1 lượt).', corruptionRequired: 18 },
+    { id: 'h_attack_031', name: 'Túc Giao Sỉ Nhục', type: CardType.H_ATTACK, value: 12, cost: 2, description: 'Dùng đôi bàn chân kẹp lấy yếu điểm kẻ địch và xoa nắn, gây 12 điểm sát thương.', corruptionRequired: 28 },
+    { id: 'h_attack_032', name: 'Thủ Giao Quấn Quýt', type: CardType.H_ATTACK, value: 14, cost: 2, description: 'Dùng hai chân quấn chặt ma sát, gây 14 điểm sát thương.', corruptionRequired: 35 },
+    { id: 'h_attack_033', name: 'Ma Sát Tất Chân', type: CardType.H_ATTACK, value: 11, cost: 2, description: 'Ma sát bằng đôi chân dài bọc trong tất lụa, gây 11 điểm sát thương.', corruptionRequired: 30 },
 
-    // --- 下体系 (堕落40-70) ---
-    { id: 'h_attack_034', name: '羞耻攻击', type: CardType.H_ATTACK, value: 12, cost: 2, description: '用私密部位蹭向敌人，造成12点伤害。', corruptionRequired: 35 },
-    { id: 'h_attack_035', name: '阴蒂刺激', type: CardType.H_ATTACK, value: 10, duration: 2, dotDamage: 3, cost: 2, description: '刺激敏感的阴蒂，造成10点+持续3点/回合。', corruptionRequired: 40 },
-    { id: 'h_attack_036', name: '蜜穴收缩', type: CardType.H_ATTACK, value: 14, cost: 2, dotDamage: 3, duration: 2, description: '用小穴有节奏地收缩，連14伤害+持续3/回合。', corruptionRequired: 45 },
-    { id: 'h_attack_037', name: '淫水喷射', type: CardType.H_ATTACK, value: 8, hitCount: 2, cost: 2, description: '喷出大量淫水攻击，攻击2次每次8点。', corruptionRequired: 48 },
-    { id: 'h_attack_038', name: '潮吹攻击', type: CardType.H_ATTACK, value: 10, hitCount: 3, cost: 3, description: '激烈潮吹喷溅敌人，攻击3次每次10点。', corruptionRequired: 55 },
-    { id: 'h_attack_039', name: '蜜穴绞杀', type: CardType.H_ATTACK, value: 18, cost: 3, dotDamage: 4, duration: 2, description: '用湿润的小穴紧紧夹住，連18伤害+持续4/回合。', corruptionRequired: 60 },
-    { id: 'h_attack_040', name: '子宫口吸附', type: CardType.H_ATTACK, value: 20, cost: 3, description: '用子宫口紧紧吸住，造成20点伤害。', corruptionRequired: 68 },
+    // --- Hệ Hạ Thân (Đọa lạc 40-70) ---
+    { id: 'h_attack_034', name: 'Tấn Công Nhục Nhã', type: CardType.H_ATTACK, value: 12, cost: 2, description: 'Dùng bộ phận nhạy cảm cọ vào kẻ địch, gây 12 điểm sát thương.', corruptionRequired: 35 },
+    { id: 'h_attack_035', name: 'Kích Thích Âm Vật', type: CardType.H_ATTACK, value: 10, duration: 2, dotDamage: 3, cost: 2, description: 'Kích thích âm vật nhạy cảm, gây 10 điểm + duy trì 3/lượt.', corruptionRequired: 40 },
+    { id: 'h_attack_036', name: 'Mật Huyệt Co Thắt', type: CardType.H_ATTACK, value: 14, cost: 2, dotDamage: 3, duration: 2, description: 'Dùng tiểu huyệt co thắt có nhịp điệu, gây 14 sát thương + duy trì 3/lượt.', corruptionRequired: 45 },
+    { id: 'h_attack_037', name: 'Dâm Thủy Phun Trào', type: CardType.H_ATTACK, value: 8, hitCount: 2, cost: 2, description: 'Phun lượng lớn dâm thủy tấn công, đánh 2 lần mỗi lần 8 điểm.', corruptionRequired: 48 },
+    { id: 'h_attack_038', name: 'Thủy Triều Tấn Công', type: CardType.H_ATTACK, value: 10, hitCount: 3, cost: 3, description: 'Phun trào kịch liệt bắn vào kẻ địch, đánh 3 lần mỗi lần 10 điểm.', corruptionRequired: 55 },
+    { id: 'h_attack_039', name: 'Mật Huyệt Giết Chóc', type: CardType.H_ATTACK, value: 18, cost: 3, dotDamage: 4, duration: 2, description: 'Dùng tiểu huyệt ướt át kẹp chặt, gây 18 sát thương + duy trì 4/lượt.', corruptionRequired: 60 },
+    { id: 'h_attack_040', name: 'Cổ Tử Cung Hấp Phụ', type: CardType.H_ATTACK, value: 20, cost: 3, description: 'Dùng cổ tử cung mút chặt, gây 20 điểm sát thương.', corruptionRequired: 68 },
 
-    // --- 后庭系 (堕落50-75) ---
-    { id: 'h_attack_041', name: '菊穴挑逗', type: CardType.H_ATTACK, value: 12, cost: 2, description: '用紧致的菊穴轻轻挑逗，造成12点伤害。', corruptionRequired: 48 },
-    { id: 'h_attack_042', name: '菊穴吞噬', type: CardType.H_ATTACK, value: 15, cost: 2, description: '用紧致的菊穴吞入，造成15点伤害。', corruptionRequired: 55 },
-    { id: 'h_attack_043', name: '后庭调教', type: CardType.H_ATTACK, value: 14, duration: 2, dotDamage: 4, cost: 3, description: '让敌人侵犯我的后庭，造成14点+持续4点/回合。', corruptionRequired: 60 },
-    { id: 'h_attack_044', name: '菊穴绞杀', type: CardType.H_ATTACK, value: 18, cost: 3, description: '用菊穴紧紧绞杀，造成18点伤害。', corruptionRequired: 70 },
+    // --- Hệ Hậu Môn (Đọa lạc 50-75) ---
+    { id: 'h_attack_041', name: 'Cúc Huyệt Trêu Chọc', type: CardType.H_ATTACK, value: 12, cost: 2, description: 'Dùng cúc huyệt khít khao nhẹ nhàng trêu chọc, gây 12 điểm sát thương.', corruptionRequired: 48 },
+    { id: 'h_attack_042', name: 'Cúc Huyệt Thôn Phệ', type: CardType.H_ATTACK, value: 15, cost: 2, description: 'Dùng cúc huyệt khít khao nuốt trọn, gây 15 điểm sát thương.', corruptionRequired: 55 },
+    { id: 'h_attack_043', name: 'Hậu Đình Điều Giáo', type: CardType.H_ATTACK, value: 14, duration: 2, dotDamage: 4, cost: 3, description: 'Để kẻ địch xâm phạm hậu đình của tôi, gây 14 điểm + duy trì 4/lượt.', corruptionRequired: 60 },
+    { id: 'h_attack_044', name: 'Cúc Huyệt Giết Chóc', type: CardType.H_ATTACK, value: 18, cost: 3, description: 'Dùng cúc huyệt siết chặt, gây 18 điểm sát thương.', corruptionRequired: 70 },
 
-    // --- 高级技 (堕落60-90) ---
-    { id: 'h_attack_045', name: '肉棒插入', type: CardType.H_ATTACK, value: 20, cost: 3, description: '让敌人的肉棒插入体内，夹断它，造成20点。', corruptionRequired: 65 },
-    { id: 'h_attack_046', name: '骑乘攻势', type: CardType.H_ATTACK, value: 6, hitCount: 4, cost: 3, description: '骑在敌人身上激烈扭动，攻击4次每次6点。', corruptionRequired: 62 },
-    { id: 'h_attack_047', name: '摇臀狂舞', type: CardType.H_ATTACK, value: 5, hitCount: 5, cost: 3, description: '疯狂摇动臀部，攻击5次每次5点。', corruptionRequired: 58 },
-    { id: 'h_attack_048', name: '全身缠绕', type: CardType.H_ATTACK, value: 22, cost: 3, debuffType: 'attack', debuffValue: 5, debuffDuration: 2, description: '用全身紧紧缠绕敌人，連22伤害，敌人攻击-5(2回合)。', corruptionRequired: 70 },
-    { id: 'h_attack_049', name: '致命诱惑', type: CardType.H_ATTACK, value: 20, cost: 3, description: '展露胴体的极致诱惑，造成20点伤害。', corruptionRequired: 55 },
-    { id: 'h_attack_050', name: '禁忌之触', type: CardType.H_ATTACK, value: 16, duration: 2, dotDamage: 4, cost: 3, description: '手指探入禁忌之处，造成16点+持续4点/回合。', corruptionRequired: 50 },
+    // --- Kỹ Năng Cao Cấp (Đọa lạc 60-90) ---
+    { id: 'h_attack_045', name: 'Nhục Bổng Cắm Vào', type: CardType.H_ATTACK, value: 20, cost: 3, description: 'Để nhục bổng của địch cắm vào cơ thể, kẹp nát nó, gây 20 điểm.', corruptionRequired: 65 },
+    { id: 'h_attack_046', name: 'Thế Cưỡi Ngựa', type: CardType.H_ATTACK, value: 6, hitCount: 4, cost: 3, description: 'Cưỡi lên người kẻ địch và vặn vẹo kịch liệt, đánh 4 lần mỗi lần 6 điểm.', corruptionRequired: 62 },
+    { id: 'h_attack_047', name: 'Lắc Mông Cuồng Vũ', type: CardType.H_ATTACK, value: 5, hitCount: 5, cost: 3, description: 'Lắc mông điên cuồng, đánh 5 lần mỗi lần 5 điểm.', corruptionRequired: 58 },
+    { id: 'h_attack_048', name: 'Toàn Thân Quấn Quýt', type: CardType.H_ATTACK, value: 22, cost: 3, debuffType: 'attack', debuffValue: 5, debuffDuration: 2, description: 'Dùng toàn thân quấn chặt kẻ địch, gây 22 sát thương, công địch -5 (2 lượt).', corruptionRequired: 70 },
+    { id: 'h_attack_049', name: 'Dẫn Dụ Chí Mạng', type: CardType.H_ATTACK, value: 20, cost: 3, description: 'Sự dẫn dụ tột cùng khi phô bày thân thể, gây 20 điểm sát thương.', corruptionRequired: 55 },
+    { id: 'h_attack_050', name: 'Cái Chạm Cấm Kỵ', type: CardType.H_ATTACK, value: 16, duration: 2, dotDamage: 4, cost: 3, description: 'Ngón tay thăm dò nơi cấm kỵ, gây 16 điểm + duy trì 4/lượt.', corruptionRequired: 50 },
 
-    // --- 终极技 (堕落75-100) ---
-    { id: 'h_attack_051', name: '双穴齐开', type: CardType.H_ATTACK, value: 28, cost: 4, dotDamage: 5, duration: 2, debuffType: 'attack', debuffValue: 4, debuffDuration: 2, description: '同时用小穴和菊穴吞噬，連28伤害+持续5/回合，敌人攻击-4(2回合)。', corruptionRequired: 80 },
-    { id: 'h_attack_052', name: '终极诱惑', type: CardType.H_ATTACK, value: 25, cost: 4, description: '全裸展示完美身材，造成25点伤害。', corruptionRequired: 75 },
-    { id: 'h_attack_053', name: '肉体献祭', type: CardType.H_ATTACK, value: 30, cost: 4, description: '献出整个身体进行攻击，造成30点伤害。', corruptionRequired: 88 },
-    { id: 'h_attack_054', name: '淫堕之极', type: CardType.H_ATTACK, value: 35, cost: 5, dotDamage: 6, duration: 3, debuffType: 'attack', debuffValue: 6, debuffDuration: 3, description: '堕落至极的终极攻击，連35伤害+持续6/回合，敌人攻击-6(3回合)。', corruptionRequired: 100 },
+    // --- Kỹ Năng Cuối (Đọa lạc 75-100) ---
+    { id: 'h_attack_051', name: 'Song Huyệt Tề Khai', type: CardType.H_ATTACK, value: 28, cost: 4, dotDamage: 5, duration: 2, debuffType: 'attack', debuffValue: 4, debuffDuration: 2, description: 'Đồng thời dùng tiểu huyệt và cúc huyệt thôn phệ, gây 28 sát thương + duy trì 5/lượt, công địch -4 (2 lượt).', corruptionRequired: 80 },
+    { id: 'h_attack_052', name: 'Dẫn Dụ Tột Cùng', type: CardType.H_ATTACK, value: 25, cost: 4, description: 'Khỏa thân hoàn toàn khoe dáng vẻ hoàn hảo, gây 25 điểm sát thương.', corruptionRequired: 75 },
+    { id: 'h_attack_053', name: 'Hiến Tế Thân Xác', type: CardType.H_ATTACK, value: 30, cost: 4, description: 'Dùng toàn bộ cơ thể để tấn công, gây 30 điểm sát thương.', corruptionRequired: 88 },
+    { id: 'h_attack_054', name: 'Dâm Đọa Tột Đỉnh', type: CardType.H_ATTACK, value: 35, cost: 5, dotDamage: 6, duration: 3, debuffType: 'attack', debuffValue: 6, debuffDuration: 3, description: 'Đòn tấn công tối thượng của sự đọa lạc, gây 35 sát thương + duy trì 6/lượt, công địch -6 (3 lượt).', corruptionRequired: 100 },
 
-    // ========== 修女专属卡 (30张) - 特性：每张卡都带回血或防御buff ==========
-    // --- 基础攻击系 (带回血/护甲) ---
-    { id: 'nun_001', name: '圣光审判', type: CardType.ATTACK, value: 10, cost: 1, healSelf: 5, description: '神圣光芒裁决邪恶，造成10点伤害，恢复5HP。', professionRequired: 'nun' },
-    { id: 'nun_002', name: '净化之焰', type: CardType.ATTACK, value: 8, ignoreArmor: true, cost: 2, armorGain: 6, description: '圣火焚烧污秽，无视护甲造成8点伤害，获得6护甲。', professionRequired: 'nun' },
-    { id: 'nun_003', name: '神罚', type: CardType.ATTACK, value: 16, cost: 2, healSelf: 8, description: '召唤神圣惩罚，造成16点伤害，恢复8HP。', professionRequired: 'nun' },
-    { id: 'nun_004', name: '圣光洗礼', type: CardType.ATTACK, value: 12, cost: 2, healSelf: 10, description: '神圣光芒净化敌人，造成12伤害，恢复10HP。', professionRequired: 'nun' },
-    { id: 'nun_005', name: '天堂制裁', type: CardType.ATTACK, value: 20, cost: 3, armorGain: 10, description: '天堂的制裁降临，造成20点伤害，获得10护甲。', professionRequired: 'nun' },
-    { id: 'nun_006', name: '圣印烙刻', type: CardType.ATTACK, value: 6, hitCount: 2, cost: 2, healSelf: 6, description: '烙下神圣印记，攻击2次各6点，恢复6HP。', professionRequired: 'nun' },
+// ========== Thẻ bài đặc quyền Tu nữ (30 lá) - Đặc tính: Mỗi lá bài đều kèm hồi máu hoặc buff phòng thủ ==========
+    // --- Hệ Tấn công cơ bản (Kèm hồi máu/giáp) ---
+    { id: 'nun_001', name: 'Thánh Quang Phán Quyết', type: CardType.ATTACK, value: 10, cost: 1, healSelf: 5, description: 'Ánh sáng thần thánh phán xét cái ác, gây 10 sát thương, hồi 5 HP.', professionRequired: 'nun' },
+    { id: 'nun_002', name: 'Ngọn Lửa Thanh Tẩy', type: CardType.ATTACK, value: 8, ignoreArmor: true, cost: 2, armorGain: 6, description: 'Thánh hỏa thiêu rụi uế tạp, xuyên giáp gây 8 sát thương, nhận 6 giáp.', professionRequired: 'nun' },
+    { id: 'nun_003', name: 'Thần Phạt', type: CardType.ATTACK, value: 16, cost: 2, healSelf: 8, description: 'Triệu hồi hình phạt thần thánh, gây 16 sát thương, hồi 8 HP.', professionRequired: 'nun' },
+    { id: 'nun_004', name: 'Thánh Quang Tẩy Lễ', type: CardType.ATTACK, value: 12, cost: 2, healSelf: 10, description: 'Ánh sáng thần thánh thanh tẩy kẻ thù, gây 12 sát thương, hồi 10 HP.', professionRequired: 'nun' },
+    { id: 'nun_005', name: 'Thiên Đường Chế Tài', type: CardType.ATTACK, value: 20, cost: 3, armorGain: 10, description: 'Thiên đường chế tài giáng xuống, gây 20 sát thương, nhận 10 giáp.', professionRequired: 'nun' },
+    { id: 'nun_006', name: 'Khắc Ấn Thánh Ấn', type: CardType.ATTACK, value: 6, hitCount: 2, cost: 2, healSelf: 6, description: 'Khắc xuống thánh ấn, tấn công 2 lần mỗi lần 6 điểm, hồi 6 HP.', professionRequired: 'nun' },
 
-    // --- 治疗系 (带护甲) ---
-    { id: 'nun_007', name: '十字架祝福', type: CardType.HEAL, value: 15, cost: 1, armorGain: 5, description: '十字架散发神圣光芒，恢复15HP，获得5护甲。', professionRequired: 'nun' },
-    { id: 'nun_008', name: '圣水洗礼', type: CardType.HEAL, value: 8, duration: 3, cost: 2, armorGain: 8, description: '圣水持续治愈，每回合恢复8HP持续3回合，获得8护甲。', professionRequired: 'nun' },
-    { id: 'nun_009', name: '救赎之光', type: CardType.HEAL, value: 25, cost: 2, armorGain: 10, description: '神圣救赎之光，恢复25HP，获得10护甲。', professionRequired: 'nun' },
-    { id: 'nun_010', name: '忏悔之泪', type: CardType.HEAL, value: 12, removeDebuff: true, cost: 2, armorGain: 6, description: '流下忏悔之泪，恢复12HP，解除负面状态，获得6护甲。', professionRequired: 'nun' },
-    { id: 'nun_011', name: '神恩降临', type: CardType.HEAL, value: 30, cost: 3, armorGain: 15, description: '神的恩典降临，恢复30HP，获得15护甲。', professionRequired: 'nun' },
-    { id: 'nun_012', name: '治愈祷言', type: CardType.HEAL, value: 10, cost: 0, armorGain: 3, description: '低声祷告，恢复10HP，获得3护甲。', professionRequired: 'nun' },
+    // --- Hệ Trị thương (Kèm giáp) ---
+    { id: 'nun_007', name: 'Thập Tự Giá Chúc Phúc', type: CardType.HEAL, value: 15, cost: 1, armorGain: 5, description: 'Thập tự giá tỏa ánh sáng thần thánh, hồi 15 HP, nhận 5 giáp.', professionRequired: 'nun' },
+    { id: 'nun_008', name: 'Thánh Thủy Tẩy Lễ', type: CardType.HEAL, value: 8, duration: 3, cost: 2, armorGain: 8, description: 'Thánh thủy duy trì trị liệu, mỗi lượt hồi 8 HP trong 3 lượt, nhận 8 giáp.', professionRequired: 'nun' },
+    { id: 'nun_009', name: 'Ánh Sáng Cứu Rỗi', type: CardType.HEAL, value: 25, cost: 2, armorGain: 10, description: 'Hào quang cứu rỗi thần thánh, hồi 25 HP, nhận 10 giáp.', professionRequired: 'nun' },
+    { id: 'nun_010', name: 'Nước Mắt Sám Hối', type: CardType.HEAL, value: 12, removeDebuff: true, cost: 2, armorGain: 6, description: 'Rơi lệ sám hối, hồi 12 HP, giải trừ trạng thái xấu, nhận 6 giáp.', professionRequired: 'nun' },
+    { id: 'nun_011', name: 'Thần Ân Giáng Lâm', type: CardType.HEAL, value: 30, cost: 3, armorGain: 15, description: 'Ân điển của Thần giáng xuống, hồi 30 HP, nhận 15 giáp.', professionRequired: 'nun' },
+    { id: 'nun_012', name: 'Lời Nguyện Trị Thương', type: CardType.HEAL, value: 10, cost: 0, armorGain: 3, description: 'Thì thầm cầu nguyện, hồi 10 HP, nhận 3 giáp.', professionRequired: 'nun' },
 
-    // --- 护甲系 (带回血) ---
-    { id: 'nun_013', name: '神圣护盾', type: CardType.ARMOR, value: 12, cost: 1, healValue: 5, description: '神圣力量形成护盾，获得12护甲，恢复5HP。', professionRequired: 'nun' },
-    { id: 'nun_014', name: '神圣领域', type: CardType.ARMOR, value: 18, cost: 2, healValue: 10, description: '展开神圣领域，获得18护甲，恢复10HP。', professionRequired: 'nun' },
-    { id: 'nun_015', name: '天使之翼', type: CardType.ARMOR, value: 15, cost: 2, healValue: 8, description: '天使羽翼环绕护体，获得15护甲，恢复8HP。', professionRequired: 'nun' },
-    { id: 'nun_016', name: '圣光壁垒', type: CardType.ARMOR, value: 25, cost: 3, healValue: 12, description: '召唤圣光壁垒，获得25护甲，恢复12HP。', professionRequired: 'nun' },
-    { id: 'nun_017', name: '信仰之盾', type: CardType.ARMOR, value: 10, cost: 1, healValue: 6, description: '信仰凝聚成盾，获得10护甲，恢复6HP。', professionRequired: 'nun' },
+    // --- Hệ Giáp (Kèm hồi máu) ---
+    { id: 'nun_013', name: 'Khiên Thần Thánh', type: CardType.ARMOR, value: 12, cost: 1, healValue: 5, description: 'Sức mạnh thần thánh tạo thành khiên, nhận 12 giáp, hồi 5 HP.', professionRequired: 'nun' },
+    { id: 'nun_014', name: 'Thánh Vực', type: CardType.ARMOR, value: 18, cost: 2, healValue: 10, description: 'Triển khai thánh vực, nhận 18 giáp, hồi 10 HP.', professionRequired: 'nun' },
+    { id: 'nun_015', name: 'Đôi Cánh Thiên Thần', type: CardType.ARMOR, value: 15, cost: 2, healValue: 8, description: 'Đôi cánh thiên thần bao bọc hộ thể, nhận 15 giáp, hồi 8 HP.', professionRequired: 'nun' },
+    { id: 'nun_016', name: 'Băng Thành Thánh Quang', type: CardType.ARMOR, value: 25, cost: 3, healValue: 12, description: 'Triệu hồi băng thành thánh quang, nhận 25 giáp, hồi 12 HP.', professionRequired: 'nun' },
+    { id: 'nun_017', name: 'Khiên Niềm Tin', type: CardType.ARMOR, value: 10, cost: 1, healValue: 6, description: 'Đức tin ngưng tụ thành khiên, nhận 10 giáp, hồi 6 HP.', professionRequired: 'nun' },
 
-    // --- Buff系 (带回血/护甲) ---
-    { id: 'nun_018', name: '忏悔祷告', type: CardType.BUFF, value: 3, duration: 3, buffType: 'defense', cost: 1, healSelf: 5, description: '虔诚祷告，防御+3持续3回合，恢复5HP。', professionRequired: 'nun' },
-    { id: 'nun_019', name: '圣歌咏唱', type: CardType.BUFF, value: 3, duration: 3, buffType: 'attack', cost: 1, armorGain: 6, description: '吟唱圣歌，攻击+3持续3回合，获得6护甲。', professionRequired: 'nun' },
-    { id: 'nun_020', name: '天使降临', type: CardType.BUFF, value: 4, duration: 3, buffType: 'attack', cost: 2, armorGain: 10, healSelf: 8, description: '召唤天使庇护，攻击+4持续3回合，获得10护甲，恢复8HP。', professionRequired: 'nun' },
-    { id: 'nun_021', name: '神圣祝福', type: CardType.BUFF, value: 2, duration: 4, buffType: 'defense', cost: 1, healSelf: 8, description: '神圣祝福加身，防御+2持续4回合，恢复8HP。', professionRequired: 'nun' },
-    { id: 'nun_022', name: '圣光庇护', type: CardType.BUFF, value: 5, duration: 2, buffType: 'defense', cost: 2, armorGain: 12, description: '圣光庇护，防御+5持续2回合，获得12护甲。', professionRequired: 'nun' },
+    // --- Hệ Buff (Kèm hồi máu/giáp) ---
+    { id: 'nun_018', name: 'Cầu Nguyện Sám Hối', type: CardType.BUFF, value: 3, duration: 3, buffType: 'defense', cost: 1, healSelf: 5, description: 'Thành tâm cầu nguyện, phòng thủ +3 trong 3 lượt, hồi 5 HP.', professionRequired: 'nun' },
+    { id: 'nun_019', name: 'Thánh Ca Vịnh Xướng', type: CardType.BUFF, value: 3, duration: 3, buffType: 'attack', cost: 1, armorGain: 6, description: 'Ngâm nga thánh ca, tấn công +3 trong 3 lượt, nhận 6 giáp.', professionRequired: 'nun' },
+    { id: 'nun_020', name: 'Thiên Thần Giáng Lâm', type: CardType.BUFF, value: 4, duration: 3, buffType: 'attack', cost: 2, armorGain: 10, healSelf: 8, description: 'Triệu hồi thiên thần che chở, tấn công +4 trong 3 lượt, nhận 10 giáp, hồi 8 HP.', professionRequired: 'nun' },
+    { id: 'nun_021', name: 'Thần Thánh Chúc Phúc', type: CardType.BUFF, value: 2, duration: 4, buffType: 'defense', cost: 1, healSelf: 8, description: 'Thần thánh chúc phúc hộ thân, phòng thủ +2 trong 4 lượt, hồi 8 HP.', professionRequired: 'nun' },
+    { id: 'nun_022', name: 'Thánh Quang Che Chở', type: CardType.BUFF, value: 5, duration: 2, buffType: 'defense', cost: 2, armorGain: 12, description: 'Ánh sáng thần thánh che chở, phòng thủ +5 trong 2 lượt, nhận 12 giáp.', professionRequired: 'nun' },
 
-    // --- Debuff系 (带回血/护甲) ---
-    { id: 'nun_023', name: '驱魔术', type: CardType.DEBUFF, value: 3, duration: 3, debuffType: 'attack', cost: 1, armorGain: 5, description: '驱散邪恶力量，敌人攻击-3持续3回合，获得5护甲。', professionRequired: 'nun' },
-    { id: 'nun_024', name: '神圣封印', type: CardType.DEBUFF, value: 4, duration: 2, debuffType: 'attack', cost: 2, healSelf: 8, description: '封印敌人力量，敌人攻击-4持续2回合，恢复8HP。', professionRequired: 'nun' },
-    { id: 'nun_025', name: '净化诅咒', type: CardType.DEBUFF, value: 3, duration: 3, debuffType: 'defense', cost: 2, armorGain: 8, healSelf: 5, description: '净化诅咒，敌人防御-3持续3回合，获得8护甲，恢复5HP。', professionRequired: 'nun' },
+    // --- Hệ Debuff (Kèm hồi máu/giáp) ---
+    { id: 'nun_023', name: 'Thuật Trừ Tà', type: CardType.DEBUFF, value: 3, duration: 3, debuffType: 'attack', cost: 1, armorGain: 5, description: 'Xua tan thế lực tà ác, tấn công kẻ thù -3 trong 3 lượt, nhận 5 giáp.', professionRequired: 'nun' },
+    { id: 'nun_024', name: 'Thần Thánh Phong Ấn', type: CardType.DEBUFF, value: 4, duration: 2, debuffType: 'attack', cost: 2, healSelf: 8, description: 'Phong ấn sức mạnh kẻ thù, tấn công kẻ thù -4 trong 2 lượt, hồi 8 HP.', professionRequired: 'nun' },
+    { id: 'nun_025', name: 'Thanh Tẩy Lời Nguyền', type: CardType.DEBUFF, value: 3, duration: 3, debuffType: 'defense', cost: 2, armorGain: 8, healSelf: 5, description: 'Thanh tẩy lời nguyền, phòng thủ kẻ thù -3 trong 3 lượt, nhận 8 giáp, hồi 5 HP.', professionRequired: 'nun' },
 
-    // --- 堕落H技能系 (带回血/护甲) ---
-    { id: 'nun_026', name: '堕落救赎', type: CardType.H_ATTACK, value: 14, cost: 2, healSelf: 12, corruptionRequired: 30, description: '用堕落的身体救赎敌人，造成14伤害，恢复12HP。', professionRequired: 'nun' },
-    { id: 'nun_027', name: '禁忌祈祷', type: CardType.H_ATTACK, value: 18, cost: 2, armorGain: 10, corruptionRequired: 40, description: '以肉体向神祈祷，造成18伤害，获得10护甲。', professionRequired: 'nun' },
-    { id: 'nun_028', name: '圣女堕落', type: CardType.H_ATTACK, value: 22, cost: 3, healSelf: 15, armorGain: 8, corruptionRequired: 50, description: '圣女的堕落之姿，造成22伤害，恢复15HP，获得8护甲。', professionRequired: 'nun' },
-    { id: 'nun_029', name: '背德告解', type: CardType.H_ATTACK, value: 16, cost: 2, healSelf: 10, armorGain: 6, corruptionRequired: 35, description: '用身体进行告解，造成16伤害，恢复10HP，获得6护甲。', professionRequired: 'nun' },
-    { id: 'nun_030', name: '神罚与救赎', type: CardType.H_ATTACK, value: 28, cost: 4, healSelf: 20, armorGain: 15, corruptionRequired: 60, description: '神罚与救赎合一，造成28伤害，恢复20HP，获得15护甲。', professionRequired: 'nun' },
+    // --- Hệ Kỹ năng H đọa lạc (Kèm hồi máu/giáp) ---
+    { id: 'nun_026', name: 'Cứu Rỗi Đọa Lạc', type: CardType.H_ATTACK, value: 14, cost: 2, healSelf: 12, corruptionRequired: 30, description: 'Dùng thân thể đọa lạc cứu rỗi kẻ thù, gây 14 sát thương, hồi 12 HP.', professionRequired: 'nun' },
+    { id: 'nun_027', name: 'Cấm Kỵ Kỳ Nguyện', type: CardType.H_ATTACK, value: 18, cost: 2, armorGain: 10, corruptionRequired: 40, description: 'Dùng nhục thể cầu nguyện với Thần, gây 18 sát thương, nhận 10 giáp.', professionRequired: 'nun' },
+    { id: 'nun_028', name: 'Thánh Nữ Đọa Lạc', type: CardType.H_ATTACK, value: 22, cost: 3, healSelf: 15, armorGain: 8, corruptionRequired: 50, description: 'Dáng vẻ đọa lạc của Thánh nữ, gây 22 sát thương, hồi 15 HP, nhận 8 giáp.', professionRequired: 'nun' },
+    { id: 'nun_029', name: 'Bội Đức Cáo Giải', type: CardType.H_ATTACK, value: 16, cost: 2, healSelf: 10, armorGain: 6, corruptionRequired: 35, description: 'Dùng thân thể để xưng tội, gây 16 sát thương, hồi 10 HP, nhận 6 giáp.', professionRequired: 'nun' },
+    { id: 'nun_030', name: 'Thần Phạt và Cứu Rỗi', type: CardType.H_ATTACK, value: 28, cost: 4, healSelf: 20, armorGain: 15, corruptionRequired: 60, description: 'Thần phạt và cứu rỗi hợp nhất, gây 28 sát thương, hồi 20 HP, nhận 15 giáp.', professionRequired: 'nun' },
 
-    // ========== 妓女专属卡 (25张) - 特性：削弱敌人攻防，少数控制技能 ==========
-    // --- 削弱攻击系 ---
-    { id: 'courtesan_001', name: '魅惑之吻', type: CardType.DEBUFF, value: 4, duration: 3, debuffType: 'attack', cost: 1, description: '送上迷人一吻，敌人攻击-4，持续3回合。', professionRequired: 'courtesan' },
-    { id: 'courtesan_002', name: '春药涂抹', type: CardType.DEBUFF, value: 5, duration: 3, debuffType: 'attack', cost: 1, description: '涂抹特制春药，敌人攻击-5，持续3回合。', professionRequired: 'courtesan' },
-    { id: 'courtesan_003', name: '夺魂摄魄', type: CardType.DEBUFF, value: 6, duration: 2, debuffType: 'attack', cost: 2, description: '用摄魂术迷惑敌人，攻击-6，持续2回合。', professionRequired: 'courtesan' },
-    { id: 'courtesan_004', name: '销魂蚀骨', type: CardType.DEBUFF, value: 8, duration: 2, debuffType: 'attack', cost: 2, description: '销魂的手段侵蚀敌人，攻击-8，持续2回合。', professionRequired: 'courtesan' },
-    { id: 'courtesan_005', name: '醉生梦死', type: CardType.DEBUFF, value: 4, duration: 4, debuffType: 'attack', cost: 2, description: '让敌人沉醉其中，攻击-4，持续4回合。', professionRequired: 'courtesan' },
+    // ========== Thẻ bài đặc quyền Kỹ nữ (25 lá) - Đặc tính: Làm yếu công thủ kẻ địch, ít kỹ năng khống chế ==========
+    // --- Hệ Làm yếu Tấn công ---
+    { id: 'courtesan_001', name: 'Nụ Hôn Mê Hoặc', type: CardType.DEBUFF, value: 4, duration: 3, debuffType: 'attack', cost: 1, description: 'Trao một nụ hôn mê hoặc, tấn công kẻ thù -4, kéo dài 3 lượt.', professionRequired: 'courtesan' },
+    { id: 'courtesan_002', name: 'Thoa Thuốc Kích Dục', type: CardType.DEBUFF, value: 5, duration: 3, debuffType: 'attack', cost: 1, description: 'Thoa thuốc kích dục đặc chế, tấn công kẻ thù -5, kéo dài 3 lượt.', professionRequired: 'courtesan' },
+    { id: 'courtesan_003', name: 'Đoạt Hồn Nhiếp Phách', type: CardType.DEBUFF, value: 6, duration: 2, debuffType: 'attack', cost: 2, description: 'Dùng thuật nhiếp hồn làm mê muội kẻ thù, tấn công -6, kéo dài 2 lượt.', professionRequired: 'courtesan' },
+    { id: 'courtesan_004', name: 'Tiêu Hồn Thực Cốt', type: CardType.DEBUFF, value: 8, duration: 2, debuffType: 'attack', cost: 2, description: 'Dùng thủ đoạn tiêu hồn ăn mòn kẻ thù, tấn công -8, kéo dài 2 lượt.', professionRequired: 'courtesan' },
+    { id: 'courtesan_005', name: 'Túy Sinh Mộng Tử', type: CardType.DEBUFF, value: 4, duration: 4, debuffType: 'attack', cost: 2, description: 'Khiến kẻ thù chìm đắm trong say mê, tấn công -4, kéo dài 4 lượt.', professionRequired: 'courtesan' },
 
-    // --- 削弱防御系 ---
-    { id: 'courtesan_006', name: '媚眼如丝', type: CardType.DEBUFF, value: 4, duration: 3, debuffType: 'defense', cost: 1, description: '媚眼挑逗敌人，防御-4，持续3回合。', professionRequired: 'courtesan' },
-    { id: 'courtesan_007', name: '勾魂夺魄', type: CardType.DEBUFF, value: 5, duration: 3, debuffType: 'defense', cost: 1, description: '勾魂的眼神瓦解防线，防御-5，持续3回合。', professionRequired: 'courtesan' },
-    { id: 'courtesan_008', name: '酥骨散', type: CardType.DEBUFF, value: 6, duration: 2, debuffType: 'defense', cost: 2, description: '让敌人骨酥筋软，防御-6，持续2回合。', professionRequired: 'courtesan' },
-    { id: 'courtesan_009', name: '蚀心香', type: CardType.DEBUFF, value: 4, duration: 4, debuffType: 'defense', cost: 2, description: '蚀心的香气弥漫，防御-4，持续4回合。', professionRequired: 'courtesan' },
+    // --- Hệ Làm yếu Phòng thủ ---
+    { id: 'courtesan_006', name: 'Ánh Mắt Đưa Tình', type: CardType.DEBUFF, value: 4, duration: 3, debuffType: 'defense', cost: 1, description: 'Ánh mắt lả lơi trêu chọc kẻ thù, phòng thủ -4, kéo dài 3 lượt.', professionRequired: 'courtesan' },
+    { id: 'courtesan_007', name: 'Câu Hồn Đoạt Phách', type: CardType.DEBUFF, value: 5, duration: 3, debuffType: 'defense', cost: 1, description: 'Ánh mắt câu hồn làm tan rã phòng tuyến, phòng thủ -5, kéo dài 3 lượt.', professionRequired: 'courtesan' },
+    { id: 'courtesan_008', name: 'Túy Cốt Tán', type: CardType.DEBUFF, value: 6, duration: 2, debuffType: 'defense', cost: 2, description: 'Khiến kẻ thù xương mềm gân rũ, phòng thủ -6, kéo dài 2 lượt.', professionRequired: 'courtesan' },
+    { id: 'courtesan_009', name: 'Thực Tâm Hương', type: CardType.DEBUFF, value: 4, duration: 4, debuffType: 'defense', cost: 2, description: 'Hương thơm thực tâm lan tỏa, phòng thủ -4, kéo dài 4 lượt.', professionRequired: 'courtesan' },
 
-    // --- 双削系（同时削攻防） ---
-    { id: 'courtesan_010', name: '迷情香', type: CardType.DEBUFF, value: 3, duration: 3, debuffType: 'both', cost: 2, description: '释放迷情香，敌人攻防各-3，持续3回合。', professionRequired: 'courtesan' },
-    { id: 'courtesan_011', name: '温柔陷阱', type: CardType.DEBUFF, value: 4, duration: 2, debuffType: 'both', cost: 2, description: '温柔的陷阱，敌人攻防各-4，持续2回合。', professionRequired: 'courtesan' },
-    { id: 'courtesan_012', name: '花间迷梦', type: CardType.DEBUFF, value: 5, duration: 2, debuffType: 'both', cost: 3, description: '让敌人陷入花间迷梦，攻防各-5，持续2回合。', professionRequired: 'courtesan' },
+    // --- Hệ Song Suy (Giảm cả công và thủ) ---
+    { id: 'courtesan_010', name: 'Mê Tình Hương', type: CardType.DEBUFF, value: 3, duration: 3, debuffType: 'both', cost: 2, description: 'Giải phóng mê tình hương, công thủ kẻ thù mỗi thứ -3, kéo dài 3 lượt.', professionRequired: 'courtesan' },
+    { id: 'courtesan_011', name: 'Cạm Bẫy Dịu Dàng', type: CardType.DEBUFF, value: 4, duration: 2, debuffType: 'both', cost: 2, description: 'Cạm bẫy dịu dàng, công thủ kẻ thù mỗi thứ -4, kéo dài 2 lượt.', professionRequired: 'courtesan' },
+    { id: 'courtesan_012', name: 'Mê Mộng Trong Hoa', type: CardType.DEBUFF, value: 5, duration: 2, debuffType: 'both', cost: 3, description: 'Khiến kẻ thù rơi vào mộng đẹp trong hoa, công thủ mỗi thứ -5, kéo dài 2 lượt.', professionRequired: 'courtesan' },
 
-    // --- 控制系（让敌人无法行动） ---
-    { id: 'courtesan_013', name: '魅惑术', type: CardType.DEBUFF, value: 1, duration: 1, debuffType: 'stun', cost: 3, description: '强力魅惑，敌人下回合无法行动。', professionRequired: 'courtesan' },
-    { id: 'courtesan_014', name: '极乐销魂', type: CardType.DEBUFF, value: 1, duration: 1, debuffType: 'stun', cost: 4, description: '让敌人沉浸在极乐中，下回合无法行动。', professionRequired: 'courtesan' },
-    { id: 'courtesan_015', name: '花魁禁术', type: CardType.DEBUFF, value: 1, duration: 1, debuffType: 'stun', cost: 4, corruptionRequired: 40, description: '花魁秘传禁术，敌人下回合无法行动。', professionRequired: 'courtesan' },
+    // --- Hệ Khống chế (Kẻ thù không thể hành động) ---
+    { id: 'courtesan_013', name: 'Thuật Mê Hoặc', type: CardType.DEBUFF, value: 1, duration: 1, debuffType: 'stun', cost: 3, description: 'Mê hoặc mạnh mẽ, kẻ thù không thể hành động lượt sau.', professionRequired: 'courtesan' },
+    { id: 'courtesan_014', name: 'Cực Lạc Tiêu Hồn', type: CardType.DEBUFF, value: 1, duration: 1, debuffType: 'stun', cost: 4, description: 'Để kẻ thù chìm đắm trong cực lạc, không thể hành động lượt sau.', professionRequired: 'courtesan' },
+    { id: 'courtesan_015', name: 'Cấm Thuật Hoa Khôi', type: CardType.DEBUFF, value: 1, duration: 1, debuffType: 'stun', cost: 4, corruptionRequired: 40, description: 'Cấm thuật bí truyền của Hoa khôi, kẻ thù không thể hành động lượt sau.', professionRequired: 'courtesan' },
 
-    // --- 自身Buff系 ---
-    { id: 'courtesan_016', name: '风月无边', type: CardType.BUFF, value: 5, duration: 3, buffType: 'attack', cost: 2, description: '展现风月手段，攻击+5，持续3回合。', professionRequired: 'courtesan' },
-    { id: 'courtesan_017', name: '红袖添香', type: CardType.BUFF, value: 4, duration: 3, buffType: 'defense', cost: 1, description: '优雅的身段增加防御，防御+4，持续3回合。', professionRequired: 'courtesan' },
-    { id: 'courtesan_018', name: '千娇百媚', type: CardType.BUFF, value: 6, duration: 2, buffType: 'attack', cost: 2, description: '展现千娇百媚，攻击+6，持续2回合。', professionRequired: 'courtesan' },
+    // --- Hệ Buff bản thân ---
+    { id: 'courtesan_016', name: 'Phong Nguyệt Vô Biên', type: CardType.BUFF, value: 5, duration: 3, buffType: 'attack', cost: 2, description: 'Thể hiện thủ đoạn phong nguyệt, tấn công +5, kéo dài 3 lượt.', professionRequired: 'courtesan' },
+    { id: 'courtesan_017', name: 'Hồng Tụ Thiêm Hương', type: CardType.BUFF, value: 4, duration: 3, buffType: 'defense', cost: 1, description: 'Dáng vẻ tao nhã tăng phòng thủ, phòng thủ +4, kéo dài 3 lượt.', professionRequired: 'courtesan' },
+    { id: 'courtesan_018', name: 'Thiên Kiều Bách Mị', type: CardType.BUFF, value: 6, duration: 2, buffType: 'attack', cost: 2, description: 'Thể hiện sự kiều diễm mê hồn, tấn công +6, kéo dài 2 lượt.', professionRequired: 'courtesan' },
 
-    // --- 治疗系 ---
-    { id: 'courtesan_019', name: '温柔乡', type: CardType.HEAL, value: 12, cost: 1, description: '用温柔的方式恢复精力，恢复12HP。', professionRequired: 'courtesan' },
-    { id: 'courtesan_020', name: '艳福齐天', type: CardType.HEAL, value: 18, cost: 2, armorGain: 5, description: '艳福无边，恢复18HP，获得5护甲。', professionRequired: 'courtesan' },
+    // --- Hệ Trị thương ---
+    { id: 'courtesan_019', name: 'Ôn Nhu Hương', type: CardType.HEAL, value: 12, cost: 1, description: 'Dùng cách dịu dàng để khôi phục tinh lực, hồi 12 HP.', professionRequired: 'courtesan' },
+    { id: 'courtesan_020', name: 'Diễm Phúc Tề Thiên', type: CardType.HEAL, value: 18, cost: 2, armorGain: 5, description: 'Diễm phúc vô tận, hồi 18 HP, nhận 5 giáp.', professionRequired: 'courtesan' },
 
-    // --- H攻击系 ---
-    { id: 'courtesan_021', name: '销魂一击', type: CardType.H_ATTACK, value: 14, cost: 2, debuffType: 'attack', debuffValue: 3, debuffDuration: 2, description: '销魂的技巧，造成14伤害，敌人攻击-3(2回合)。', professionRequired: 'courtesan' },
-    { id: 'courtesan_022', name: '青楼绝技', type: CardType.H_ATTACK, value: 18, cost: 2, debuffType: 'defense', debuffValue: 4, debuffDuration: 2, description: '青楼秘传绝技，造成18伤害，敌人防御-4(2回合)。', professionRequired: 'courtesan' },
-    { id: 'courtesan_023', name: '床榻之术', type: CardType.H_ATTACK, value: 10, hitCount: 2, cost: 2, debuffType: 'attack', debuffValue: 2, debuffDuration: 2, description: '床榻间的技巧，攻击2次各10点，敌人攻击-2(2回合)。', professionRequired: 'courtesan' },
-    { id: 'courtesan_024', name: '花间一夜', type: CardType.H_ATTACK, value: 22, cost: 3, debuffType: 'both', debuffValue: 3, debuffDuration: 2, corruptionRequired: 35, description: '一夜春宵，造成22伤害，敌人攻防各-3(2回合)。', professionRequired: 'courtesan' },
-    { id: 'courtesan_025', name: '花魁秘术', type: CardType.H_ATTACK, value: 30, cost: 4, debuffType: 'stun', debuffDuration: 1, corruptionRequired: 50, description: '花魁终极秘术，造成30伤害，敌人下回合无法行动。', professionRequired: 'courtesan' },
+    // --- Hệ Tấn công H ---
+    { id: 'courtesan_021', name: 'Tiêu Hồn Nhất Kích', type: CardType.H_ATTACK, value: 14, cost: 2, debuffType: 'attack', debuffValue: 3, debuffDuration: 2, description: 'Kỹ thuật tiêu hồn, gây 14 sát thương, tấn công kẻ thù -3 (2 lượt).', professionRequired: 'courtesan' },
+    { id: 'courtesan_022', name: 'Tuyệt Kỹ Thanh Lâu', type: CardType.H_ATTACK, value: 18, cost: 2, debuffType: 'defense', debuffValue: 4, debuffDuration: 2, description: 'Tuyệt kỹ bí truyền thanh lâu, gây 18 sát thương, phòng thủ kẻ thù -4 (2 lượt).', professionRequired: 'courtesan' },
+    { id: 'courtesan_023', name: 'Thuật Trên Giường', type: CardType.H_ATTACK, value: 10, hitCount: 2, cost: 2, debuffType: 'attack', debuffValue: 2, debuffDuration: 2, description: 'Kỹ thuật chốn phòng khuê, tấn công 2 lần mỗi lần 10 điểm, tấn công kẻ thù -2 (2 lượt).', professionRequired: 'courtesan' },
+    { id: 'courtesan_024', name: 'Một Đêm Trong Hoa', type: CardType.H_ATTACK, value: 22, cost: 3, debuffType: 'both', debuffValue: 3, debuffDuration: 2, corruptionRequired: 35, description: 'Một đêm xuân tiêu, gây 22 sát thương, công thủ kẻ thù mỗi thứ -3 (2 lượt).', professionRequired: 'courtesan' },
+    { id: 'courtesan_025', name: 'Bí Thuật Hoa Khôi', type: CardType.H_ATTACK, value: 30, cost: 4, debuffType: 'stun', debuffDuration: 1, corruptionRequired: 50, description: 'Bí thuật tối thượng của Hoa khôi, gây 30 sát thương, kẻ thù không thể hành động lượt sau.', professionRequired: 'courtesan' },
 
-    // ========== 平民专属卡 (20张) - 特性：低费高效、抽牌、金币获取、万金油 ==========
-    // --- 0费技能（省钱高效） ---
-    { id: 'commoner_001', name: '小聪明', type: CardType.ATTACK, value: 5, drawCards: 1, cost: 0, description: '灵机一动，造成5伤害并抽1张牌。', professionRequired: 'commoner' },
-    { id: 'commoner_002', name: '喘息', type: CardType.HEAL, value: 6, cost: 0, description: '趁机喘口气，恢复6HP。', professionRequired: 'commoner' },
-    { id: 'commoner_003', name: '躲闪', type: CardType.ARMOR, value: 6, cost: 0, description: '本能地躲开，获得6护甲。', professionRequired: 'commoner' },
+    // ========== Thẻ bài đặc quyền Dân thường (20 lá) - Đặc tính: Chi phí thấp hiệu quả cao, rút bài, nhận vàng, đa năng ==========
+    // --- Kỹ năng 0 mana (Tiết kiệm hiệu quả) ---
+    { id: 'commoner_001', name: 'Khôn Vặt', type: CardType.ATTACK, value: 5, drawCards: 1, cost: 0, description: 'Nảy ra ý hay, gây 5 sát thương và rút 1 lá bài.', professionRequired: 'commoner' },
+    { id: 'commoner_002', name: 'Thở Dốc', type: CardType.HEAL, value: 6, cost: 0, description: 'Tranh thủ thở dốc, hồi 6 HP.', professionRequired: 'commoner' },
+    { id: 'commoner_003', name: 'Né Tránh', type: CardType.ARMOR, value: 6, cost: 0, description: 'Né tránh theo bản năng, nhận 6 giáp.', professionRequired: 'commoner' },
 
-    // --- 低费抽牌系 ---
-    { id: 'commoner_004', name: '急中生智', type: CardType.ATTACK, value: 8, drawCards: 1, cost: 1, description: '急中生智的一击，造成8伤害并抽1张牌。', professionRequired: 'commoner' },
-    { id: 'commoner_005', name: '随机应变', type: CardType.BUFF, value: 2, duration: 2, buffType: 'attack', drawCards: 2, cost: 1, description: '随机应变，攻击+2持续2回合，抽2张牌。', professionRequired: 'commoner' },
-    { id: 'commoner_006', name: '见机行事', type: CardType.ARMOR, value: 8, drawCards: 1, cost: 1, description: '见机行事，获得8护甲并抽1张牌。', professionRequired: 'commoner' },
-    { id: 'commoner_007', name: '灵光一闪', type: CardType.BUFF, drawCards: 3, cost: 1, description: '灵光一闪，抽3张牌。', professionRequired: 'commoner' },
+    // --- Hệ Rút bài chi phí thấp ---
+    { id: 'commoner_004', name: 'Cái Khó Ló Cái Khôn', type: CardType.ATTACK, value: 8, drawCards: 1, cost: 1, description: 'Đòn đánh thông minh trong lúc nguy cấp, gây 8 sát thương và rút 1 lá bài.', professionRequired: 'commoner' },
+    { id: 'commoner_005', name: 'Tùy Cơ Ứng Biến', type: CardType.BUFF, value: 2, duration: 2, buffType: 'attack', drawCards: 2, cost: 1, description: 'Tùy cơ ứng biến, tấn công +2 trong 2 lượt, rút 2 lá bài.', professionRequired: 'commoner' },
+    { id: 'commoner_006', name: 'Xem Thời Thế', type: CardType.ARMOR, value: 8, drawCards: 1, cost: 1, description: 'Xem thời thế mà hành động, nhận 8 giáp và rút 1 lá bài.', professionRequired: 'commoner' },
+    { id: 'commoner_007', name: 'Linh Tính Chợt Đến', type: CardType.BUFF, drawCards: 3, cost: 1, description: 'Linh tính chợt đến, rút 3 lá bài.', professionRequired: 'commoner' },
 
-    // --- 金币获取系 ---
-    { id: 'commoner_008', name: '捡漏', type: CardType.ATTACK, value: 6, goldGain: 15, cost: 1, description: '趁乱捡漏，造成6伤害并获得15金币。', professionRequired: 'commoner' },
-    { id: 'commoner_009', name: '讨价还价', type: CardType.DEBUFF, value: 3, duration: 2, debuffType: 'attack', goldGain: 20, cost: 1, description: '讨价还价分散注意，敌人攻击-3(2回合)，获得20金币。', professionRequired: 'commoner' },
-    { id: 'commoner_010', name: '市井求生', type: CardType.HEAL, value: 10, goldGain: 25, cost: 2, description: '市井中求生的智慧，恢复10HP，获得25金币。', professionRequired: 'commoner' },
+    // --- Hệ Nhận vàng ---
+    { id: 'commoner_008', name: 'Nhặt Lẻ', type: CardType.ATTACK, value: 6, goldGain: 15, cost: 1, description: 'Thừa cơ nhặt lẻ, gây 6 sát thương và nhận 15 vàng.', professionRequired: 'commoner' },
+    { id: 'commoner_009', name: 'Mặc Cả', type: CardType.DEBUFF, value: 3, duration: 2, debuffType: 'attack', goldGain: 20, cost: 1, description: 'Mặc cả làm phân tâm, tấn công kẻ thù -3 (2 lượt), nhận 20 vàng.', professionRequired: 'commoner' },
+    { id: 'commoner_010', name: 'Sinh Tồn Phố Chợ', type: CardType.HEAL, value: 10, goldGain: 25, cost: 2, description: 'Trí tuệ sinh tồn chốn thị thành, hồi 10 HP, nhận 25 vàng.', professionRequired: 'commoner' },
 
-    // --- 生存韧性系 ---
-    { id: 'commoner_011', name: '坚强意志', type: CardType.ARMOR, value: 12, cost: 1, description: '普通人的坚强意志，获得12护甲。', professionRequired: 'commoner' },
-    { id: 'commoner_012', name: '生存本能', type: CardType.HEAL, value: 10, armorGain: 6, cost: 1, description: '生存本能觉醒，恢复10HP并获得6护甲。', professionRequired: 'commoner' },
-    { id: 'commoner_013', name: '逆境求生', type: CardType.BUFF, value: 4, duration: 3, buffType: 'defense', cost: 1, description: '逆境中的求生本能，防御+4，持续3回合。', professionRequired: 'commoner' },
-    { id: 'commoner_014', name: '绝处逢生', type: CardType.HEAL, value: 20, armorGain: 10, cost: 2, description: '绝处逢生，恢复20HP并获得10护甲。', professionRequired: 'commoner' },
+    // --- Hệ Sinh tồn dẻo dai ---
+    { id: 'commoner_011', name: 'Ý Chí Kiên Cường', type: CardType.ARMOR, value: 12, cost: 1, description: 'Ý chí kiên cường của người bình thường, nhận 12 giáp.', professionRequired: 'commoner' },
+    { id: 'commoner_012', name: 'Bản Năng Sinh Tồn', type: CardType.HEAL, value: 10, armorGain: 6, cost: 1, description: 'Bản năng sinh tồn thức tỉnh, hồi 10 HP và nhận 6 giáp.', professionRequired: 'commoner' },
+    { id: 'commoner_013', name: 'Nghịch Cảnh Cầu Sinh', type: CardType.BUFF, value: 4, duration: 3, buffType: 'defense', cost: 1, description: 'Bản năng sinh tồn trong nghịch cảnh, phòng thủ +4, kéo dài 3 lượt.', professionRequired: 'commoner' },
+    { id: 'commoner_014', name: 'Tuyệt Xứ Phùng Sinh', type: CardType.HEAL, value: 20, armorGain: 10, cost: 2, description: 'Tìm thấy đường sống trong cõi chết, hồi 20 HP và nhận 10 giáp.', professionRequired: 'commoner' },
 
-    // --- 万金油攻击系 ---
-    { id: 'commoner_015', name: '奋力一击', type: CardType.ATTACK, value: 12, cost: 1, description: '拼尽全力的一击，造成12伤害。', professionRequired: 'commoner' },
-    { id: 'commoner_016', name: '孤注一掷', type: CardType.ATTACK, value: 18, armorGain: 5, cost: 2, description: '孤注一掷，造成18伤害并获得5护甲。', professionRequired: 'commoner' },
-    { id: 'commoner_017', name: '背水一战', type: CardType.ATTACK, value: 10, hitCount: 2, cost: 2, description: '背水一战，攻击2次各10点伤害。', professionRequired: 'commoner' },
+    // --- Hệ Tấn công đa năng ---
+    { id: 'commoner_015', name: 'Dốc Lực Nhất Kích', type: CardType.ATTACK, value: 12, cost: 1, description: 'Đòn đánh dốc hết sức bình sinh, gây 12 sát thương.', professionRequired: 'commoner' },
+    { id: 'commoner_016', name: 'Được Ăn Cả Ngã Về Không', type: CardType.ATTACK, value: 18, armorGain: 5, cost: 2, description: 'Đánh cược tất cả, gây 18 sát thương và nhận 5 giáp.', professionRequired: 'commoner' },
+    { id: 'commoner_017', name: 'Trận Chiến Cuối Cùng', type: CardType.ATTACK, value: 10, hitCount: 2, cost: 2, description: 'Đường cùng phản kháng, tấn công 2 lần mỗi lần 10 điểm sát thương.', professionRequired: 'commoner' },
 
-    // --- 堕落H技能系 ---
-    { id: 'commoner_018', name: '委身求存', type: CardType.H_ATTACK, value: 12, healSelf: 8, goldGain: 20, cost: 1, corruptionRequired: 25, description: '委身求存，造成12伤害，恢复8HP，获得20金币。', professionRequired: 'commoner' },
-    { id: 'commoner_019', name: '出卖肉体', type: CardType.H_ATTACK, value: 16, goldGain: 40, cost: 2, corruptionRequired: 40, description: '出卖肉体换取生存，造成16伤害，获得40金币。', professionRequired: 'commoner' },
-    { id: 'commoner_020', name: '堕落求生', type: CardType.H_ATTACK, value: 22, healSelf: 15, armorGain: 8, goldGain: 30, cost: 3, corruptionRequired: 50, description: '彻底堕落以求生存，造成22伤害，恢复15HP，获得8护甲和30金币。', professionRequired: 'commoner' },
+    // --- Hệ Kỹ năng H đọa lạc ---
+    { id: 'commoner_018', name: 'Phó Mặc Thân Xác', type: CardType.H_ATTACK, value: 12, healSelf: 8, goldGain: 20, cost: 1, corruptionRequired: 25, description: 'Phó mặc thân xác để cầu sinh, gây 12 sát thương, hồi 8 HP, nhận 20 vàng.', professionRequired: 'commoner' },
+    { id: 'commoner_019', name: 'Bán Rẻ Nhục Thể', type: CardType.H_ATTACK, value: 16, goldGain: 40, cost: 2, corruptionRequired: 40, description: 'Bán rẻ nhục thể đổi lấy sự sinh tồn, gây 16 sát thương, nhận 40 vàng.', professionRequired: 'commoner' },
+    { id: 'commoner_020', name: 'Đọa Lạc Cầu Sinh', type: CardType.H_ATTACK, value: 22, healSelf: 15, armorGain: 8, goldGain: 30, cost: 3, corruptionRequired: 50, description: 'Hoàn toàn đọa lạc để sống sót, gây 22 sát thương, hồi 15 HP, nhận 8 giáp và 30 vàng.', professionRequired: 'commoner' },
 
-    // ========== 盗贼专属卡 (25张) - 特性：持续伤害DOT、低费抽牌 ==========
-    // --- 0费/低费抽牌系 ---
-    { id: 'thief_001', name: '暗中观察', type: CardType.BUFF, drawCards: 2, cost: 0, description: '暗中观察敌人，抽2张牌。', professionRequired: 'thief' },
-    { id: 'thief_002', name: '偷袭', type: CardType.ATTACK, value: 8, drawCards: 1, cost: 1, description: '快速偷袭，造成8伤害并抽1张牌。', professionRequired: 'thief' },
-    { id: 'thief_003', name: '消失', type: CardType.ARMOR, value: 10, drawCards: 1, cost: 1, description: '消失在暗影中，获得10护甲并抽1张牌。', professionRequired: 'thief' },
-    { id: 'thief_004', name: '潜行', type: CardType.BUFF, value: 3, duration: 2, buffType: 'attack', drawCards: 1, cost: 1, description: '潜入暗影，攻击+3持续2回合，抽1张牌。', professionRequired: 'thief' },
-    { id: 'thief_005', name: '疾风步', type: CardType.ARMOR, value: 6, drawCards: 2, cost: 1, description: '疾风般移动，获得6护甲并抽2张牌。', professionRequired: 'thief' },
+    // ========== Thẻ bài đặc quyền Đạo tặc (25 lá) - Đặc tính: Sát thương duy trì DOT, rút bài chi phí thấp ==========
+    // --- Hệ Rút bài 0 mana/chi phí thấp ---
+    { id: 'thief_001', name: 'Quan Sát Trong Bóng Tối', type: CardType.BUFF, drawCards: 2, cost: 0, description: 'Âm thầm quan sát kẻ thù, rút 2 lá bài.', professionRequired: 'thief' },
+    { id: 'thief_002', name: 'Đánh Lén', type: CardType.ATTACK, value: 8, drawCards: 1, cost: 1, description: 'Đánh lén nhanh chóng, gây 8 sát thương và rút 1 lá bài.', professionRequired: 'thief' },
+    { id: 'thief_003', name: 'Biến Mất', type: CardType.ARMOR, value: 10, drawCards: 1, cost: 1, description: 'Biến mất trong màn đêm, nhận 10 giáp và rút 1 lá bài.', professionRequired: 'thief' },
+    { id: 'thief_004', name: 'Ẩn Nấp', type: CardType.BUFF, value: 3, duration: 2, buffType: 'attack', drawCards: 1, cost: 1, description: 'Lẻn vào bóng tối, tấn công +3 trong 2 lượt, rút 1 lá bài.', professionRequired: 'thief' },
+    { id: 'thief_005', name: 'Tật Phong Bộ', type: CardType.ARMOR, value: 6, drawCards: 2, cost: 1, description: 'Di chuyển như gió, nhận 6 giáp và rút 2 lá bài.', professionRequired: 'thief' },
 
-    // --- 毒系DOT ---
-    { id: 'thief_006', name: '淬毒', type: CardType.DEBUFF, dotDamage: 3, duration: 3, debuffType: 'dot', cost: 1, description: '涂抹毒药，敌人每回合受3点毒伤，持续3回合。', professionRequired: 'thief' },
-    { id: 'thief_007', name: '毒刃', type: CardType.ATTACK, value: 6, dotDamage: 4, duration: 3, cost: 1, description: '淬毒的匕首，造成6伤害，敌人每回合受4点毒伤持续3回合。', professionRequired: 'thief' },
-    { id: 'thief_008', name: '剧毒匕首', type: CardType.ATTACK, value: 4, dotDamage: 5, duration: 4, cost: 2, description: '剧毒匕首，造成4伤害，敌人每回合受5点剧毒持续4回合。', professionRequired: 'thief' },
-    { id: 'thief_009', name: '蛇毒涂抹', type: CardType.DEBUFF, dotDamage: 6, duration: 3, debuffType: 'dot', cost: 2, description: '涂抹蛇毒，敌人每回合受6点毒伤，持续3回合。', professionRequired: 'thief' },
-    { id: 'thief_010', name: '致命剧毒', type: CardType.DEBUFF, dotDamage: 8, duration: 3, debuffType: 'dot', cost: 3, description: '致命剧毒侵蚀，敌人每回合受8点毒伤，持续3回合。', professionRequired: 'thief' },
+    // --- DOT hệ Độc ---
+    { id: 'thief_006', name: 'Tẩm Độc', type: CardType.DEBUFF, dotDamage: 3, duration: 3, debuffType: 'dot', cost: 1, description: 'Thoa thuốc độc, kẻ thù chịu 3 điểm độc thương mỗi lượt, kéo dài 3 lượt.', professionRequired: 'thief' },
+    { id: 'thief_007', name: 'Độc Nhận', type: CardType.ATTACK, value: 6, dotDamage: 4, duration: 3, cost: 1, description: 'Dao găm tẩm độc, gây 6 sát thương, kẻ thù chịu 4 điểm độc thương mỗi lượt trong 3 lượt.', professionRequired: 'thief' },
+    { id: 'thief_008', name: 'Dao Găm Kịch Độc', type: CardType.ATTACK, value: 4, dotDamage: 5, duration: 4, cost: 2, description: 'Dao găm kịch độc, gây 4 sát thương, kẻ thù chịu 5 điểm kịch độc mỗi lượt trong 4 lượt.', professionRequired: 'thief' },
+    { id: 'thief_009', name: 'Thoa Xà Độc', type: CardType.DEBUFF, dotDamage: 6, duration: 3, debuffType: 'dot', cost: 2, description: 'Thoa nọc rắn, kẻ thù chịu 6 điểm độc thương mỗi lượt trong 3 lượt.', professionRequired: 'thief' },
+    { id: 'thief_010', name: 'Kịch Độc Chí Mạng', type: CardType.DEBUFF, dotDamage: 8, duration: 3, debuffType: 'dot', cost: 3, description: 'Kịch độc chí mạng ăn mòn, kẻ thù chịu 8 điểm độc thương mỗi lượt trong 3 lượt.', professionRequired: 'thief' },
 
-    // --- 流血系DOT ---
-    { id: 'thief_011', name: '割裂', type: CardType.ATTACK, value: 5, dotDamage: 3, duration: 3, cost: 1, description: '割裂伤口，造成5伤害，敌人每回合流血3点持续3回合。', professionRequired: 'thief' },
-    { id: 'thief_012', name: '放血', type: CardType.DEBUFF, dotDamage: 4, duration: 4, debuffType: 'dot', cost: 1, description: '造成深深的伤口，敌人每回合流血4点，持续4回合。', professionRequired: 'thief' },
-    { id: 'thief_013', name: '连环割', type: CardType.ATTACK, value: 3, hitCount: 2, dotDamage: 3, duration: 3, cost: 2, description: '连续割裂，攻击2次各3点，敌人每回合流血3点持续3回合。', professionRequired: 'thief' },
-    { id: 'thief_014', name: '动脉切割', type: CardType.ATTACK, value: 8, dotDamage: 6, duration: 3, cost: 2, description: '切割动脉，造成8伤害，敌人每回合流血6点持续3回合。', professionRequired: 'thief' },
+    // --- DOT hệ Xuất huyết ---
+    { id: 'thief_011', name: 'Xé Rách', type: CardType.ATTACK, value: 5, dotDamage: 3, duration: 3, cost: 1, description: 'Xé rách vết thương, gây 5 sát thương, kẻ thù chảy máu 3 điểm mỗi lượt trong 3 lượt.', professionRequired: 'thief' },
+    { id: 'thief_012', name: 'Phóng Huyết', type: CardType.DEBUFF, dotDamage: 4, duration: 4, debuffType: 'dot', cost: 1, description: 'Gây ra vết thương sâu, kẻ thù chảy máu 4 điểm mỗi lượt trong 4 lượt.', professionRequired: 'thief' },
+    { id: 'thief_013', name: 'Liên Hoàn Cát', type: CardType.ATTACK, value: 3, hitCount: 2, dotDamage: 3, duration: 3, cost: 2, description: 'Cắt liên tiếp, tấn công 2 lần mỗi lần 3 điểm, kẻ thù chảy máu 3 điểm mỗi lượt trong 3 lượt.', professionRequired: 'thief' },
+    { id: 'thief_014', name: 'Cắt Động Mạch', type: CardType.ATTACK, value: 8, dotDamage: 6, duration: 3, cost: 2, description: 'Cắt đứt động mạch, gây 8 sát thương, kẻ thù chảy máu 6 điểm mỗi lượt trong 3 lượt.', professionRequired: 'thief' },
 
-    // --- 复合DOT（毒+流血） ---
-    { id: 'thief_015', name: '毒血双刃', type: CardType.ATTACK, value: 6, dotDamage: 4, duration: 4, cost: 2, drawCards: 1, description: '毒血双刃，造成6伤害，敌人每回合受4点伤害持续4回合，抽1张牌。', professionRequired: 'thief' },
-    { id: 'thief_016', name: '腐蚀之刃', type: CardType.ATTACK, value: 10, dotDamage: 5, duration: 3, cost: 2, description: '腐蚀之刃，造成10伤害，敌人每回合受5点腐蚀持续3回合。', professionRequired: 'thief' },
+    // --- DOT Phức hợp (Độc + Chảy máu) ---
+    { id: 'thief_015', name: 'Độc Huyết Song Nhận', type: CardType.ATTACK, value: 6, dotDamage: 4, duration: 4, cost: 2, drawCards: 1, description: 'Song đao độc huyết, gây 6 sát thương, kẻ thù chịu 4 điểm sát thương mỗi lượt trong 4 lượt, rút 1 lá bài.', professionRequired: 'thief' },
+    { id: 'thief_016', name: 'Lưỡi Dao Ăn Mòn', type: CardType.ATTACK, value: 10, dotDamage: 5, duration: 3, cost: 2, description: 'Lưỡi dao ăn mòn, gây 10 sát thương, kẻ thù chịu 5 điểm ăn mòn mỗi lượt trong 3 lượt.', professionRequired: 'thief' },
 
-    // --- 爆发攻击系 ---
-    { id: 'thief_017', name: '背刺', type: CardType.ATTACK, value: 15, ignoreArmor: true, cost: 2, description: '从背后偷袭，无视护甲造成15点伤害。', professionRequired: 'thief' },
-    { id: 'thief_018', name: '致命一击', type: CardType.ATTACK, value: 20, cost: 2, description: '瞄准要害的致命一击，造成20点伤害。', professionRequired: 'thief' },
-    { id: 'thief_019', name: '连环刺', type: CardType.ATTACK, value: 5, hitCount: 4, cost: 2, description: '快速的连续攻击，攻击4次各5点伤害。', professionRequired: 'thief' },
+    // --- Hệ Tấn công Bộc phát ---
+    { id: 'thief_017', name: 'Đâm Lén', type: CardType.ATTACK, value: 15, ignoreArmor: true, cost: 2, description: 'Đánh lén từ phía sau, xuyên giáp gây 15 điểm sát thương.', professionRequired: 'thief' },
+    { id: 'thief_018', name: 'Chí Mạng Nhất Kích', type: CardType.ATTACK, value: 20, cost: 2, description: 'Nhắm vào yếu huyệt gây đòn chí mạng, gây 20 điểm sát thương.', professionRequired: 'thief' },
+    { id: 'thief_019', name: 'Liên Hoàn Thích', type: CardType.ATTACK, value: 5, hitCount: 4, cost: 2, description: 'Tấn công liên tiếp nhanh chóng, tấn công 4 lần mỗi lần 5 điểm sát thương.', professionRequired: 'thief' },
 
-    // --- 生存/防御系 ---
-    { id: 'thief_020', name: '烟雾弹', type: CardType.ARMOR, value: 12, drawCards: 1, cost: 1, description: '投掷烟雾弹，获得12护甲并抽1张牌。', professionRequired: 'thief' },
-    { id: 'thief_021', name: '影遁', type: CardType.ARMOR, value: 15, cost: 1, description: '遁入暗影，获得15护甲。', professionRequired: 'thief' },
+    // --- Hệ Sinh tồn/Phòng thủ ---
+    { id: 'thief_020', name: 'Bom Khói', type: CardType.ARMOR, value: 12, drawCards: 1, cost: 1, description: 'Ném bom khói, nhận 12 giáp và rút 1 lá bài.', professionRequired: 'thief' },
+    { id: 'thief_021', name: 'Ảnh Độn', type: CardType.ARMOR, value: 15, cost: 1, description: 'Ẩn mình trong bóng tối, nhận 15 giáp.', professionRequired: 'thief' },
 
-    // --- 堕落H技能系 ---
-    { id: 'thief_022', name: '色诱暗杀', type: CardType.H_ATTACK, value: 14, dotDamage: 4, duration: 3, cost: 2, corruptionRequired: 30, description: '用身体引诱后暗杀，造成14伤害，敌人每回合受4点伤害持续3回合。', professionRequired: 'thief' },
-    { id: 'thief_023', name: '致命诱惑', type: CardType.H_ATTACK, value: 12, dotDamage: 5, duration: 3, drawCards: 1, cost: 2, corruptionRequired: 35, description: '致命的诱惑，造成12伤害，敌人每回合受5点伤害持续3回合，抽1张牌。', professionRequired: 'thief' },
-    { id: 'thief_024', name: '蛇蝎美人', type: CardType.H_ATTACK, value: 18, dotDamage: 6, duration: 4, cost: 3, corruptionRequired: 45, description: '蛇蝎美人的毒吻，造成18伤害，敌人每回合受6点剧毒持续4回合。', professionRequired: 'thief' },
-    { id: 'thief_025', name: '夺命销魂', type: CardType.H_ATTACK, value: 25, dotDamage: 8, duration: 3, cost: 4, corruptionRequired: 55, description: '销魂夺命，造成25伤害，敌人每回合受8点伤害持续3回合。', professionRequired: 'thief' },
+    // --- Hệ Kỹ năng H đọa lạc ---
+    { id: 'thief_022', name: 'Sắc Dụ Ám Sát', type: CardType.H_ATTACK, value: 14, dotDamage: 4, duration: 3, cost: 2, corruptionRequired: 30, description: 'Dùng thân thể dẫn dụ rồi ám sát, gây 14 sát thương, kẻ thù chịu 4 điểm sát thương mỗi lượt trong 3 lượt.', professionRequired: 'thief' },
+    { id: 'thief_023', name: 'Sự Quyến Rũ Chí Mạng', type: CardType.H_ATTACK, value: 12, dotDamage: 5, duration: 3, drawCards: 1, cost: 2, corruptionRequired: 35, description: 'Sự quyến rũ chết người, gây 12 sát thương, kẻ thù chịu 5 điểm sát thương mỗi lượt trong 3 lượt, rút 1 lá bài.', professionRequired: 'thief' },
+    { id: 'thief_024', name: 'Góa Phụ Đen', type: CardType.H_ATTACK, value: 18, dotDamage: 6, duration: 4, cost: 3, corruptionRequired: 45, description: 'Nụ hôn độc của mỹ nhân rắn rết, gây 18 sát thương, kẻ thù chịu 6 điểm kịch độc mỗi lượt trong 4 lượt.', professionRequired: 'thief' },
+    { id: 'thief_025', name: 'Đoạt Mệnh Tiêu Hồn', type: CardType.H_ATTACK, value: 25, dotDamage: 8, duration: 3, cost: 4, corruptionRequired: 55, description: 'Tiêu hồn đoạt mệnh, gây 25 sát thương, kẻ thù chịu 8 điểm sát thương mỗi lượt trong 3 lượt.', professionRequired: 'thief' },
 
-    // ========== 战士专属卡 (15张) ==========
-    { id: 'warrior_001', name: '重击', type: CardType.ATTACK, value: 16, cost: 2, description: '力量型重击，造成16点伤害。', professionRequired: 'warrior' },
-    { id: 'warrior_002', name: '盾击', type: CardType.ATTACK, value: 10, armorGain: 10, cost: 2, description: '用盾牌攻击，造成10伤害并获得10护甲。', professionRequired: 'warrior' },
-    { id: 'warrior_003', name: '铁壁', type: CardType.ARMOR, value: 20, cost: 2, description: '如铁壁般的防御，获得20点护甲。', professionRequired: 'warrior' },
-    { id: 'warrior_004', name: '战吼', type: CardType.BUFF, value: 6, duration: 3, buffType: 'attack', cost: 2, description: '发出战吼鼓舞自己，攻击+6，持续3回合。', professionRequired: 'warrior' },
-    { id: 'warrior_005', name: '破甲斩', type: CardType.ATTACK, value: 12, ignoreArmor: true, cost: 2, description: '破甲的一斩，无视护甲造成12点伤害。', professionRequired: 'warrior' },
-    { id: 'warrior_006', name: '坚守', type: CardType.ARMOR, value: 25, cost: 3, description: '坚守阵地，获得25点护甲。', professionRequired: 'warrior' },
-    { id: 'warrior_007', name: '狂战士之怒', type: CardType.BUFF, value: 10, duration: 2, buffType: 'attack', cost: 2, description: '进入狂战状态，攻击+10，持续2回合。', professionRequired: 'warrior' },
-    { id: 'warrior_008', name: '反击姿态', type: CardType.ARMOR, value: 12, counterDamage: 6, cost: 2, description: '进入反击姿态，获得12护甲，被攻击时反弹6点伤害。', professionRequired: 'warrior' },
-    { id: 'warrior_009', name: '冲锋', type: CardType.ATTACK, value: 14, armorGain: 5, cost: 2, description: '勇猛冲锋，造成14伤害并获得5护甲。', professionRequired: 'warrior' },
-    { id: 'warrior_010', name: '钢铁之躯', type: CardType.BUFF, value: 8, duration: 3, buffType: 'defense', armorGain: 15, cost: 3, description: '钢铁之躯，防御+8持续3回合，获得15护甲。', professionRequired: 'warrior' },
-    { id: 'warrior_011', name: '横扫千军', type: CardType.ATTACK, value: 20, cost: 3, description: '横扫一切的强力攻击，造成20点伤害。', professionRequired: 'warrior' },
-    { id: 'warrior_012', name: '不动如山', type: CardType.ARMOR, value: 30, cost: 3, description: '不动如山的防御姿态，获得30点护甲。', professionRequired: 'warrior' },
-    { id: 'warrior_013', name: '战神附体', type: CardType.BUFF, value: 8, duration: 3, buffType: 'attack', armorGain: 20, cost: 4, description: '战神附体，攻击+8持续3回合，获得20护甲。', professionRequired: 'warrior' },
-    { id: 'warrior_014', name: '终结技', type: CardType.ATTACK, value: 30, cost: 4, description: '战士的终结技，造成30点伤害。', professionRequired: 'warrior' },
-    { id: 'warrior_015', name: '英勇无畏', type: CardType.BUFF, value: 5, duration: 4, buffType: 'attack', healSelf: 20, cost: 3, description: '英勇无畏，攻击+5持续4回合，恢复20HP。', professionRequired: 'warrior' },
+    // ========== Thẻ bài đặc quyền Chiến binh (15 lá) ==========
+    { id: 'warrior_001', name: 'Trọng Kích', type: CardType.ATTACK, value: 16, cost: 2, description: 'Cú đánh nặng nề đầy uy lực, gây 16 điểm sát thương.', professionRequired: 'warrior' },
+    { id: 'warrior_002', name: 'Khiên Kích', type: CardType.ATTACK, value: 10, armorGain: 10, cost: 2, description: 'Tấn công bằng khiên, gây 10 sát thương và nhận 10 giáp.', professionRequired: 'warrior' },
+    { id: 'warrior_003', name: 'Thiết Bích', type: CardType.ARMOR, value: 20, cost: 2, description: 'Phòng thủ kiên cố như vách sắt, nhận 20 điểm giáp.', professionRequired: 'warrior' },
+    { id: 'warrior_004', name: 'Chiến Hống', type: CardType.BUFF, value: 6, duration: 3, buffType: 'attack', cost: 2, description: 'Hống vang cổ vũ bản thân, tấn công +6 trong 3 lượt.', professionRequired: 'warrior' },
+    { id: 'warrior_005', name: 'Phá Giáp Trảm', type: CardType.ATTACK, value: 12, ignoreArmor: true, cost: 2, description: 'Cú chém phá giáp, xuyên giáp gây 12 điểm sát thương.', professionRequired: 'warrior' },
+    { id: 'warrior_006', name: 'Kiên Thủ', type: CardType.ARMOR, value: 25, cost: 3, description: 'Kiên trì giữ vững vị trí, nhận 25 điểm giáp.', professionRequired: 'warrior' },
+    { id: 'warrior_007', name: 'Cuồng Chiến Sĩ Chi Nộ', type: CardType.BUFF, value: 10, duration: 2, buffType: 'attack', cost: 2, description: 'Vào trạng thái cuồng chiến, tấn công +10 trong 2 lượt.', professionRequired: 'warrior' },
+    { id: 'warrior_008', name: 'Thế Phản Công', type: CardType.ARMOR, value: 12, counterDamage: 6, cost: 2, description: 'Vào tư thế phản công, nhận 12 giáp, phản lại 6 sát thương khi bị tấn công.', professionRequired: 'warrior' },
+    { id: 'warrior_009', name: 'Xung Phong', type: CardType.ATTACK, value: 14, armorGain: 5, cost: 2, description: 'Dũng mãnh xung phong, gây 14 sát thương và nhận 5 giáp.', professionRequired: 'warrior' },
+    { id: 'warrior_010', name: 'Thân Thể Thép', type: CardType.BUFF, value: 8, duration: 3, buffType: 'defense', armorGain: 15, cost: 3, description: 'Thân thể bằng thép, phòng thủ +8 trong 3 lượt, nhận 15 giáp.', professionRequired: 'warrior' },
+    { id: 'warrior_011', name: 'Hoành Tảo Thiên Quân', type: CardType.ATTACK, value: 20, cost: 3, description: 'Đòn đánh mạnh mẽ quét sạch tất cả, gây 20 điểm sát thương.', professionRequired: 'warrior' },
+    { id: 'warrior_012', name: 'Bất Động Như Sơn', type: CardType.ARMOR, value: 30, cost: 3, description: 'Tư thế phòng thủ vững như núi, nhận 30 điểm giáp.', professionRequired: 'warrior' },
+    { id: 'warrior_013', name: 'Chiến Thần Nhập Thể', type: CardType.BUFF, value: 8, duration: 3, buffType: 'attack', armorGain: 20, cost: 4, description: 'Chiến thần nhập thể, tấn công +8 trong 3 lượt, nhận 20 giáp.', professionRequired: 'warrior' },
+    { id: 'warrior_014', name: 'Kỹ Năng Kết Liễu', type: CardType.ATTACK, value: 30, cost: 4, description: 'Chiêu kết liễu của chiến binh, gây 30 điểm sát thương.', professionRequired: 'warrior' },
+    { id: 'warrior_015', name: 'Anh Dũng Không Sợ', type: CardType.BUFF, value: 5, duration: 4, buffType: 'attack', healSelf: 20, cost: 3, description: 'Anh dũng không sợ, tấn công +5 trong 4 lượt, hồi 20 HP.', professionRequired: 'warrior' },
 
-    // ========== 女法师专属卡 (25张) - 特性：高伤害法术、抽牌、能量获取 ==========
-    // --- 火系法术 ---
-    { id: 'mage_001', name: '火球术', type: CardType.ATTACK, value: 10, cost: 1, description: '发射一颗火球，造成10点伤害。', professionRequired: 'mage' },
-    { id: 'mage_002', name: '烈焰冲击', type: CardType.ATTACK, value: 14, cost: 1, description: '烈焰冲击敌人，造成14点伤害。', professionRequired: 'mage' },
-    { id: 'mage_003', name: '炎爆术', type: CardType.ATTACK, value: 22, cost: 2, description: '引爆火焰能量，造成22点伤害。', professionRequired: 'mage' },
-    { id: 'mage_004', name: '陨石坠落', type: CardType.ATTACK, value: 30, cost: 3, description: '召唤陨石从天而降，造成30点伤害。', professionRequired: 'mage' },
+    // ========== Thẻ bài đặc quyền Nữ Pháp sư (25 lá) - Đặc tính: Phép thuật sát thương cao, rút bài, nhận năng lượng ==========
+    // --- Phép thuật hệ Hỏa ---
+    { id: 'mage_001', name: 'Hỏa Cầu Thuật', type: CardType.ATTACK, value: 10, cost: 1, description: 'Phóng một quả cầu lửa, gây 10 điểm sát thương.', professionRequired: 'mage' },
+    { id: 'mage_002', name: 'Liệt Diễm Xung Kích', type: CardType.ATTACK, value: 14, cost: 1, description: 'Sóng lửa kích mạnh kẻ thù, gây 14 điểm sát thương.', professionRequired: 'mage' },
+    { id: 'mage_003', name: 'Viêm Bạo Thuật', type: CardType.ATTACK, value: 22, cost: 2, description: 'Kích nổ năng lượng lửa, gây 22 điểm sát thương.', professionRequired: 'mage' },
+    { id: 'mage_004', name: 'Thiên Thạch Giáng Lâm', type: CardType.ATTACK, value: 30, cost: 3, description: 'Triệu hồi thiên thạch từ trời cao, gây 30 điểm sát thương.', professionRequired: 'mage' },
 
-    // --- 冰系法术 ---
-    { id: 'mage_005', name: '冰锥术', type: CardType.ATTACK, value: 8, cost: 1, drawCards: 1, description: '召唤冰锥攻击，造成8伤害并抽1张牌。', professionRequired: 'mage' },
-    { id: 'mage_006', name: '寒冰箭', type: CardType.ATTACK, value: 12, cost: 1, drawCards: 1, description: '发射寒冰箭，造成12伤害并抽1张牌。', professionRequired: 'mage' },
-    { id: 'mage_007', name: '暴风雪', type: CardType.ATTACK, value: 7, hitCount: 3, cost: 2, drawCards: 1, description: '召唤暴风雪，攻击3次各7点，抽1张牌。', professionRequired: 'mage' },
-    { id: 'mage_008', name: '冰封', type: CardType.ATTACK, value: 16, cost: 2, debuffType: 'attack', debuffValue: 3, debuffDuration: 2, description: '冰封敌人，造成16伤害，敌人攻击-3(2回合)。', professionRequired: 'mage' },
+    // --- Phép thuật hệ Băng ---
+    { id: 'mage_005', name: 'Băng Chùy Thuật', type: CardType.ATTACK, value: 8, cost: 1, drawCards: 1, description: 'Triệu hồi băng chùy tấn công, gây 8 sát thương và rút 1 lá bài.', professionRequired: 'mage' },
+    { id: 'mage_006', name: 'Hàn Băng Tiễn', type: CardType.ATTACK, value: 12, cost: 1, drawCards: 1, description: 'Bắn ra tiễn băng, gây 12 sát thương và rút 1 lá bài.', professionRequired: 'mage' },
+    { id: 'mage_007', name: 'Bão Tuyết', type: CardType.ATTACK, value: 7, hitCount: 3, cost: 2, drawCards: 1, description: 'Triệu hồi bão tuyết, tấn công 3 lần mỗi lần 7 điểm, rút 1 lá bài.', professionRequired: 'mage' },
+    { id: 'mage_008', name: 'Băng Phong', type: CardType.ATTACK, value: 16, cost: 2, debuffType: 'attack', debuffValue: 3, debuffDuration: 2, description: 'Đóng băng kẻ thù, gây 16 sát thương, tấn công kẻ thù -3 (2 lượt).', professionRequired: 'mage' },
 
-    // --- 雷系法术 ---
-    { id: 'mage_009', name: '雷击术', type: CardType.ATTACK, value: 12, ignoreArmor: true, cost: 1, description: '召唤雷电打击，无视护甲造成12点伤害。', professionRequired: 'mage' },
-    { id: 'mage_010', name: '连锁闪电', type: CardType.ATTACK, value: 6, hitCount: 3, ignoreArmor: true, cost: 2, description: '连锁闪电，无视护甲攻击3次各6点。', professionRequired: 'mage' },
-    { id: 'mage_011', name: '雷霆万钧', type: CardType.ATTACK, value: 20, ignoreArmor: true, cost: 3, description: '雷霆万钧，无视护甲造成20点伤害。', professionRequired: 'mage' },
+    // --- Phép thuật hệ Lôi ---
+    { id: 'mage_009', name: 'Lôi Kích Thuật', type: CardType.ATTACK, value: 12, ignoreArmor: true, cost: 1, description: 'Triệu hồi sấm sét đánh xuống, xuyên giáp gây 12 điểm sát thương.', professionRequired: 'mage' },
+    { id: 'mage_010', name: 'Tia Chớp Liên Hoàn', type: CardType.ATTACK, value: 6, hitCount: 3, ignoreArmor: true, cost: 2, description: 'Tia chớp liên hoàn, xuyên giáp tấn công 3 lần mỗi lần 6 điểm.', professionRequired: 'mage' },
+    { id: 'mage_011', name: 'Lôi Đình Vạn Quân', type: CardType.ATTACK, value: 20, ignoreArmor: true, cost: 3, description: 'Sấm sét kinh thiên, xuyên giáp gây 20 điểm sát thương.', professionRequired: 'mage' },
 
-    // --- 奥术系 ---
-    { id: 'mage_012', name: '奥术飞弹', type: CardType.ATTACK, value: 4, hitCount: 3, cost: 1, description: '发射3枚奥术飞弹，每枚造成4点伤害。', professionRequired: 'mage' },
-    { id: 'mage_013', name: '奥术冲击', type: CardType.ATTACK, value: 8, cost: 0, description: '奥术能量冲击，造成8点伤害。', professionRequired: 'mage' },
-    { id: 'mage_014', name: '元素爆发', type: CardType.ATTACK, value: 12, hitCount: 3, cost: 4, description: '元素之力大爆发，攻击3次各12点伤害。', professionRequired: 'mage' },
+    // --- Hệ Bí thuật ---
+    { id: 'mage_012', name: 'Bí Thuật Phi Đạn', type: CardType.ATTACK, value: 4, hitCount: 3, cost: 1, description: 'Phóng ra 3 viên phi đạn bí thuật, mỗi viên gây 4 sát thương.', professionRequired: 'mage' },
+    { id: 'mage_013', name: 'Bí Thuật Xung Kích', type: CardType.ATTACK, value: 8, cost: 0, description: 'Sóng năng lượng bí thuật xung kích, gây 8 điểm sát thương.', professionRequired: 'mage' },
+    { id: 'mage_014', name: 'Nguyên Tố Bộc Phát', type: CardType.ATTACK, value: 12, hitCount: 3, cost: 4, description: 'Sức mạnh nguyên tố bùng nổ, tấn công 3 lần mỗi lần 12 sát thương.', professionRequired: 'mage' },
 
-    // --- 能量/抽牌系 ---
-    { id: 'mage_015', name: '魔力涌动', type: CardType.BUFF, gainEnergy: 2, drawCards: 1, cost: 1, description: '魔力涌动，获得2点能量并抽1张牌。', professionRequired: 'mage' },
-    { id: 'mage_016', name: '法力汲取', type: CardType.ATTACK, value: 8, cost: 1, gainEnergy: 1, description: '汲取敌人魔力，造成8伤害并获得1能量。', professionRequired: 'mage' },
-    { id: 'mage_017', name: '时间扭曲', type: CardType.BUFF, drawCards: 3, cost: 1, description: '扭曲时间，抽3张牌。', professionRequired: 'mage' },
-    { id: 'mage_018', name: '奥术智慧', type: CardType.BUFF, drawCards: 2, gainEnergy: 1, cost: 1, description: '奥术智慧，抽2张牌并获得1能量。', professionRequired: 'mage' },
+    // --- Hệ Năng lượng/Rút bài ---
+    { id: 'mage_015', name: 'Ma Lực Trào Dâng', type: CardType.BUFF, gainEnergy: 2, drawCards: 1, cost: 1, description: 'Ma lực trào dâng, nhận 2 năng lượng và rút 1 lá bài.', professionRequired: 'mage' },
+    { id: 'mage_016', name: 'Hút Pháp Lực', type: CardType.ATTACK, value: 8, cost: 1, gainEnergy: 1, description: 'Hút ma lực kẻ thù, gây 8 sát thương và nhận 1 năng lượng.', professionRequired: 'mage' },
+    { id: 'mage_017', name: 'Thời Gian Sai Lệch', type: CardType.BUFF, drawCards: 3, cost: 1, description: 'Bóp méo thời gian, rút 3 lá bài.', professionRequired: 'mage' },
+    { id: 'mage_018', name: 'Trí Tuệ Bí Thuật', type: CardType.BUFF, drawCards: 2, gainEnergy: 1, cost: 1, description: 'Trí tuệ bí thuật, rút 2 lá bài và nhận 1 năng lượng.', professionRequired: 'mage' },
 
-    // --- 护盾系 ---
-    { id: 'mage_019', name: '魔力护盾', type: CardType.ARMOR, value: 10, cost: 1, description: '召唤魔力护盾，获得10点护甲。', professionRequired: 'mage' },
-    { id: 'mage_020', name: '寒冰屏障', type: CardType.ARMOR, value: 16, cost: 2, description: '召唤寒冰屏障，获得16点护甲。', professionRequired: 'mage' },
-    { id: 'mage_021', name: '元素护盾', type: CardType.ARMOR, value: 12, drawCards: 1, cost: 1, description: '元素护盾，获得12护甲并抽1张牌。', professionRequired: 'mage' },
+    // --- Hệ Khiên ---
+    { id: 'mage_019', name: 'Khiên Ma Lực', type: CardType.ARMOR, value: 10, cost: 1, description: 'Triệu hồi khiên ma lực, nhận 10 điểm giáp.', professionRequired: 'mage' },
+    { id: 'mage_020', name: 'Hàn Băng Bình Chướng', type: CardType.ARMOR, value: 16, cost: 2, description: 'Triệu hồi bình chướng băng giá, nhận 16 điểm giáp.', professionRequired: 'mage' },
+    { id: 'mage_021', name: 'Khiên Nguyên Tố', type: CardType.ARMOR, value: 12, drawCards: 1, cost: 1, description: 'Khiên nguyên tố, nhận 12 giáp và rút 1 lá bài.', professionRequired: 'mage' },
 
-    // --- Buff/Debuff系 ---
-    { id: 'mage_022', name: '元素精通', type: CardType.BUFF, value: 5, duration: 3, buffType: 'attack', cost: 1, description: '精通元素之力，攻击+5，持续3回合。', professionRequired: 'mage' },
-    { id: 'mage_023', name: '魔法反制', type: CardType.DEBUFF, value: 5, duration: 2, debuffType: 'attack', armorGain: 8, cost: 2, description: '魔法反制，敌人攻击-5持续2回合，获得8护甲。', professionRequired: 'mage' },
+    // --- Hệ Buff/Debuff ---
+    { id: 'mage_022', name: 'Tinh Thông Nguyên Tố', type: CardType.BUFF, value: 5, duration: 3, buffType: 'attack', cost: 1, description: 'Tinh thông sức mạnh nguyên tố, tấn công +5 trong 3 lượt.', professionRequired: 'mage' },
+    { id: 'mage_023', name: 'Phản Phế Phép Thuật', type: CardType.DEBUFF, value: 5, duration: 2, debuffType: 'attack', armorGain: 8, cost: 2, description: 'Phản phệ phép thuật, tấn công kẻ thù -5 trong 2 lượt, nhận 8 giáp.', professionRequired: 'mage' },
 
-    // --- 堕落H技能系 ---
-    { id: 'mage_024', name: '禁忌魔法', type: CardType.H_ATTACK, value: 20, cost: 2, drawCards: 1, corruptionRequired: 35, description: '禁忌的魔法，造成20伤害并抽1张牌。', professionRequired: 'mage' },
-    { id: 'mage_025', name: '堕落奥义', type: CardType.H_ATTACK, value: 28, cost: 3, gainEnergy: 2, corruptionRequired: 50, description: '堕落的奥义，造成28伤害并获得2能量。', professionRequired: 'mage' },
+    // --- Hệ Kỹ năng H đọa lạc ---
+    { id: 'mage_024', name: 'Ma Pháp Cấm Kỵ', type: CardType.H_ATTACK, value: 20, cost: 2, drawCards: 1, corruptionRequired: 35, description: 'Ma pháp cấm kỵ, gây 20 sát thương và rút 1 lá bài.', professionRequired: 'mage' },
+    { id: 'mage_025', name: 'Đọa Lạc Áo Nghĩa', type: CardType.H_ATTACK, value: 28, cost: 3, gainEnergy: 2, corruptionRequired: 50, description: 'Áo nghĩa đọa lạc, gây 28 sát thương và nhận 2 năng lượng.', professionRequired: 'mage' },
 
-    // ========== 魅魔专属卡 (20张) - 特性：造成伤害同时回血（吸血） ==========
-    // --- 基础吸血攻击 ---
-    { id: 'succubus_p_001', name: '生命汲取', type: CardType.H_ATTACK, value: 10, cost: 1, healSelf: 6, description: '吸取敌人生命，造成10伤害并恢复6HP。', professionRequired: 'succubus_player' },
-    { id: 'succubus_p_002', name: '精华吸收', type: CardType.H_ATTACK, value: 8, cost: 1, healSelf: 8, description: '吸收敌人精华，造成8伤害并恢复8HP。', professionRequired: 'succubus_player' },
-    { id: 'succubus_p_003', name: '诱惑之吻', type: CardType.H_ATTACK, value: 12, cost: 1, healSelf: 6, description: '用致命的吻攻击，造成12伤害并恢复6HP。', professionRequired: 'succubus_player' },
-    { id: 'succubus_p_004', name: '魅魔之触', type: CardType.H_ATTACK, value: 6, cost: 0, healSelf: 4, description: '魅魔的轻触，造成6伤害并恢复4HP。', professionRequired: 'succubus_player' },
+    // ========== Thẻ bài đặc quyền Succubus (Mị Ma) (20 lá) - Đặc tính: Gây sát thương đồng thời hồi máu (Hút máu) ==========
+    // --- Tấn công hút máu cơ bản ---
+    { id: 'succubus_p_001', name: 'Hút Sinh Mệnh', type: CardType.H_ATTACK, value: 10, cost: 1, healSelf: 6, description: 'Hút sinh mệnh kẻ thù, gây 10 sát thương và hồi 6 HP.', professionRequired: 'succubus_player' },
+    { id: 'succubus_p_002', name: 'Hấp Thụ Tinh Hoa', type: CardType.H_ATTACK, value: 8, cost: 1, healSelf: 8, description: 'Hấp thụ tinh hoa kẻ thù, gây 8 sát thương và hồi 8 HP.', professionRequired: 'succubus_player' },
+    { id: 'succubus_p_003', name: 'Nụ Hôn Dẫn Dụ', type: CardType.H_ATTACK, value: 12, cost: 1, healSelf: 6, description: 'Tấn công bằng nụ hôn chết người, gây 12 sát thương và hồi 6 HP.', professionRequired: 'succubus_player' },
+    { id: 'succubus_p_004', name: 'Cái Chạm Của Succubus', type: CardType.H_ATTACK, value: 6, cost: 0, healSelf: 4, description: 'Cái chạm nhẹ của Mị ma, gây 6 sát thương và hồi 4 HP.', professionRequired: 'succubus_player' },
 
-    // --- 中级吸血攻击 ---
-    { id: 'succubus_p_005', name: '精华吞噬', type: CardType.H_ATTACK, value: 16, cost: 2, healSelf: 10, description: '吞噬敌人精华，造成16伤害并恢复10HP。', professionRequired: 'succubus_player' },
-    { id: 'succubus_p_006', name: '生命虹吸', type: CardType.H_ATTACK, value: 14, cost: 2, healSelf: 14, description: '强力虹吸生命，造成14伤害并恢复14HP。', professionRequired: 'succubus_player' },
-    { id: 'succubus_p_007', name: '魅魔之舞', type: CardType.H_ATTACK, value: 6, hitCount: 3, cost: 2, healSelf: 9, description: '妖艳的舞蹈，攻击3次各6点，恢复9HP。', professionRequired: 'succubus_player' },
-    { id: 'succubus_p_008', name: '欲望侵蚀', type: CardType.H_ATTACK, value: 18, cost: 2, healSelf: 8, description: '用欲望侵蚀敌人，造成18伤害并恢复8HP。', professionRequired: 'succubus_player' },
+    // --- Tấn công hút máu trung cấp ---
+    { id: 'succubus_p_005', name: 'Thôn Phệ Tinh Hoa', type: CardType.H_ATTACK, value: 16, cost: 2, healSelf: 10, description: 'Thôn phệ tinh hoa kẻ thù, gây 16 sát thương và hồi 10 HP.', professionRequired: 'succubus_player' },
+    { id: 'succubus_p_006', name: 'Siphon Sinh Mệnh', type: CardType.H_ATTACK, value: 14, cost: 2, healSelf: 14, description: 'Hút sinh mệnh mạnh mẽ, gây 14 sát thương và hồi 14 HP.', professionRequired: 'succubus_player' },
+    { id: 'succubus_p_007', name: 'Điệu Nhảy Succubus', type: CardType.H_ATTACK, value: 6, hitCount: 3, cost: 2, healSelf: 9, description: 'Điệu nhảy yêu kiều, tấn công 3 lần mỗi lần 6 điểm, hồi 9 HP.', professionRequired: 'succubus_player' },
+    { id: 'succubus_p_008', name: 'Dục Vọng Ăn Mòn', type: CardType.H_ATTACK, value: 18, cost: 2, healSelf: 8, description: 'Dùng dục vọng ăn mòn kẻ thù, gây 18 sát thương và hồi 8 HP.', professionRequired: 'succubus_player' },
 
-    // --- 高级吸血攻击 ---
-    { id: 'succubus_p_009', name: '深渊凝视', type: CardType.H_ATTACK, value: 22, cost: 3, healSelf: 12, description: '深渊的凝视，造成22伤害并恢复12HP。', professionRequired: 'succubus_player' },
-    { id: 'succubus_p_010', name: '灵魂吸取', type: CardType.H_ATTACK, value: 20, cost: 3, healSelf: 20, description: '吸取敌人灵魂，造成20伤害并恢复20HP。', professionRequired: 'succubus_player' },
-    { id: 'succubus_p_011', name: '深渊绽放', type: CardType.H_ATTACK, value: 30, cost: 4, healSelf: 18, description: '深渊之力绽放，造成30伤害并恢复18HP。', professionRequired: 'succubus_player' },
-    { id: 'succubus_p_012', name: '魅魔真身', type: CardType.H_ATTACK, value: 25, cost: 4, healSelf: 25, description: '展现魅魔真身，造成25伤害并恢复25HP。', professionRequired: 'succubus_player' },
+    // --- Tấn công hút máu cao cấp ---
+    { id: 'succubus_p_009', name: 'Ánh Nhìn Vực Thẳm', type: CardType.H_ATTACK, value: 22, cost: 3, healSelf: 12, description: 'Ánh nhìn từ vực thẳm, gây 22 sát thương và hồi 12 HP.', professionRequired: 'succubus_player' },
+    { id: 'succubus_p_010', name: 'Hút Linh Hồn', type: CardType.H_ATTACK, value: 20, cost: 3, healSelf: 20, description: 'Hút lấy linh hồn kẻ thù, gây 20 sát thương và hồi 20 HP.', professionRequired: 'succubus_player' },
+    { id: 'succubus_p_011', name: 'Vực Thẳm Nở Rộ', type: CardType.H_ATTACK, value: 30, cost: 4, healSelf: 18, description: 'Sức mạnh vực thẳm bùng nở, gây 30 sát thương và hồi 18 HP.', professionRequired: 'succubus_player' },
+    { id: 'succubus_p_012', name: 'Chân Thân Succubus', type: CardType.H_ATTACK, value: 25, cost: 4, healSelf: 25, description: 'Hiện nguyên hình Mị ma, gây 25 sát thương và hồi 25 HP.', professionRequired: 'succubus_player' },
 
-    // --- 吸血+护甲 ---
-    { id: 'succubus_p_013', name: '暗影拥抱', type: CardType.ARMOR, value: 10, healValue: 6, cost: 1, description: '暗影环绕护体，获得10护甲并恢复6HP。', professionRequired: 'succubus_player' },
-    { id: 'succubus_p_014', name: '堕落之翼', type: CardType.ARMOR, value: 14, healValue: 8, cost: 2, description: '展开堕落之翼，获得14护甲并恢复8HP。', professionRequired: 'succubus_player' },
-    { id: 'succubus_p_015', name: '魔翼护体', type: CardType.ARMOR, value: 18, healValue: 10, cost: 2, description: '魔翼环绕护体，获得18护甲并恢复10HP。', professionRequired: 'succubus_player' },
+    // --- Hút máu + Giáp ---
+    { id: 'succubus_p_013', name: 'Cái Ôm Bóng Tối', type: CardType.ARMOR, value: 10, healValue: 6, cost: 1, description: 'Bóng tối bao phủ hộ thể, nhận 10 giáp và hồi 6 HP.', professionRequired: 'succubus_player' },
+    { id: 'succubus_p_014', name: 'Đôi Cánh Đọa Lạc', type: CardType.ARMOR, value: 14, healValue: 8, cost: 2, description: 'Triển khai đôi cánh đọa lạc, nhận 14 giáp và hồi 8 HP.', professionRequired: 'succubus_player' },
+    { id: 'succubus_p_015', name: 'Ma Dực Hộ Thể', type: CardType.ARMOR, value: 18, healValue: 10, cost: 2, description: 'Cánh ma bao bọc hộ thể, nhận 18 giáp và hồi 10 HP.', professionRequired: 'succubus_player' },
 
-    // --- 吸血+Buff ---
-    { id: 'succubus_p_016', name: '欲望觉醒', type: CardType.BUFF, value: 5, duration: 3, buffType: 'attack', healSelf: 8, cost: 2, description: '觉醒内心欲望，攻击+5持续3回合，恢复8HP。', professionRequired: 'succubus_player' },
-    { id: 'succubus_p_017', name: '堕天使降临', type: CardType.BUFF, value: 6, duration: 3, buffType: 'attack', healSelf: 12, armorGain: 10, cost: 3, description: '化身堕天使，攻击+6持续3回合，恢复12HP，获得10护甲。', professionRequired: 'succubus_player' },
+    // --- Hút máu + Buff ---
+    { id: 'succubus_p_016', name: 'Dục Vọng Thức Tỉnh', type: CardType.BUFF, value: 5, duration: 3, buffType: 'attack', healSelf: 8, cost: 2, description: 'Thức tỉnh dục vọng nội tâm, tấn công +5 trong 3 lượt, hồi 8 HP.', professionRequired: 'succubus_player' },
+    { id: 'succubus_p_017', name: 'Đọa Thiên Sứ Giáng Lâm', type: CardType.BUFF, value: 6, duration: 3, buffType: 'attack', healSelf: 12, armorGain: 10, cost: 3, description: 'Hóa thân thành thiên sứ đọa lạc, tấn công +6 trong 3 lượt, hồi 12 HP, nhận 10 giáp.', professionRequired: 'succubus_player' },
 
-    // --- 吸血+Debuff ---
-    { id: 'succubus_p_018', name: '魅惑之眼', type: CardType.DEBUFF, value: 4, duration: 3, debuffType: 'attack', healSelf: 6, cost: 1, description: '魅惑的眼神，敌人攻击-4持续3回合，恢复6HP。', professionRequired: 'succubus_player' },
-    { id: 'succubus_p_019', name: '心灵支配', type: CardType.DEBUFF, value: 5, duration: 2, debuffType: 'attack', healSelf: 10, cost: 2, description: '支配敌人心灵，攻击-5持续2回合，恢复10HP。', professionRequired: 'succubus_player' },
-    { id: 'succubus_p_020', name: '魔性诱惑', type: CardType.DEBUFF, value: 4, duration: 3, debuffType: 'defense', healSelf: 8, cost: 2, description: '魔性的诱惑，敌人防御-4持续3回合，恢复8HP。', professionRequired: 'succubus_player' },
+    // --- Hút máu + Debuff ---
+    { id: 'succubus_p_018', name: 'Mắt Mê Hoặc', type: CardType.DEBUFF, value: 4, duration: 3, debuffType: 'attack', healSelf: 6, cost: 1, description: 'Ánh mắt mê hoặc, tấn công kẻ thù -4 trong 3 lượt, hồi 6 HP.', professionRequired: 'succubus_player' },
+    { id: 'succubus_p_019', name: 'Chi phối Tâm Trí', type: CardType.DEBUFF, value: 5, duration: 2, debuffType: 'attack', healSelf: 10, cost: 2, description: 'Chi phối tâm trí kẻ thù, tấn công -5 trong 2 lượt, hồi 10 HP.', professionRequired: 'succubus_player' },
+    { id: 'succubus_p_020', name: 'Sự Quyến Rũ Ma Tính', type: CardType.DEBUFF, value: 4, duration: 3, debuffType: 'defense', healSelf: 8, cost: 2, description: 'Sự quyến rũ đầy ma tính, phòng thủ kẻ thù -4 trong 3 lượt, hồi 8 HP.', professionRequired: 'succubus_player' },
 
-    // ========== 治疗卡 (12张) ==========
-    { id: 'heal_001', name: '急救包', type: CardType.HEAL, value: 8, cost: 1, description: '快速治疗，恢复8点生命值。' },
-    { id: 'heal_002', name: '医疗箱', type: CardType.HEAL, value: 15, cost: 2, description: '使用医疗箱，恢复15点生命值。' },
-    { id: 'heal_003', name: '生命药剂', type: CardType.HEAL, value: 25, cost: 3, description: '饮用珍贵的生命药剂，恢复25点生命值。' },
-    { id: 'heal_004', name: '持续恢复', type: CardType.HEAL, value: 3, duration: 4, cost: 2, description: '4回合内每回合恢复3点生命值。' },
-    { id: 'heal_005', name: '绷带', type: CardType.HEAL, value: 5, cost: 0, description: '简单包扎，恢复5点生命值。' },
-    { id: 'heal_006', name: '圣光治疗', type: CardType.HEAL, value: 12, cost: 1, description: '神圣之光，恢复12点生命值。' },
-    { id: 'heal_007', name: '再生术', type: CardType.HEAL, value: 5, duration: 3, cost: 2, description: '3回合内每回合恢复5点生命值。' },
-    { id: 'heal_008', name: '神圣之泉', type: CardType.HEAL, value: 35, cost: 4, description: '神圣泉水，恢复35点生命值。' },
-    { id: 'heal_009', name: '急速恢复', type: CardType.HEAL, value: 10, cost: 1, description: '快速恢复10点生命值。' },
-    { id: 'heal_010', name: '生命汲取', type: CardType.HEAL, value: 8, cost: 1, description: '从大地汲取生命，恢复8点HP。' },
-    { id: 'heal_011', name: '治愈之风', type: CardType.HEAL, value: 18, cost: 2, description: '治愈之风吹拂，恢复18点HP。' },
-    { id: 'heal_012', name: '完全恢复', type: CardType.HEAL, value: 50, cost: 5, description: '强力治疗，恢复50点生命值。' },
+    // ========== Thẻ bài Trị liệu chung (12 lá) ==========
+    { id: 'heal_001', name: 'Túi Cấp Cứu', type: CardType.HEAL, value: 8, cost: 1, description: 'Trị thương nhanh, hồi 8 điểm sinh mệnh.' },
+    { id: 'heal_002', name: 'Hộp Y Tế', type: CardType.HEAL, value: 15, cost: 2, description: 'Sử dụng hộp y tế, hồi 15 điểm sinh mệnh.' },
+    { id: 'heal_003', name: 'Dược Phẩm Sinh Mệnh', type: CardType.HEAL, value: 25, cost: 3, description: 'Uống dược phẩm sinh mệnh quý giá, hồi 25 điểm sinh mệnh.' },
+    { id: 'heal_004', name: 'Khôi Phục Duy Trì', type: CardType.HEAL, value: 3, duration: 4, cost: 2, description: 'Mỗi lượt hồi 3 điểm sinh mệnh trong vòng 4 lượt.' },
+    { id: 'heal_005', name: 'Băng Gạc', type: CardType.HEAL, value: 5, cost: 0, description: 'Băng bó đơn giản, hồi 5 điểm sinh mệnh.' },
+    { id: 'heal_006', name: 'Thánh Quang Trị Liệu', type: CardType.HEAL, value: 12, cost: 1, description: 'Ánh sáng thần thánh, hồi 12 điểm sinh mệnh.' },
+    { id: 'heal_007', name: 'Thuật Tái Sinh', type: CardType.HEAL, value: 5, duration: 3, cost: 2, description: 'Mỗi lượt hồi 5 điểm sinh mệnh trong vòng 3 lượt.' },
+    { id: 'heal_008', name: 'Suối Thánh', type: CardType.HEAL, value: 35, cost: 4, description: 'Nước suối thần thánh, hồi 35 điểm sinh mệnh.' },
+    { id: 'heal_009', name: 'Khôi Phục Cấp Tốc', type: CardType.HEAL, value: 10, cost: 1, description: 'Khôi phục nhanh 10 điểm sinh mệnh.' },
+    { id: 'heal_010', name: 'Hút Sự Sống', type: CardType.HEAL, value: 8, cost: 1, description: 'Hút sinh mệnh từ đại địa, hồi 8 điểm HP.' },
+    { id: 'heal_011', name: 'Gió Trị Liệu', type: CardType.HEAL, value: 18, cost: 2, description: 'Làn gió trị liệu thổi qua, hồi 18 điểm HP.' },
+    { id: 'heal_012', name: 'Khôi Phục Hoàn Toàn', type: CardType.HEAL, value: 50, cost: 5, description: 'Trị liệu cực mạnh, hồi 50 điểm sinh mệnh.' },
 
-    // ========== 增益卡 (15张) ==========
-    { id: 'buff_001', name: '力量增幅', type: CardType.BUFF, value: 3, duration: 3, buffType: 'attack', cost: 1, description: '增加3点攻击力，持续3回合。' },
-    { id: 'buff_002', name: '战意高昂', type: CardType.BUFF, value: 5, duration: 2, buffType: 'attack', cost: 2, description: '大幅提升攻击力+5，持续2回合。' },
-    { id: 'buff_003', name: '铁壁', type: CardType.BUFF, value: 5, duration: 3, buffType: 'defense', cost: 2, description: '增加5点防御力，持续3回合。' },
-    { id: 'buff_004', name: '加速', type: CardType.BUFF, value: 1, duration: 2, buffType: 'extraAction', cost: 3, description: '获得额外行动机会，持续2回合。' },
-    { id: 'buff_005', name: '专注', type: CardType.BUFF, value: 2, duration: 3, buffType: 'draw', cost: 1, description: '每回合额外抽2张牌，持续3回合。' },
-    { id: 'buff_006', name: '狂暴', type: CardType.BUFF, value: 8, duration: 2, buffType: 'attack', cost: 3, description: '进入狂暴状态，攻击+8，持续2回合。' },
-    { id: 'buff_007', name: '钢铁意志', type: CardType.BUFF, value: 8, duration: 2, buffType: 'defense', cost: 3, description: '钢铁般的意志，防御+8，持续2回合。' },
-    { id: 'buff_008', name: '轻盈', type: CardType.BUFF, value: 1, duration: 3, buffType: 'draw', cost: 1, description: '每回合额外抽1张牌，持续3回合。' },
-    { id: 'buff_009', name: '蓄力', type: CardType.BUFF, value: 2, duration: 4, buffType: 'attack', cost: 1, description: '攻击+2，持续4回合。' },
-    { id: 'buff_010', name: '坚韧', type: CardType.BUFF, value: 3, duration: 4, buffType: 'defense', cost: 1, description: '防御+3，持续4回合。' },
-    { id: 'buff_011', name: '嗜血', type: CardType.BUFF, value: 10, duration: 1, buffType: 'attack', cost: 2, description: '爆发攻击+10，仅1回合。' },
-    { id: 'buff_012', name: '神圣庇护', type: CardType.BUFF, value: 6, duration: 3, buffType: 'defense', cost: 2, description: '神圣庇护，防御+6，持续3回合。' },
-    { id: 'buff_013', name: '全力以赴', type: CardType.BUFF, value: 4, duration: 5, buffType: 'attack', cost: 2, description: '全力以赴，攻击+4，持续5回合。' },
-    { id: 'buff_014', name: '闪避姿态', type: CardType.BUFF, value: 4, duration: 2, buffType: 'defense', cost: 1, description: '进入闪避姿态，防御+4，持续2回合。' },
-    { id: 'buff_015', name: '战术天才', type: CardType.BUFF, value: 2, duration: 2, buffType: 'draw', cost: 3, description: '每回合额外抽2张牌，持续2回合。' },
+    // ========== Thẻ bài Tăng ích (Buff) chung (15 lá) ==========
+    { id: 'buff_001', name: 'Tăng Cường Sức Mạnh', type: CardType.BUFF, value: 3, duration: 3, buffType: 'attack', cost: 1, description: 'Tăng 3 điểm tấn công, kéo dài 3 lượt.' },
+    { id: 'buff_002', name: 'Chiến Ý Sục Sôi', type: CardType.BUFF, value: 5, duration: 2, buffType: 'attack', cost: 2, description: 'Tăng mạnh tấn công +5, kéo dài 2 lượt.' },
+    { id: 'buff_003', name: 'Thiết Bích', type: CardType.BUFF, value: 5, duration: 3, buffType: 'defense', cost: 2, description: 'Tăng 5 điểm phòng thủ, kéo dài 3 lượt.' },
+    { id: 'buff_004', name: 'Tăng Tốc', type: CardType.BUFF, value: 1, duration: 2, buffType: 'extraAction', cost: 3, description: 'Nhận thêm cơ hội hành động, kéo dài 2 lượt.' },
+    { id: 'buff_005', name: 'Chuyên Chú', type: CardType.BUFF, value: 2, duration: 3, buffType: 'draw', cost: 1, description: 'Mỗi lượt rút thêm 2 lá bài, kéo dài 3 lượt.' },
+    { id: 'buff_006', name: 'Cuồng Bạo', type: CardType.BUFF, value: 8, duration: 2, buffType: 'attack', cost: 3, description: 'Vào trạng thái cuồng bạo, tấn công +8, kéo dài 2 lượt.' },
+    { id: 'buff_007', name: 'Ý Chí Thép', type: CardType.BUFF, value: 8, duration: 2, buffType: 'defense', cost: 3, description: 'Ý chí sắt đá, phòng thủ +8, kéo dài 2 lượt.' },
+    { id: 'buff_008', name: 'Khinh Doanh', type: CardType.BUFF, value: 1, duration: 3, buffType: 'draw', cost: 1, description: 'Mỗi lượt rút thêm 1 lá bài, kéo dài 3 lượt.' },
+    { id: 'buff_009', name: 'Tích Lực', type: CardType.BUFF, value: 2, duration: 4, buffType: 'attack', cost: 1, description: 'Tấn công +2, kéo dài 4 lượt.' },
+    { id: 'buff_010', name: 'Kiên Nhẫn', type: CardType.BUFF, value: 3, duration: 4, buffType: 'defense', cost: 1, description: 'Phòng thủ +3, kéo dài 4 lượt.' },
+    { id: 'buff_011', name: 'Khát Máu', type: CardType.BUFF, value: 10, duration: 1, buffType: 'attack', cost: 2, description: 'Bùng nổ tấn công +10, chỉ trong 1 lượt.' },
+    { id: 'buff_012', name: 'Thần Thánh Che Chở', type: CardType.BUFF, value: 6, duration: 3, buffType: 'defense', cost: 2, description: 'Thần thánh che chở, phòng thủ +6, kéo dài 3 lượt.' },
+    { id: 'buff_013', name: 'Dốc Toàn Lực', type: CardType.BUFF, value: 4, duration: 5, buffType: 'attack', cost: 2, description: 'Dốc toàn lực, tấn công +4, kéo dài 5 lượt.' },
+    { id: 'buff_014', name: 'Thế Né Tránh', type: CardType.BUFF, value: 4, duration: 2, buffType: 'defense', cost: 1, description: 'Vào tư thế né tránh, phòng thủ +4, kéo dài 2 lượt.' },
+    { id: 'buff_015', name: 'Thiên Tài Chiến Thuật', type: CardType.BUFF, value: 2, duration: 2, buffType: 'draw', cost: 3, description: 'Mỗi lượt rút thêm 2 lá bài, kéo dài 2 lượt.' },
 
-    // ========== 减益卡 (12张) ==========
-    { id: 'debuff_001', name: '虚弱', type: CardType.DEBUFF, value: 3, duration: 2, debuffType: 'attack', cost: 1, description: '使敌方攻击力降低3点，持续2回合。' },
-    { id: 'debuff_002', name: '腐蚀', type: CardType.DEBUFF, value: 3, duration: 3, debuffType: 'dot', cost: 2, description: '对敌方施加腐蚀，每回合造成3点伤害，持续3回合。' },
-    { id: 'debuff_003', name: '束缚', type: CardType.DEBUFF, value: 5, duration: 2, debuffType: 'defense', cost: 2, description: '束缚敌人，降低5点防御力，持续2回合。' },
-    { id: 'debuff_004', name: '致盲', type: CardType.DEBUFF, value: 50, duration: 2, debuffType: 'accuracy', cost: 2, description: '使敌方命中率降低50%，持续2回合。' },
-    { id: 'debuff_005', name: '恐惧', type: CardType.DEBUFF, value: 1, duration: 1, debuffType: 'skip', cost: 3, description: '使敌方陷入恐惧，跳过下一回合行动。' },
-    { id: 'debuff_006', name: '剧毒', type: CardType.DEBUFF, value: 5, duration: 3, debuffType: 'dot', cost: 3, description: '剧毒效果，每回合造成5点伤害，持续3回合。' },
-    { id: 'debuff_007', name: '衰弱', type: CardType.DEBUFF, value: 5, duration: 3, debuffType: 'attack', cost: 2, description: '使敌方攻击降低5点，持续3回合。' },
-    { id: 'debuff_008', name: '破甲', type: CardType.DEBUFF, value: 8, duration: 2, debuffType: 'defense', cost: 2, description: '破坏护甲，降低8点防御力，持续2回合。' },
-    { id: 'debuff_009', name: '迷惑', type: CardType.DEBUFF, value: 80, duration: 1, debuffType: 'accuracy', cost: 2, description: '使敌方命中率降低80%，持续1回合。' },
-    { id: 'debuff_010', name: '瘫痪', type: CardType.DEBUFF, value: 1, duration: 1, debuffType: 'skip', cost: 3, description: '使敌方瘫痪，跳过1回合行动。' },
-    { id: 'debuff_011', name: '灼烧', type: CardType.DEBUFF, value: 4, duration: 4, debuffType: 'dot', cost: 2, description: '灼烧效果，每回合造成4点伤害，持续4回合。' },
-    { id: 'debuff_012', name: '诅咒', type: CardType.DEBUFF, value: 6, duration: 2, debuffType: 'attack', cost: 2, description: '诅咒敌人，攻击力降低6点，持续2回合。' },
+    // ========== Thẻ bài Suy giảm (Debuff) chung (12 lá) ==========
+    { id: 'debuff_001', name: 'Suy Nhược', type: CardType.DEBUFF, value: 3, duration: 2, debuffType: 'attack', cost: 1, description: 'Làm tấn công kẻ thù giảm 3 điểm, kéo dài 2 lượt.' },
+    { id: 'debuff_002', name: 'Ăn Mòn', type: CardType.DEBUFF, value: 3, duration: 3, debuffType: 'dot', cost: 2, description: 'Gây ăn mòn lên kẻ thù, mỗi lượt gây 3 sát thương, kéo dài 3 lượt.' },
+    { id: 'debuff_003', name: 'Trói Buộc', type: CardType.DEBUFF, value: 5, duration: 2, debuffType: 'defense', cost: 2, description: 'Trói buộc kẻ thù, giảm 5 điểm phòng thủ, kéo dài 2 lượt.' },
+    { id: 'debuff_004', name: 'Mù Lòa', type: CardType.DEBUFF, value: 50, duration: 2, debuffType: 'accuracy', cost: 2, description: 'Làm tỉ lệ chính xác của kẻ thù giảm 50%, kéo dài 2 lượt.' },
+    { id: 'debuff_005', name: 'Sợ Hãi', type: CardType.DEBUFF, value: 1, duration: 1, debuffType: 'skip', cost: 3, description: 'Khiến kẻ thù rơi vào sợ hãi, bỏ qua lượt hành động tiếp theo.' },
+    { id: 'debuff_006', name: 'Kịch Độc', type: CardType.DEBUFF, value: 5, duration: 3, debuffType: 'dot', cost: 3, description: 'Hiệu ứng kịch độc, mỗi lượt gây 5 sát thương, kéo dài 3 lượt.' },
+    { id: 'debuff_007', name: 'Suy Yếu', type: CardType.DEBUFF, value: 5, duration: 3, debuffType: 'attack', cost: 2, description: 'Làm tấn công kẻ thù giảm 5 điểm, kéo dài 3 lượt.' },
+    { id: 'debuff_008', name: 'Phá Giáp', type: CardType.DEBUFF, value: 8, duration: 2, debuffType: 'defense', cost: 2, description: 'Phá hủy giáp, giảm 8 điểm phòng thủ, kéo dài 2 lượt.' },
+    { id: 'debuff_009', name: 'Mê Muội', type: CardType.DEBUFF, value: 80, duration: 1, debuffType: 'accuracy', cost: 2, description: 'Làm tỉ lệ chính xác của kẻ thù giảm 80%, kéo dài 1 lượt.' },
+    { id: 'debuff_010', name: 'Tê Liệt', type: CardType.DEBUFF, value: 1, duration: 1, debuffType: 'skip', cost: 3, description: 'Làm kẻ thù tê liệt, bỏ qua 1 lượt hành động.' },
+    { id: 'debuff_011', name: 'Thiêu Đốt', type: CardType.DEBUFF, value: 4, duration: 4, debuffType: 'dot', cost: 2, description: 'Hiệu ứng thiêu đốt, mỗi lượt gây 4 sát thương, kéo dài 4 lượt.' },
+    { id: 'debuff_012', name: 'Lời Nguyền', type: CardType.DEBUFF, value: 6, duration: 2, debuffType: 'attack', cost: 2, description: 'Nguyền rủa kẻ thù, tấn công giảm 6 điểm, kéo dài 2 lượt.' },
 
-    // ========== 护甲卡 (9张) ==========
-    { id: 'armor_001', name: '格挡', type: CardType.ARMOR, value: 5, cost: 1, description: '获得5点护甲，可抵挡5点伤害。' },
-    { id: 'armor_002', name: '钢铁之墙', type: CardType.ARMOR, value: 12, cost: 2, description: '获得12点护甲，大幅提高防御能力。' },
-    { id: 'armor_003', name: '反射护盾', type: CardType.ARMOR, value: 8, reflect: 3, cost: 2, description: '获得8点护甲，受到攻击时反弹3点伤害。' },
-    { id: 'armor_004', name: '能量护盾', type: CardType.ARMOR, value: 6, duration: 3, cost: 2, description: '每回合获得6点护甲，持续3回合。' },
-    { id: 'armor_005', name: '绝对防御', type: CardType.ARMOR, value: 20, cost: 3, description: '获得20点强力护甲。' },
-    { id: 'armor_006', name: '轻盾', type: CardType.ARMOR, value: 3, cost: 0, description: '获得3点护甲。' },
-    { id: 'armor_007', name: '圣光护盾', type: CardType.ARMOR, value: 10, cost: 2, description: '神圣护盾，获得10点护甲。' },
-    { id: 'armor_008', name: '荆棘护甲', type: CardType.ARMOR, value: 6, reflect: 5, cost: 2, description: '获得6点护甲，反弹5点伤害。' },
-    { id: 'armor_009', name: '不灭壁垒', type: CardType.ARMOR, value: 30, cost: 4, description: '终极防御，获得30点护甲。' },
+    // ========== Thẻ bài Giáp chung (9 lá) ==========
+    { id: 'armor_001', name: 'Đỡ Đòn', type: CardType.ARMOR, value: 5, cost: 1, description: 'Nhận 5 điểm giáp, có thể chặn 5 điểm sát thương.' },
+    { id: 'armor_002', name: 'Tường Thép', type: CardType.ARMOR, value: 12, cost: 2, description: 'Nhận 12 điểm giáp, tăng mạnh khả năng phòng thủ.' },
+    { id: 'armor_003', name: 'Khiên Phản Đòn', type: CardType.ARMOR, value: 8, reflect: 3, cost: 2, description: 'Nhận 8 điểm giáp, phản lại 3 sát thương khi bị tấn công.' },
+    { id: 'armor_004', name: 'Khiên Năng Lượng', type: CardType.ARMOR, value: 6, duration: 3, cost: 2, description: 'Mỗi lượt nhận 6 điểm giáp, kéo dài 3 lượt.' },
+    { id: 'armor_005', name: 'Phòng Thủ Tuyệt Đối', type: CardType.ARMOR, value: 20, cost: 3, description: 'Nhận 20 điểm giáp cực mạnh.' },
+    { id: 'armor_006', name: 'Khiên Nhẹ', type: CardType.ARMOR, value: 3, cost: 0, description: 'Nhận 3 điểm giáp.' },
+    { id: 'armor_007', name: 'Khiên Thánh Quang', type: CardType.ARMOR, value: 10, cost: 2, description: 'Khiên thần thánh, nhận 10 điểm giáp.' },
+    { id: 'armor_008', name: 'Giáp Gai', type: CardType.ARMOR, value: 6, reflect: 5, cost: 2, description: 'Nhận 6 điểm giáp, phản lại 5 sát thương.' },
+    { id: 'armor_009', name: 'Bình Chướng Bất Diệt', type: CardType.ARMOR, value: 30, cost: 4, description: 'Phòng thủ tối thượng, nhận 30 điểm giáp.' },
 
-    // ========== 魔法少女专属卡 (30张) - 特性：变身机制 ==========
-    // --- 变身卡 ---
-    { id: 'mg_transform', name: '好，开始营业！ (ﾉ◕ヮ◕)ﾉ', type: CardType.BUFF, cost: 0, isTransformCard: true, isConsume: true, description: '✨变身为魔法少女！变身持续2回合。此卡使用后消耗。', professionRequired: 'magicalGirl' },
+    // ========== Thẻ bài đặc quyền Ma Pháp Thiếu Nữ (30 lá) - Đặc tính: Cơ chế biến thân ==========
+    // --- Thẻ biến thân ---
+    { id: 'mg_transform', name: 'Được rồi, bắt đầu làm việc nào! (ﾉ◕ヮ◕)ﾉ', type: CardType.BUFF, cost: 0, isTransformCard: true, isConsume: true, description: '✨ Biến thân thành Ma Pháp Thiếu Nữ! Biến thân kéo dài 2 lượt. Thẻ này sẽ bị tiêu hao sau khi dùng.', professionRequired: 'magicalGirl' },
 
-    // --- 变身前可用卡（基础卡） ---
-    { id: 'mg_001', name: '星光弹 ☆彡', type: CardType.ATTACK, value: 6, cost: 1, description: '发射星光弹，造成6点伤害。', professionRequired: 'magicalGirl' },
-    { id: 'mg_002', name: '月光祝福 ☽', type: CardType.HEAL, value: 8, cost: 1, description: '月光的祝福，恢复8HP。', professionRequired: 'magicalGirl' },
-    { id: 'mg_003', name: '彩虹护盾 ⌒°', type: CardType.ARMOR, value: 8, cost: 1, description: '彩虹光芒形成护盾，获得8护甲。', professionRequired: 'magicalGirl' },
-    { id: 'mg_004', name: '闪耀之心 ♡', type: CardType.BUFF, value: 2, duration: 3, buffType: 'attack', cost: 1, description: '心中的光芒，攻击+2持续3回合。', professionRequired: 'magicalGirl' },
-    { id: 'mg_005', name: '希望之光 ✧', type: CardType.BUFF, value: 2, duration: 3, buffType: 'defense', cost: 1, description: '希望的光芒，防御+2持续3回合。', professionRequired: 'magicalGirl' },
+    // --- Thẻ dùng trước khi biến thân (Thẻ cơ bản) ---
+    { id: 'mg_001', name: 'Tinh Quang Đạn ☆彡', type: CardType.ATTACK, value: 6, cost: 1, description: 'Bắn đạn ánh sao, gây 6 điểm sát thương.', professionRequired: 'magicalGirl' },
+    { id: 'mg_002', name: 'Nguyệt Quang Chúc Phúc ☽', type: CardType.HEAL, value: 8, cost: 1, description: 'Lời chúc của ánh trăng, hồi 8 HP.', professionRequired: 'magicalGirl' },
+    { id: 'mg_003', name: 'Khiên Cầu Vồng ⌒°', type: CardType.ARMOR, value: 8, cost: 1, description: 'Hào quang cầu vồng tạo thành khiên, nhận 8 giáp.', professionRequired: 'magicalGirl' },
+    { id: 'mg_004', name: 'Trái Tim Tỏa Sáng ♡', type: CardType.BUFF, value: 2, duration: 3, buffType: 'attack', cost: 1, description: 'Ánh sáng trong tim, tấn công +2 trong 3 lượt.', professionRequired: 'magicalGirl' },
+    { id: 'mg_005', name: 'Ánh Sáng Hy Vọng ✧', type: CardType.BUFF, value: 2, duration: 3, buffType: 'defense', cost: 1, description: 'Ánh sáng của hy vọng, phòng thủ +2 trong 3 lượt.', professionRequired: 'magicalGirl' },
 
-    // --- 变身后强力卡（需要变身状态） ---
-    { id: 'mg_006', name: '✨闪耀冲击 (๑•̀ㅂ•́)و✧', type: CardType.ATTACK, value: 25, cost: 1, requiresTransform: true, description: '【需变身】闪耀的冲击波，造成25点伤害。', professionRequired: 'magicalGirl' },
-    { id: 'mg_007', name: '✨星爆连击 ☆ﾐ(o*･ω･)ﾉ', type: CardType.ATTACK, value: 12, hitCount: 2, cost: 2, requiresTransform: true, description: '【需变身】星星爆发，攻击2次各12点。', professionRequired: 'magicalGirl' },
-    { id: 'mg_008', name: '✨月神之怒 (╬ Ò﹏Ó)', type: CardType.ATTACK, value: 40, cost: 2, requiresTransform: true, description: '【需变身】月神的愤怒降临，造成40点伤害。', professionRequired: 'magicalGirl' },
-    { id: 'mg_009', name: '✨彗星坠落 ☄(ﾟ∀ﾟ)', type: CardType.ATTACK, value: 30, ignoreArmor: true, cost: 1, requiresTransform: true, description: '【需变身】召唤彗星，无视护甲造成30点伤害。', professionRequired: 'magicalGirl' },
-    { id: 'mg_010', name: '✨极光之箭 ⇝⇝(ノ´ヮ`)ノ', type: CardType.ATTACK, value: 18, hitCount: 2, cost: 1, requiresTransform: true, description: '【需变身】发射极光箭矢，攻击2次各18点。', professionRequired: 'magicalGirl' },
-    { id: 'mg_011', name: '✨银河风暴 ٩(๑`^´๑)۶', type: CardType.ATTACK, value: 15, hitCount: 4, cost: 2, requiresTransform: true, description: '【需变身】银河的风暴，攻击4次各15点。', professionRequired: 'magicalGirl' },
-    { id: 'mg_012', name: '✨心之光束 (ノ◕ヮ◕)ノ*:･ﾟ✧', type: CardType.ATTACK, value: 60, cost: 3, requiresTransform: true, description: '【需变身】心中的光束，造成60点伤害。', professionRequired: 'magicalGirl' },
-    { id: 'mg_013', name: '✨流星雨 ☆彡☆彡☆彡', type: CardType.ATTACK, value: 10, hitCount: 5, cost: 3, requiresTransform: true, description: '【需变身】召唤流星雨，攻击5次各10点。', professionRequired: 'magicalGirl' },
+    // --- Thẻ bài mạnh sau khi biến thân (Yêu cầu trạng thái biến thân) ---
+    { id: 'mg_006', name: '✨Xung Kích Tỏa Sáng (๑•̀ㅂ•́)u✧', type: CardType.ATTACK, value: 25, cost: 1, requiresTransform: true, description: '【Cần biến thân】Sóng xung kích tỏa sáng, gây 25 điểm sát thương.', professionRequired: 'magicalGirl' },
+    { id: 'mg_007', name: '✨Tinh Bạo Liên Kích ☆ﾐ(o*･ω･)ﾉ', type: CardType.ATTACK, value: 12, hitCount: 2, cost: 2, requiresTransform: true, description: '【Cần biến thân】Sao bùng nổ, tấn công 2 lần mỗi lần 12 điểm.', professionRequired: 'magicalGirl' },
+    { id: 'mg_008', name: '✨Nguyệt Thần Chi Nộ (╬ Ò﹏Ó)', type: CardType.ATTACK, value: 40, cost: 2, requiresTransform: true, description: '【Cần biến thân】Cơn thịnh nộ của Nguyệt Thần giáng xuống, gây 40 điểm sát thương.', professionRequired: 'magicalGirl' },
+    { id: 'mg_009', name: '✨Tuế Tinh Đọa Lạc ☄(ﾟ∀ﾟ)', type: CardType.ATTACK, value: 30, ignoreArmor: true, cost: 1, requiresTransform: true, description: '【Cần biến thân】Triệu hồi sao chổi, xuyên giáp gây 30 điểm sát thương.', professionRequired: 'magicalGirl' },
+    { id: 'mg_010', name: '✨Mũi Tên Cực Quang ⇝⇝(ノ´ヮ`)ノ', type: CardType.ATTACK, value: 18, hitCount: 2, cost: 1, requiresTransform: true, description: '【Cần biến thân】Bắn mũi tên cực quang, tấn công 2 lần mỗi lần 18 điểm.', professionRequired: 'magicalGirl' },
+    { id: 'mg_011', name: '✨Ngân Hà Phong Bạo ٩(๑`^´๑)۶', type: CardType.ATTACK, value: 15, hitCount: 4, cost: 2, requiresTransform: true, description: '【Cần biến thân】Cơn bão dải ngân hà, tấn công 4 lần mỗi lần 15 điểm.', professionRequired: 'magicalGirl' },
+    { id: 'mg_012', name: '✨Tia Sáng Trái Tim (ノ◕ヮ◕)ノ*:･ﾟ✧', type: CardType.ATTACK, value: 60, cost: 3, requiresTransform: true, description: '【Cần biến thân】Tia sáng từ con tim, gây 60 điểm sát thương.', professionRequired: 'magicalGirl' },
+    { id: 'mg_013', name: '✨Mưa Sao Băng ☆彡☆彡☆彡', type: CardType.ATTACK, value: 10, hitCount: 5, cost: 3, requiresTransform: true, description: '【Cần biến thân】Triệu hồi mưa sao băng, tấn công 5 lần mỗi lần 10 điểm.', professionRequired: 'magicalGirl' },
 
-    // --- 变身后治疗/防御卡 ---
-    { id: 'mg_014', name: '✨圣光治愈 (´,,•ω•,,)♡', type: CardType.HEAL, value: 30, cost: 1, requiresTransform: true, description: '【需变身】圣光治愈身心，恢复30HP。', professionRequired: 'magicalGirl' },
-    { id: 'mg_015', name: '✨钻石护盾 ◇◆◇', type: CardType.ARMOR, value: 30, cost: 1, requiresTransform: true, description: '【需变身】钻石般的护盾，获得30护甲。', professionRequired: 'magicalGirl' },
-    { id: 'mg_016', name: '✨星光屏障 ☆(ゝω・)v', type: CardType.ARMOR, value: 20, healValue: 12, cost: 1, requiresTransform: true, description: '【需变身】星光屏障，获得20护甲，恢复12HP。', professionRequired: 'magicalGirl' },
+    // --- Thẻ Trị liệu/Phòng thủ sau khi biến thân ---
+    { id: 'mg_014', name: '✨Thánh Quang Trị Dũ (´,,•ω•,,)♡', type: CardType.HEAL, value: 30, cost: 1, requiresTransform: true, description: '【Cần biến thân】Thánh quang chữa lành thân tâm, hồi 30 HP.', professionRequired: 'magicalGirl' },
+    { id: 'mg_015', name: '✨Khiên Kim Cương ◇◆◇', type: CardType.ARMOR, value: 30, cost: 1, requiresTransform: true, description: '【Cần biến thân】Lớp khiên cứng như kim cương, nhận 30 giáp.', professionRequired: 'magicalGirl' },
+    { id: 'mg_016', name: '✨Bình Chướng Tinh Quang ☆(ゝω・)v', type: CardType.ARMOR, value: 20, healValue: 12, cost: 1, requiresTransform: true, description: '【Cần biến thân】Bình chướng ánh sao, nhận 20 giáp, hồi 12 HP.', professionRequired: 'magicalGirl' },
 
-    // --- 变身后Buff/Debuff卡 ---
-    { id: 'mg_017', name: '✨魔力觉醒 (๑˃̵ᴗ˂̵)و', type: CardType.BUFF, value: 10, duration: 2, buffType: 'attack', cost: 1, requiresTransform: true, description: '【需变身】魔力觉醒，攻击+10持续2回合。', professionRequired: 'magicalGirl' },
-    { id: 'mg_018', name: '✨星辰祝福 ☆(´ε｀ )☆', type: CardType.BUFF, value: 8, duration: 2, buffType: 'defense', armorGain: 20, cost: 2, requiresTransform: true, description: '【需变身】星辰祝福，防御+8(2回合)，获得20护甲。', professionRequired: 'magicalGirl' },
-    { id: 'mg_019', name: '✨封印之光 (｀・ω・´)', type: CardType.DEBUFF, value: 10, duration: 2, debuffType: 'attack', cost: 1, requiresTransform: true, description: '【需变身】光芒封印敌人，敌人攻击-10(2回合)。', professionRequired: 'magicalGirl' },
-    { id: 'mg_020', name: '✨虹光弱化 ヾ(≧へ≦)〃', type: CardType.DEBUFF, value: 8, duration: 2, debuffType: 'defense', cost: 1, requiresTransform: true, description: '【需变身】彩虹光芒削弱敌人，敌人防御-8(2回合)。', professionRequired: 'magicalGirl' },
+    // --- Thẻ Buff/Debuff sau khi biến thân ---
+    { id: 'mg_017', name: '✨Ma Lực Thức Tỉnh (๑˃̵ᴗ˂̵)u', type: CardType.BUFF, value: 10, duration: 2, buffType: 'attack', cost: 1, requiresTransform: true, description: '【Cần biến thân】Ma lực thức tỉnh, tấn công +10 trong 2 lượt.', professionRequired: 'magicalGirl' },
+    { id: 'mg_018', name: '✨Tinh Thần Chúc Phúc ☆(´ε｀ )☆', type: CardType.BUFF, value: 8, duration: 2, buffType: 'defense', armorGain: 20, cost: 2, requiresTransform: true, description: '【Cần biến thân】Tinh tú chúc phúc, phòng thủ +8 (2 lượt), nhận 20 giáp.', professionRequired: 'magicalGirl' },
+    { id: 'mg_019', name: '✨Hào Quang Phong Ấn (｀・ω・´)', type: CardType.DEBUFF, value: 10, duration: 2, debuffType: 'attack', cost: 1, requiresTransform: true, description: '【Cần biến thân】Hào quang phong ấn kẻ thù, tấn công kẻ thù -10 (2 lượt).', professionRequired: 'magicalGirl' },
+    { id: 'mg_020', name: '✨Hồng Quang Suy Nhược ヾ(≧へ≦)〃', type: CardType.DEBUFF, value: 8, duration: 2, debuffType: 'defense', cost: 1, requiresTransform: true, description: '【Cần biến thân】Ánh cầu vồng làm yếu kẻ thù, phòng thủ kẻ thù -8 (2 lượt).', professionRequired: 'magicalGirl' },
 
-    // --- 变身延长卡（重要！） ---
-    { id: 'mg_021', name: '✨永恒之心 ♡( ◡‿◡ )', type: CardType.BUFF, cost: 2, extendTransform: 1, requiresTransform: true, description: '【需变身】永恒的信念，延长变身1回合。', professionRequired: 'magicalGirl' },
-    { id: 'mg_022', name: '✨希望延续 (ง˃̀ᴗ˂́)ง', type: CardType.BUFF, cost: 2, extendTransform: 1, requiresTransform: true, drawCards: 1, description: '【需变身】希望延续，延长变身1回合，抽1张牌。', professionRequired: 'magicalGirl' },
-    { id: 'mg_023', name: '✨魔法永驻 ٩(♡ε♡ )۶', type: CardType.BUFF, cost: 3, extendTransform: 2, requiresTransform: true, description: '【需变身】魔法永不消逝，延长变身2回合。', professionRequired: 'magicalGirl' },
+    // --- Thẻ kéo dài biến thân (Quan trọng!) ---
+    { id: 'mg_021', name: '✨Trái Tim Vĩnh Hằng ♡( ◡‿◡ )', type: CardType.BUFF, cost: 2, extendTransform: 1, requiresTransform: true, description: '【Cần biến thân】Niềm tin vĩnh cửu, kéo dài biến thân thêm 1 lượt.', professionRequired: 'magicalGirl' },
+    { id: 'mg_022', name: '✨Hy Vọng Tiếp Diễn (ง˃̀ᴗ˂́)ง', type: CardType.BUFF, cost: 2, extendTransform: 1, requiresTransform: true, drawCards: 1, description: '【Cần biến thân】Hy vọng tiếp diễn, kéo dài biến thân thêm 1 lượt, rút 1 lá bài.', professionRequired: 'magicalGirl' },
+    { id: 'mg_023', name: '✨Ma Pháp Vĩnh Hằng ٩(♡ε♡ )۶', type: CardType.BUFF, cost: 3, extendTransform: 2, requiresTransform: true, description: '【Cần biến thân】Ma pháp không bao giờ biến mất, kéo dài biến thân thêm 2 lượt.', professionRequired: 'magicalGirl' },
 
-    // --- 高级变身卡 ---
-    { id: 'mg_024', name: '✨终极冲击 (๑•̀ω•́๑)', type: CardType.ATTACK, value: 40, cost: 2, requiresTransform: true, healSelf: 20, description: '【需变身】终极冲击，造成40伤害，恢复20HP。', professionRequired: 'magicalGirl' },
-    { id: 'mg_025', name: '✨净化光线 ☆ﾟ.*･｡', type: CardType.ATTACK, value: 35, cost: 2, requiresTransform: true, armorGain: 15, description: '【需变身】净化光线，造成35伤害，获得15护甲。', professionRequired: 'magicalGirl' },
-    { id: 'mg_026', name: '✨奇迹火花 (ﾉ≧∀≦)ﾉ', type: CardType.ATTACK, value: 15, hitCount: 3, cost: 2, requiresTransform: true, healSelf: 10, description: '【需变身】奇迹火花，攻击3次各15点，恢复10HP。', professionRequired: 'magicalGirl' },
-    { id: 'mg_027', name: '✨魔法爆发 ٩(๑`ȏ´๑)۶', type: CardType.ATTACK, value: 40, cost: 3, requiresTransform: true, description: '【需变身】全力魔法爆发，造成40点伤害。', professionRequired: 'magicalGirl' },
-    { id: 'mg_028', name: '✨星辰审判 ☆(メ｀ロ´)', type: CardType.ATTACK, value: 35, ignoreArmor: true, cost: 2, requiresTransform: true, description: '【需变身】星辰的审判，无视护甲造成35点伤害。', professionRequired: 'magicalGirl' },
-    { id: 'mg_029', name: '✨月光轮回 ☽(´,,•ω•,,)', type: CardType.HEAL, value: 40, armorGain: 20, cost: 2, requiresTransform: true, description: '【需变身】月光轮回，恢复40HP，获得20护甲。', professionRequired: 'magicalGirl' },
-    { id: 'mg_030', name: '✨最终闪耀 ☆ﾟ.+:｡ヽ(◎´∀`)ﾉﾟ.+:｡', type: CardType.ATTACK, value: 60, cost: 4, requiresTransform: true, description: '【需变身】倾尽所有的最终闪耀！造成60点伤害。', professionRequired: 'magicalGirl' }
+    // --- Thẻ biến thân cao cấp ---
+    { id: 'mg_024', name: '✨Xung Kích Cuối Cùng (๑•̀ω•́๑)', type: CardType.ATTACK, value: 40, cost: 2, requiresTransform: true, healSelf: 20, description: '【Cần biến thân】Xung kích cuối cùng, gây 40 sát thương, hồi 20 HP.', professionRequired: 'magicalGirl' },
+    { id: 'mg_025', name: '✨Tia Sáng Thanh Tẩy ☆ﾟ.*･｡', type: CardType.ATTACK, value: 35, cost: 2, requiresTransform: true, armorGain: 15, description: '【Cần biến thân】Tia sáng thanh tẩy, gây 35 sát thương, nhận 15 giáp.', professionRequired: 'magicalGirl' },
+    { id: 'mg_026', name: '✨Tia Lửa Kỳ Tích (ノ≧∀≦)ノ', type: CardType.ATTACK, value: 15, hitCount: 3, cost: 2, requiresTransform: true, healSelf: 10, description: '【Cần biến thân】Tia lửa kỳ tích, tấn công 3 lần mỗi lần 15 điểm, hồi 10 HP.', professionRequired: 'magicalGirl' },
+    { id: 'mg_027', name: '✨Ma Pháp Bùng Nổ ٩(๑`ȏ´๑)۶', type: CardType.ATTACK, value: 40, cost: 3, requiresTransform: true, description: '【Cần biến thân】Dốc toàn lực ma pháp bùng nổ, gây 40 điểm sát thương.', professionRequired: 'magicalGirl' },
+    { id: 'mg_028', name: '✨Tinh Thần Phán Quyết ☆(メ｀ロ´)', type: CardType.ATTACK, value: 35, ignoreArmor: true, cost: 2, requiresTransform: true, description: '【Cần biến thân】Sự phán xét của các vì sao, xuyên giáp gây 35 điểm sát thương.', professionRequired: 'magicalGirl' },
+    { id: 'mg_029', name: '✨Nguyệt Quang Luân Hồi ☽(´,,•ω•,,)', type: CardType.HEAL, value: 40, armorGain: 20, cost: 2, requiresTransform: true, description: '【Cần biến thân】Nguyệt quang luân hồi, hồi 40 HP, nhận 20 giáp.', professionRequired: 'magicalGirl' },
+    { id: 'mg_030', name: '✨Tỏa Sáng Cuối Cùng ☆ﾟ.+:｡ヽ(◎´∀`)ﾉﾟ.+:｡', type: CardType.ATTACK, value: 60, cost: 4, requiresTransform: true, description: '【Cần biến thân】Ánh sáng cuối cùng dốc hết tất cả! Gây 60 điểm sát thương.', professionRequired: 'magicalGirl' }
 ];
 
 
@@ -3154,15 +3109,15 @@ const CardDeckManager = {
         // 更新卡组数量显示
         const countEl = document.getElementById('cardDeckCount');
         if (countEl) {
-            countEl.textContent = this.deck.length + '张';
+            countEl.textContent = this.deck.length + ' Bộ';
         }
 
         if (this.deck.length === 0) {
             container.innerHTML = `
                 <div style="text-align: center; color: #999; padding: 20px;">
                     <div style="font-size: 36px; margin-bottom: 10px;">🃏</div>
-                    <div>暂无卡牌</div>
-                    <div style="font-size: 11px; margin-top: 5px; color: #666;">卡牌将在游戏中获取</div>
+                    <div>Chưa có thẻ bài</div>
+                    <div style="font-size: 11px; margin-top: 5px; color: #666;">Thẻ bài sẽ được thu thập trong quá trình chơi</div>
                 </div>`;
             return;
         }
@@ -3176,7 +3131,7 @@ const CardDeckManager = {
             typeCount[card.type].push(card);
         });
 
-        let html = `<div class="card-deck-summary" style="margin-bottom: 10px; font-size: 12px; color: #888;">卡组总数: ${this.deck.length} 张</div>`;
+        let html = `<div class="card-deck-summary" style="margin-bottom: 10px; font-size: 12px; color: #888;">Tổng số thẻ bài: ${this.deck.length} lá</div>`;
 
         // 渲染每张卡（用grid布局，一行3个）
         html += `<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px;">`;
@@ -3191,36 +3146,36 @@ const CardDeckManager = {
     // 渲染单张卡牌
     renderCard: function (card, index = 0) {
         const typeColor = CardTypeColors[card.type] || '#666';
-        const typeName = CardTypeNames[card.type] || '未知';
+        const typeName = CardTypeNames[card.type] || 'Chưa biết';
 
-        // 根据卡牌类型生成效果文本
+        // Tạo văn bản hiệu ứng dựa trên loại thẻ bài
         let effectText = '';
         if (card.type === CardType.ATTACK || card.type === CardType.H_ATTACK) {
-            effectText = `伤害: ${card.value}`;
-            if (card.hitCount) effectText += ` x${card.hitCount}次`;
-            if (card.ignoreArmor) effectText += ' (无视护甲)';
+            effectText = `Sát thương: ${card.value}`;
+            if (card.hitCount) effectText += ` x${card.hitCount} lần`;
+            if (card.ignoreArmor) effectText += ' (Xuyên giáp)';
         } else if (card.type === CardType.HEAL) {
-            effectText = `恢复: +${card.value}HP`;
-            if (card.duration) effectText += ` (${card.duration}回合)`;
+            effectText = `Hồi phục: +${card.value}HP`;
+            if (card.duration) effectText += ` (${card.duration} lượt)`;
         } else if (card.type === CardType.BUFF) {
-            // BUFF类型需要根据具体效果显示
+            // Loại BUFF cần hiển thị dựa trên hiệu ứng cụ thể
             if (card.drawCards) {
-                effectText = `📜 抽${card.drawCards}张牌`;
+                effectText = `📜 Rút ${card.drawCards} lá bài`;
             } else if (card.gainEnergy) {
-                effectText = `⚡ +${card.gainEnergy}能量`;
+                effectText = `⚡ +${card.gainEnergy} năng lượng`;
             } else if (card.value) {
-                effectText = `效果: +${card.value}`;
+                effectText = `Hiệu quả: +${card.value}`;
             } else {
-                effectText = `✨ 增益效果`;
+                effectText = `✨ Hiệu ứng tăng ích`;
             }
-            if (card.duration) effectText += ` (${card.duration}回合)`;
+            if (card.duration) effectText += ` (${card.duration} lượt)`;
         } else if (card.type === CardType.DEBUFF) {
-            effectText = `效果: -${card.value}`;
-            if (card.duration) effectText += ` (${card.duration}回合)`;
+            effectText = `Hiệu quả: -${card.value}`;
+            if (card.duration) effectText += ` (${card.duration} lượt)`;
         } else if (card.type === CardType.ARMOR) {
-            effectText = `护甲: +${card.value}`;
-            if (card.reflect) effectText += ` (反伤${card.reflect})`;
-            if (card.duration) effectText += ` (${card.duration}回合)`;
+            effectText = `Giáp: +${card.value}`;
+            if (card.reflect) effectText += ` (Phản sát thương ${card.reflect})`;
+            if (card.duration) effectText += ` (${card.duration} lượt)`;
         }
 
         return `
@@ -3251,7 +3206,7 @@ const CardDeckManager = {
         if (!card) return;
 
         const typeColor = CardTypeColors[card.type] || '#666';
-        const typeName = CardTypeNames[card.type] || '未知';
+        const typeName = CardTypeNames[card.type] || 'Chưa biết';
 
         // 创建弹窗
         const modal = document.createElement('div');
@@ -3273,9 +3228,9 @@ const CardDeckManager = {
                 
                 <div style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 15px; margin-bottom: 15px;">
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 13px;">
-                        <div><span style="color: #888;">数值：</span><span style="color: ${typeColor}; font-weight: bold;">${card.value}</span></div>
-                        <div><span style="color: #888;">消耗：</span><span style="color: #ffd700;">${card.cost || 1} 点</span></div>
-                        ${card.duration ? `<div style="grid-column: span 2;"><span style="color: #888;">持续：</span><span style="color: #2ed573;">${card.duration} 回合</span></div>` : ''}
+                        <div><span style="color: #888;">Chỉ số: </span><span style="color: ${typeColor}; font-weight: bold;">${card.value}</span></div>
+                        <div><span style="color: #888;">Tiêu hao: </span><span style="color: #ffd700;">${card.cost || 1} điểm</span></div>
+                        ${card.duration ? `<div style="grid-column: span 2;"><span style="color: #888;">Duy trì: </span><span style="color: #2ed573;">${card.duration} lượt</span></div>` : ''}
                     </div>
                 </div>
                 
@@ -3286,7 +3241,7 @@ const CardDeckManager = {
                 <button onclick="document.getElementById('cardDetailModal').remove()"
                         style="width: 100%; padding: 10px; background: ${typeColor}; color: #fff;
                                border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">
-                    关闭
+                    Đóng
                 </button>
             </div>
         `;
@@ -3302,19 +3257,19 @@ const CardDeckManager = {
 // AI生成卡牌的解析器
 const AICardParser = {
     /**
-     * 解析AI生成的卡牌文本
-     * 期望格式：
-     * 【卡名】xxx
-     * 【类型】攻击/H攻击/治疗/增益/减益/护甲
-     * 【数值】+5
-     * 【持续】2回合（可选）
-     * 【描述】xxx
+     * Phân tích văn bản thẻ bài do AI tạo ra
+     * Định dạng kỳ vọng:
+     * 【Tên thẻ】xxx
+     * 【Loại】Tấn công/Tấn công H/Trị liệu/Tăng ích/Giảm ích/Giáp
+     * 【Chỉ số】+5
+     * 【Duy trì】2 lượt (tùy chọn)
+     * 【Mô tả】xxx
      */
     parse: function (text) {
         const cards = [];
 
-        // 匹配卡牌块
-        const cardPattern = /【卡名】([^\n【]+)[\s\S]*?【类型】([^\n【]+)[\s\S]*?【数值】([^\n【]+)(?:[\s\S]*?【持续】([^\n【]+))?[\s\S]*?【描述】([^\n【]+)/g;
+        // Khớp khối thẻ bài
+        const cardPattern = /【Tên thẻ】([^\n【]+)[\s\S]*?【Loại】([^\n【]+)[\s\S]*?【Chỉ số】([^\n【]+)(?:[\s\S]*?【Duy trì】([^\n【]+))?[\s\S]*?【Mô tả】([^\n【]+)/g;
 
         let match;
         while ((match = cardPattern.exec(text)) !== null) {
@@ -3342,16 +3297,16 @@ const AICardParser = {
     // 解析类型
     parseType: function (typeText) {
         const typeMap = {
-            '攻击': CardType.ATTACK,
-            'h攻击': CardType.H_ATTACK,
-            'H攻击': CardType.H_ATTACK,
-            '治疗': CardType.HEAL,
-            '增益': CardType.BUFF,
-            '我方增益': CardType.BUFF,
-            '减益': CardType.DEBUFF,
+            'Tấn công': CardType.ATTACK,
+            'h tấn công': CardType.H_ATTACK,
+            'H tấn công': CardType.H_ATTACK,
+            'Trị liệu': CardType.HEAL,
+            'Tăng ích': CardType.BUFF,
+            'Tăng ích ta': CardType.BUFF,
+            'Giảm ích': CardType.DEBUFF,
             'debuff': CardType.DEBUFF,
-            '给对方debuff': CardType.DEBUFF,
-            '护甲': CardType.ARMOR
+            'Debuff đối phương': CardType.DEBUFF,
+            'Giáp': CardType.ARMOR
         };
         return typeMap[typeText] || CardType.ATTACK;
     },
@@ -3485,8 +3440,8 @@ const RouteSystem = {
                         onmouseout="this.style.background='rgba(255,255,255,0.1)'">✕</button>
             </div>
             <div style="color: #fff; font-size: 24px; margin-bottom: 30px; text-align: center;">
-                <div>第 ${nextFloor} 层</div>
-                <div style="font-size: 14px; color: #888; margin-top: 5px;">选择你的道路</div>
+                <div>Tầng ${nextFloor}</div>
+                <div style="font-size: 14px; color: #888; margin-top: 5px;">Chọn con đường của bạn</div>
             </div>
             <div style="display: flex; gap: 20px; flex-wrap: wrap; justify-content: center;">
                 ${cardsHtml}
@@ -3498,7 +3453,7 @@ const RouteSystem = {
                                color: #fff; cursor: pointer; font-size: 16px; transition: all 0.3s;"
                         onmouseover="this.style.transform='scale(1.05)';this.style.boxShadow='0 5px 20px rgba(0,0,0,0.4)';"
                         onmouseout="this.style.transform='scale(1)';this.style.boxShadow='none';">
-                    🚪 离开尖塔
+                    🚪 Rời khỏi tòa tháp
                 </button>
             </div>
         `;
@@ -3556,10 +3511,10 @@ const RouteSystem = {
                         border: 2px solid #667eea; border-radius: 16px; padding: 30px;
                         max-width: 400px; text-align: center;">
                 <div style="font-size: 48px; margin-bottom: 20px;">🚪</div>
-                <div style="color: #fff; font-size: 20px; font-weight: bold; margin-bottom: 10px;">离开尖塔</div>
+                <div style="color: #fff; font-size: 20px; font-weight: bold; margin-bottom: 10px;">Rời khỏi tòa tháp</div>
                 <div style="color: #888; font-size: 14px; margin-bottom: 25px;">
-                    当前层数: 第 ${PlayerState.floor} 层<br>
-                    金币: ${PlayerState.gold} 💰
+                    Tầng hiện tại: Tầng ${PlayerState.floor}<br>
+                    Vàng: ${PlayerState.gold} 💰
                 </div>
                 <div style="display: flex; gap: 15px; justify-content: center;">
                     <button onclick="RouteSystem.confirmLeaveDungeon(true)"
@@ -3568,7 +3523,7 @@ const RouteSystem = {
                                    color: #fff; cursor: pointer; font-size: 14px; transition: all 0.3s;"
                             onmouseover="this.style.transform='scale(1.05)'"
                             onmouseout="this.style.transform='scale(1)'">
-                        ✨ 生成剧情
+                        ✨ Tạo cốt truyện
                     </button>
                     <button onclick="RouteSystem.confirmLeaveDungeon(false)"
                             style="background: linear-gradient(135deg, #636e72 0%, #2d3436 100%);
@@ -3576,13 +3531,13 @@ const RouteSystem = {
                                    color: #fff; cursor: pointer; font-size: 14px; transition: all 0.3s;"
                             onmouseover="this.style.transform='scale(1.05)'"
                             onmouseout="this.style.transform='scale(1)'">
-                        ⏭️ 跳过剧情
+                        ⏭️ Bỏ qua cốt truyện
                     </button>
                 </div>
                 <button onclick="document.getElementById('leaveDungeonModal')?.remove()"
                         style="margin-top: 20px; background: transparent; border: 1px solid #666;
                                border-radius: 6px; padding: 8px 20px; color: #888; cursor: pointer;">
-                    取消
+                    Hủy bỏ
                 </button>
             </div>
         `;
@@ -3595,16 +3550,16 @@ const RouteSystem = {
         document.getElementById('leaveDungeonModal')?.remove();
 
         if (generateStory) {
-            // 生成剧情：发送给AI
-            const prompt = `【离开尖塔】
-我带着在尖塔获得的战利品，决定暂时离开这个危险的地方。
-当前状态：
-- 探索层数: 第 ${PlayerState.floor} 层
-- 金币: ${PlayerState.gold}
-- 生命值: ${PlayerState.hp}/${PlayerState.maxHp}
-- 堕落值: ${PlayerState.corruption}
+            // Tạo cốt truyện: Gửi cho AI
+            const prompt = `【Rời khỏi tòa tháp】
+Tôi mang theo những chiến lợi phẩm thu được trong tòa tháp, quyết định tạm thời rời khỏi nơi nguy hiểm này.
+Trạng thái hiện tại:
+- Tầng thám hiểm: Tầng ${PlayerState.floor}
+- Vàng: ${PlayerState.gold}
+- Sinh mệnh: ${PlayerState.hp}/${PlayerState.maxHp}
+- Chỉ số đọa lạc: ${PlayerState.corruption}
 
-请描写我离开尖塔的场景，以及回到安全区域后的感受。`;
+Hãy miêu tả cảnh tượng tôi rời khỏi tòa tháp, cũng như cảm giác sau khi trở về khu vực an toàn.`;
 
             // 重置到第0层
             PlayerState.floor = 0;
@@ -3628,11 +3583,11 @@ const RouteSystem = {
             // 🔧 更新内联状态栏显示（inlinePlayerFloor等）
             PlayerState.updateDisplay();
 
-            // 显示简单提示
+            // Hiển thị thông báo đơn giản
             if (typeof showNotification === 'function') {
-                showNotification('你离开了尖塔，回到了第0层', 'info');
+                showNotification('Bạn đã rời khỏi tòa tháp và quay trở về tầng 0', 'info');
             } else {
-                alert('你离开了尖塔，回到了第0层');
+                alert('Bạn đã rời khỏi tòa tháp và quay trở về tầng 0');
             }
 
             // 更新状态面板
@@ -3682,10 +3637,10 @@ const RouteSystem = {
             updateStatusPanel();
         }
 
-        // 发送提示词给AI
+        // Gửi từ khóa gợi ý cho AI
         const floor = PlayerState.floor || 1;
-        const prompt = `简单跳过之前的场景，生成新剧情：【尖塔第${floor}层】我中了陷阱，被塞上了无法取下的${randomKey}。${status.fullDesc}`;
-        ACJTGame.recordToHistory(`陷阱：被塞上${randomKey}`);
+        const prompt = `Bỏ qua các cảnh trước đó một cách đơn giản, tạo cốt truyện mới: 【Tầng ${floor} của tòa tháp】 Tôi đã dính bẫy và bị gắn ${randomKey} không thể tháo rời. ${status.fullDesc}`;
+        ACJTGame.recordToHistory(`Cạm bẫy: Bị gắn ${randomKey}`);
         ACJTGame.sendToAI(prompt);
     }
 };
@@ -3726,8 +3681,8 @@ const BattleSystem = {
     // 📝 添加战斗日志
     addLog: function (text) {
         // 如果text已经包含 [回合X] 则不再添加
-        const hasPrefix = text.startsWith('[回合');
-        const logText = hasPrefix ? text : `[回合${this.turn}] ${text}`;
+        const hasPrefix = text.startsWith('[Lượt');
+        const logText = hasPrefix ? text : `[Lượt ${this.turn}] ${text}`;
         this.battleLog.push(logText);
         console.log('[战斗日志]', text);
     },
@@ -3792,44 +3747,44 @@ const BattleSystem = {
         this.transformTurnsLeft = 0;
 
 
-        // 📝 记录战斗开始
-        this.battleLog.push(`━━━ 战斗开始 ━━━`);
-        this.battleLog.push(`敌人: ${this.currentEnemy.name} (HP:${this.currentEnemy.hp} 攻:${this.currentEnemy.attack} 防:${this.currentEnemy.defense})`);
-        this.battleLog.push(`玩家: ${PlayerState.name} (HP:${PlayerState.hp}/${PlayerState.maxHp} 攻:${PlayerState.attack} 防:${PlayerState.defense})`);
+        // 📝 Ghi lại bắt đầu trận đấu
+        this.battleLog.push(`━━━ Bắt đầu trận đấu ━━━`);
+        this.battleLog.push(`Kẻ địch: ${this.currentEnemy.name} (HP:${this.currentEnemy.hp} Công:${this.currentEnemy.attack} Thủ:${this.currentEnemy.defense})`);
+        this.battleLog.push(`Người chơi: ${PlayerState.name} (HP:${PlayerState.hp}/${PlayerState.maxHp} Công:${PlayerState.attack} Thủ:${PlayerState.defense})`);
 
-        // 🆕 如果是Boss，显示特殊机制信息
+        // 🆕 Nếu là Boss, hiển thị thông tin cơ chế đặc biệt
         if (this.currentEnemy.specialMechanic) {
             const mech = this.currentEnemy.specialMechanic;
-            this.battleLog.push(`⭐ Boss机制: ${mech.name} - ${mech.description}`);
+            this.battleLog.push(`⭐ Cơ chế Boss: ${mech.name} - ${mech.description}`);
         }
 
-        // 🔧 应用特殊状态效果
+        // 🔧 Áp dụng hiệu ứng trạng thái đặc biệt
         const statusEffects = SpecialStatusManager.onBattleStart();
         this.currentEnergy = Math.max(0, PlayerState.energy - (statusEffects.energyLoss || 0));
 
-        // 🔧 应用特殊状态的属性修正
+        // 🔧 Áp dụng điều chỉnh thuộc tính từ trạng thái đặc biệt
         this.applySpecialStatusEffects();
 
-        // 初始化牌组
+        // Khởi tạo bộ bài
         this.drawPile = [...CardDeckManager.deck].sort(() => Math.random() - 0.5);
         this.discardPile = [];
         this.hand = [];
 
-        // 抽初始手牌（基础5张 + 遗物抽卡加成）
+        // Rút bài khởi đầu (Cơ bản 5 lá + Thưởng rút bài từ Thánh di vật)
         let initialDraw = 5;
         if (this.relicMods?.drawBonus > 0) {
             initialDraw += this.relicMods.drawBonus;
-            console.log('[战斗] 遗物抽牌加成:', this.relicMods.drawBonus);
+            console.log('[Trận đấu] Thưởng rút bài từ Thánh di vật:', this.relicMods.drawBonus);
         }
         this.drawCards(initialDraw);
 
-        // 🆕 生成敌人第一回合意图
+        // 🆕 Tạo ý định lượt đầu tiên của kẻ địch
         this.generateNextIntent();
 
-        // 显示战斗UI
+        // Hiển thị giao diện chiến đấu (Battle UI)
         this.showBattleUI();
 
-        console.log('[战斗] 开始战斗:', this.currentEnemy.name);
+        console.log('[Trận đấu] Bắt đầu trận đấu với:', this.currentEnemy.name);
     },
 
     // 🔧 应用特殊状态效果到战斗属性
@@ -3975,7 +3930,7 @@ const BattleSystem = {
         }
     },
 
-    // 🆕 获取意图显示HTML
+// 🆕 Lấy HTML hiển thị ý định
     getIntentDisplay: function () {
         const intent = this.currentIntent;
         if (!intent) return '';
@@ -3990,7 +3945,7 @@ const BattleSystem = {
             valueText = ` ${intent.value}`;
         } else if (intent.type === EnemyIntentType.CHARGE) {
             valueText = intent.isRelease ? ` ${intent.value}` : '';
-            extraInfo = intent.isRelease ? ' (释放!)' : ' (蓄力中...)';
+            extraInfo = intent.isRelease ? ' (Giải phóng!)' : ' (Đang tích lực...)';
         } else if (intent.type === EnemyIntentType.DEFEND) {
             valueText = ` +${intent.value}`;
         } else if (intent.type === EnemyIntentType.HEAL) {
@@ -4008,17 +3963,17 @@ const BattleSystem = {
                         border-radius: 6px; border: 1px solid ${config.color}60;
                         display: inline-block;">
                 <div style="color: ${config.color}; font-size: 13px; font-weight: bold;">
-                    意图: ${config.icon} ${config.name}${valueText}${extraInfo}
+                    Ý định: ${config.icon} ${config.name}${valueText}${extraInfo}
                 </div>
             </div>
         `;
     },
 
-    // 抽牌
+    // Rút bài
     drawCards: function (count) {
         for (let i = 0; i < count; i++) {
             if (this.drawPile.length === 0) {
-                // 洗牌
+                // Xáo bài
                 this.drawPile = [...this.discardPile].sort(() => Math.random() - 0.5);
                 this.discardPile = [];
             }
@@ -4137,8 +4092,8 @@ const BattleSystem = {
             
             <!-- 顶部信息栏 - 克苏鲁风格 -->
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 10px 15px; background: linear-gradient(180deg, rgba(139,0,0,0.15) 0%, transparent 100%); border-bottom: 2px solid rgba(139,0,0,0.3); border-radius: 4px;">
-                <div style="color: #c9b896; font-size: 18px; font-family: 'Cinzel', serif; text-shadow: 0 0 10px rgba(139,0,0,0.4);">҉ 回合 ${this.turn}</div>
-                ${this.isTransformed ? `<div style="color: #ff69b4; font-size: 16px; font-weight: bold; text-shadow: 0 0 15px rgba(255,105,180,0.8); animation: pulse 1s infinite;">✨ 变身中 (${this.transformTurnsLeft}回合) (ﾉ◕ヮ◕)ﾉ</div>` : (PlayerState.profession?.id === 'magicalGirl' ? '<div style="color: #888; font-size: 14px;">未变身 - 使用变身卡！</div>' : '')}
+                <div style="color: #c9b896; font-size: 18px; font-family: 'Cinzel', serif; text-shadow: 0 0 10px rgba(139,0,0,0.4);">҉ Lượt ${this.turn}</div>
+                ${this.isTransformed ? `<div style="color: #ff69b4; font-size: 16px; font-weight: bold; text-shadow: 0 0 15px rgba(255,105,180,0.8); animation: pulse 1s infinite;">✨ Đang biến thân (${this.transformTurnsLeft} lượt) (ﾉ◕ヮ◕)ﾉ</div>` : (PlayerState.profession?.id === 'magicalGirl' ? '<div style="color: #888; font-size: 14px;">Chưa biến thân - Hãy dùng thẻ biến thân!</div>' : '')}
                 <div style="color: #c9b896; font-size: 16px; text-shadow: 0 0 10px rgba(139,0,0,0.4);">⚡ ${this.currentEnergy}/${PlayerState.energy}</div>
             </div>
 
@@ -4159,10 +4114,10 @@ const BattleSystem = {
                     <!-- 玩家属性面板 - 克苏鲁风格 -->
                     <div style="background: linear-gradient(180deg, rgba(25,18,15,0.9) 0%, rgba(15,10,8,0.95) 100%); border: 2px solid #3d2f24; border-radius: 4px; padding: 10px; text-align: left; font-size: 12px; box-shadow: inset 0 0 15px rgba(0,0,0,0.5);">
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
-                            <div style="color: #6b5d4d;">🛡️ 护甲: <span style="color: #c9b896; font-weight: bold;">${this.playerArmor}</span></div>
-                            <div style="color: #6b5d4d;">⚔️ 攻击: <span style="color: #c9b896;">${this.getPlayerEffectiveAttack()}</span></div>
-                            <div style="color: #6b5d4d;">🔰 防御: <span style="color: #c9b896;">${this.getPlayerEffectiveDefense()}</span></div>
-                            <div style="color: #6b5d4d;">💜 堕落: <span style="color: #8b0000; font-weight: bold;">${PlayerState.corruption}</span></div>
+                            <div style="color: #6b5d4d;">🛡️ Giáp: <span style="color: #c9b896; font-weight: bold;">${this.playerArmor}</span></div>
+                            <div style="color: #6b5d4d;">⚔️ Tấn công: <span style="color: #c9b896;">${this.getPlayerEffectiveAttack()}</span></div>
+                            <div style="color: #6b5d4d;">🔰 Phòng thủ: <span style="color: #c9b896;">${this.getPlayerEffectiveDefense()}</span></div>
+                            <div style="color: #6b5d4d;">💜 Đọa lạc: <span style="color: #8b0000; font-weight: bold;">${PlayerState.corruption}</span></div>
                         </div>
                         ${this.getPlayerBuffDisplay()}
                     </div>
@@ -4188,9 +4143,9 @@ const BattleSystem = {
                     <!-- 敌人属性面板 - 克苏鲁风格 -->
                     <div style="background: linear-gradient(180deg, rgba(25,18,15,0.9) 0%, rgba(15,10,8,0.95) 100%); border: 2px solid #3d2f24; border-radius: 4px; padding: 10px; text-align: left; font-size: 12px; box-shadow: inset 0 0 15px rgba(0,0,0,0.5);">
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
-                            <div style="color: #6b5d4d;">🛡️ 护甲: <span style="color: #c9b896; font-weight: bold;">${this.enemyArmor}</span></div>
-                            <div style="color: #6b5d4d;">⚔️ 攻击: <span style="color: #c9b896; font-weight: bold;">${this.getEnemyEffectiveAttack()}</span></div>
-                            <div style="color: #6b5d4d;">🔰 防御: <span style="color: #c9b896; font-weight: bold;">${this.getEnemyEffectiveDefense()}</span></div>
+                            <div style="color: #6b5d4d;">🛡️ Giáp: <span style="color: #c9b896; font-weight: bold;">${this.enemyArmor}</span></div>
+                            <div style="color: #6b5d4d;">⚔️ Tấn công: <span style="color: #c9b896; font-weight: bold;">${this.getEnemyEffectiveAttack()}</span></div>
+                            <div style="color: #6b5d4d;">🔰 Phòng thủ: <span style="color: #c9b896; font-weight: bold;">${this.getEnemyEffectiveDefense()}</span></div>
                         </div>
                         ${this.getEnemyDebuffDisplay()}
                         ${this.getIntentDisplay()}
@@ -4203,9 +4158,9 @@ const BattleSystem = {
             
             <!-- 手牌区域 - 克苏鲁风格 -->
             <div style="background: linear-gradient(180deg, rgba(25,18,15,0.9) 0%, rgba(15,10,8,0.95) 100%); border: 2px solid #3d2f24; border-radius: 4px; padding: 15px; margin-bottom: 15px; box-shadow: inset 0 0 20px rgba(0,0,0,0.5);">
-                <div style="color: #6b5d4d; font-size: 12px; margin-bottom: 10px;">҉ 手牌 (${this.hand.length}) | 牌库 (${this.drawPile.length}) | 弃牌堆 (${this.discardPile.length})</div>
+                <div style="color: #6b5d4d; font-size: 12px; margin-bottom: 10px;">҉ Bài trên tay (${this.hand.length}) | Bộ bài còn lại (${this.drawPile.length}) | Chồng bài bỏ (${this.discardPile.length})</div>
                 <div style="display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px;">
-                    ${handHtml || '<div style="color: #6b5d4d; text-align: center; width: 100%;">没有手牌</div>'}
+                    ${handHtml || '<div style="color: #6b5d4d; text-align: center; width: 100%;">Không có bài trên tay</div>'}
                 </div>
             </div>
             
@@ -4218,72 +4173,72 @@ const BattleSystem = {
                                text-shadow: 0 1px 2px rgba(0,0,0,0.8); transition: all 0.2s;"
                         onmouseover="this.style.boxShadow='inset 0 1px 0 rgba(139,107,74,0.5), 0 0 25px rgba(139,0,0,0.6)'; this.style.borderColor='#8b5a2b'"
                         onmouseout="this.style.boxShadow='inset 0 1px 0 rgba(107,82,65,0.4), 0 0 15px rgba(139,0,0,0.4)'; this.style.borderColor='#6b5241'">
-                    ҉ 结束回合
+                    ҉ Kết thúc lượt
                 </button>
             </div>
         `;
     },
 
-    // 出牌
+// Đánh bài
     playCard: function (handIndex) {
         const card = this.hand[handIndex];
         if (!card || card.cost > this.currentEnergy) return;
 
-        // 🔧 诅咒卡牌无法打出
+        // 🔧 Thẻ bài Nguyền rủa không thể đánh ra
         if (card.type === CardType.CURSE) {
-            this.addLog(`[回合${this.turn}] ❌ 诅咒卡【${card.name}】无法使用！`);
+            this.addLog(`[Lượt ${this.turn}] ❌ Thẻ Nguyền rủa 【${card.name}】 không thể sử dụng!`);
             return;
         }
 
-        // 🆕 魔法少女变身需求检查
+        // 🆕 Kiểm tra yêu cầu biến thân của Thiếu nữ Ma pháp
         if (card.requiresTransform && !this.isTransformed) {
-            this.addLog(`[回合${this.turn}] ❌ 【${card.name}】需要变身后才能使用！(ﾉ◕ヮ◕)ﾉ`);
+            this.addLog(`[Lượt ${this.turn}] ❌ 【${card.name}】 yêu cầu biến thân mới có thể sử dụng! (ﾉ◕ヮ◕)ﾉ`);
             return;
         }
 
         this.currentEnergy -= card.cost;
         this.hand.splice(handIndex, 1);
 
-        // 🆕 处理消耗卡牌（使用后不进入弃牌堆）
+        // 🆕 Xử lý thẻ Tiêu tốn (sử dụng xong sẽ không vào chồng bài bỏ)
         if (card.isConsume) {
-            this.addLog(`[回合${this.turn}] 🔥 【${card.name}】已消耗，移出本场战斗`);
+            this.addLog(`[Lượt ${this.turn}] 🔥 【${card.name}】 đã tiêu tốn, loại bỏ khỏi trận đấu này`);
         } else {
             this.discardPile.push(card);
         }
 
-        // 📝 简化日志：H技能详细记录，普通技能简化
+        // 📝 Ghi log đơn giản: Kỹ năng H ghi chi tiết, kỹ năng thường ghi vắn tắt
         if (card.type === CardType.H_ATTACK) {
-            this.addLog(`[回合${this.turn}] 💋 使用H技能【${card.name}】：${card.description}`);
+            this.addLog(`[Lượt ${this.turn}] 💋 Sử dụng kỹ năng H 【${card.name}】: ${card.description}`);
         } else {
-            // 普通技能不单独记录，只统计
+            // Kỹ năng thường không ghi log riêng lẻ, chỉ thống kê
             if (!this.turnActions) this.turnActions = [];
             this.turnActions.push(card.name);
         }
 
-        // 执行卡牌效果
+        // Thực thi hiệu ứng thẻ bài
         this.executeCard(card);
 
-        // 检查战斗是否结束
+        // Kiểm tra trận đấu kết thúc chưa
         if (this.checkBattleEnd()) return;
 
-        // 刷新UI
+        // Làm mới giao diện
         this.updateBattleUI();
     },
 
-    // 执行卡牌效果
+    // Thực thi hiệu ứng thẻ bài
     executeCard: function (card) {
-        // 🆕 处理魔法少女变身卡
+        // 🆕 Xử lý thẻ Biến thân Thiếu nữ Ma pháp
         if (card.isTransformCard) {
             this.isTransformed = true;
-            this.transformTurnsLeft = 2; // 变身持续2回合
-            this.addLog(`[回合${this.turn}] ✨ 【变身！】好，开始营业！ (ﾉ◕ヮ◕)ﾉ*:･ﾟ✧ 变身持续${this.transformTurnsLeft}回合！`);
+            this.transformTurnsLeft = 2; // Biến thân duy trì 2 lượt
+            this.addLog(`[Lượt ${this.turn}] ✨ 【Biến thân!】 Được rồi, bắt đầu làm việc nào! (ﾉ◕ヮ◕)ﾉ*:･ﾟ✧ Biến thân duy trì ${this.transformTurnsLeft} lượt!`);
 
-            // 🆕 变身Buff：攻防+5，抽牌+1，费用+1 (持续2回合)
+            // 🆕 Buff Biến thân: Công thủ +5, rút bài +1, năng lượng +1 (duy trì 2 lượt)
             const buffs = [
-                { name: '魔法少女之力', buffType: 'attack', value: 5, duration: 2 },
-                { name: '魔法少女之盾', buffType: 'defense', value: 5, duration: 2 },
-                { name: '魔力充盈', buffType: 'draw', value: 1, duration: 2 },
-                { name: '魔力源泉', buffType: 'energy', value: 1, duration: 2 }
+                { name: 'Sức mạnh Thiếu nữ Ma pháp', buffType: 'attack', value: 5, duration: 2 },
+                { name: 'Khiên Thiếu nữ Ma pháp', buffType: 'defense', value: 5, duration: 2 },
+                { name: 'Ma lực tràn trề', buffType: 'draw', value: 1, duration: 2 },
+                { name: 'Nguồn ma lực', buffType: 'energy', value: 1, duration: 2 }
             ];
             buffs.forEach(b => {
                 this.playerBuffs.push({
@@ -4293,28 +4248,28 @@ const BattleSystem = {
                     remainingTurns: b.duration
                 });
             });
-            this.addLog(`[变身] ✨ 获得攻防+5、抽牌+1、费用+1 (持续2回合)`);
+            this.addLog(`[Biến thân] ✨ Nhận Công thủ +5, Rút bài +1, Năng lượng +1 (duy trì 2 lượt)`);
 
             this.updateBattleUI();
-            return; // 变身卡只有变身效果，不执行其他
+            return; // Thẻ biến thân chỉ có hiệu ứng biến thân, không thực hiện việc khác
         }
 
-        // 🆕 处理延长变身效果
+        // 🆕 Xử lý hiệu ứng kéo dài thời gian biến thân
         if (card.extendTransform && this.isTransformed) {
             this.transformTurnsLeft += card.extendTransform;
-            this.addLog(`[回合${this.turn}] ✨ 变身延长${card.extendTransform}回合！剩余${this.transformTurnsLeft}回合 ♡( ◡‿◡ )`);
+            this.addLog(`[Lượt ${this.turn}] ✨ Thời gian biến thân kéo dài thêm ${card.extendTransform} lượt! Còn lại ${this.transformTurnsLeft} lượt ♡( ◡‿◡ )`);
         }
 
-        // 🔧 应用特殊状态攻击力修正
+        // 🔧 Áp dụng điều chỉnh tấn công từ trạng thái đặc biệt
         let attackMod = this.statusMods?.attack || 0;
 
-        // 🆕 诅咒词缀的伤害加成
+        // 🆕 Thưởng sát thương từ thuộc tính nguyền rủa (affix)
         let affixDamageBonus = 1.0;
         if (card.affix && card.affix.effect?.type === 'empower') {
             affixDamageBonus = 1.0 + (card.affix.effect.bonus || 0.5);
         }
 
-        // 🔧 加上 playerBuffs 中的攻击加成（如战意高昂）
+        // 🔧 Cộng thêm thưởng tấn công từ playerBuffs (ví dụ: Chiến ý sục sôi)
         (this.playerBuffs || []).forEach(b => {
             if (b.buffType === 'attack') {
                 attackMod += b.value;
@@ -4322,39 +4277,39 @@ const BattleSystem = {
         });
 
         const totalAttack = Math.max(0, card.value + PlayerState.attack + attackMod);
-        let totalDamageDealt = 0; // 用于计算生命汲取
+        let totalDamageDealt = 0; // Dùng để tính toán Hút sinh mệnh
 
         switch (card.type) {
             case CardType.ATTACK:
             case CardType.H_ATTACK:
-                // 🆕 应用词缀伤害加成
+                // 🆕 Áp dụng thưởng sát thương từ thuộc tính
                 let damage = Math.floor(totalAttack * affixDamageBonus);
 
-                // 🔧 H技能伤害加成（开局状态 + 身体改造效果 + 圣遗物）+ 堕落值+1
+                // 🔧 Thưởng sát thương kỹ năng H (Trạng thái ban đầu + Hiệu ứng cải tạo cơ thể + Thánh di vật) + Đọa lạc +1
                 if (card.type === CardType.H_ATTACK) {
                     let hBonus = this.statusMods?.hDamageBonus || 0;
                     const bodyMods = typeof BlackMarketSystem !== 'undefined' ? BlackMarketSystem.getBattleMods() : {};
                     if (bodyMods.hDamageBonus > 0) hBonus += bodyMods.hDamageBonus;
-                    // 🔧 圣遗物H伤害加成
+                    // 🔧 Thưởng sát thương H từ Thánh di vật
                     if (this.relicMods?.hDamageBonus > 0) hBonus += this.relicMods.hDamageBonus;
                     if (hBonus > 0) {
-                        damage += hBonus; // 直接加数值
-                        this.addLog(`[回合${this.turn}] 💗 H伤害+${hBonus}`);
+                        damage += hBonus; // Cộng trực tiếp vào chỉ số
+                        this.addLog(`[Lượt ${this.turn}] 💗 Sát thương H +${hBonus}`);
                     }
-                    // H技能使用时堕落值+1
+                    // Khi dùng kỹ năng H, điểm đọa lạc +1
                     PlayerState.corruption += 1;
                     PlayerState.save();
                     PlayerState.updateDisplay();
-                    this.addLog(`[回合${this.turn}] 💜 堕落值+1 (${PlayerState.corruption})`);
+                    this.addLog(`[Lượt ${this.turn}] 💜 Đọa lạc +1 (${PlayerState.corruption})`);
                 }
 
-                // 🔧 应用敌人防御力debuff（束缚）
+                // 🔧 Áp dụng Debuff phòng thủ của kẻ địch (Trói buộc)
                 let enemyDefense = this.currentEnemy.defense || 0;
                 this.enemyDebuffs.forEach(d => {
                     if (d.debuffType === 'defense') {
                         enemyDefense = Math.max(0, enemyDefense - d.value);
                     }
-                    // 🔧 防御归零效果（见龙卸甲）
+                    // 🔧 Hiệu ứng Phòng thủ về 0 (Kiến Long Tạ Giáp)
                     if (d.debuffType === 'defenseZero') {
                         enemyDefense = 0;
                     }
@@ -4370,12 +4325,12 @@ const BattleSystem = {
                 this.currentEnemy.currentHp -= damage;
                 totalDamageDealt += damage;
 
-                // 🔥 显示打击效果
+                // 🔥 Hiển thị hiệu ứng đánh trúng
                 if (damage > 0) {
                     this.showHitEffect(damage, damage >= 15);
                 }
 
-                // 🔧 多段攻击处理（支持 hitCount 和 hits）
+                // 🔧 Xử lý tấn công nhiều lần (hỗ trợ cả hitCount và hits)
                 const hitCount = card.hitCount || card.hits || 1;
                 if (hitCount > 1) {
                     for (let i = 1; i < hitCount; i++) {
@@ -4385,144 +4340,144 @@ const BattleSystem = {
                     }
                 }
 
-                // 🔧 毒伤效果（支持 poisonDamage/poisonDuration 和 dotDamage/duration 两种写法）
+                // 🔧 Hiệu ứng sát thương độc/theo thời gian (Hỗ trợ cả hai cách viết poisonDamage/poisonDuration và dotDamage/duration)
                 const dotDmg = card.poisonDamage || card.dotDamage;
                 const dotDur = card.poisonDuration || card.duration;
                 if (dotDmg && dotDur) {
                     this.enemyDebuffs.push({
-                        name: '持续伤害',
+                        name: 'Sát thương duy trì',
                         debuffType: 'poison',
                         value: dotDmg,
                         remainingTurns: dotDur
                     });
-                    this.addLog(`[回合${this.turn}] 🧪 敌人中毒 ${dotDmg}伤害/${dotDur}回合`);
+                    this.addLog(`[Lượt ${this.turn}] 🧪 Kẻ địch trúng độc ${dotDmg} sát thương / ${dotDur} lượt`);
                 }
 
-                // 🔧 攻击/H攻击卡附带的debuff效果（如减攻击、减防御）
+                // 🔧 Hiệu ứng Debuff đi kèm thẻ Tấn công/Tấn công H (như giảm công, giảm thủ)
                 if (card.debuffType && card.debuffValue && card.debuffDuration) {
                     this.enemyDebuffs.push({
-                        name: card.debuffType === 'attack' ? '攻击削弱' : (card.debuffType === 'defense' ? '防御削弱' : '削弱'),
+                        name: card.debuffType === 'attack' ? 'Suy yếu tấn công' : (card.debuffType === 'defense' ? 'Suy yếu phòng thủ' : 'Suy yếu'),
                         debuffType: card.debuffType,
                         value: card.debuffValue,
                         remainingTurns: card.debuffDuration
                     });
-                    const debuffName = card.debuffType === 'attack' ? '攻击' : (card.debuffType === 'defense' ? '防御' : card.debuffType);
-                    this.addLog(`[回合${this.turn}] 💫 敌人${debuffName}-${card.debuffValue} (${card.debuffDuration}回合)`);
+                    const debuffName = card.debuffType === 'attack' ? 'Tấn công' : (card.debuffType === 'defense' ? 'Phòng thủ' : card.debuffType);
+                    this.addLog(`[Lượt ${this.turn}] 💫 Kẻ địch ${debuffName} -${card.debuffValue} (${card.debuffDuration} lượt)`);
                 }
 
-                // 🔧 防御归零效果（见龙卸甲）
+                // 🔧 Hiệu ứng Phòng thủ về 0 (Kiến Long Tạ Giáp)
                 if (card.debuffType === 'defenseZero' && card.debuffDuration) {
                     this.enemyDebuffs.push({
-                        name: '防御归零',
+                        name: 'Phòng thủ về 0',
                         debuffType: 'defenseZero',
-                        value: 999, // 用于标记防御归零
+                        value: 999, // Dùng để đánh dấu phòng thủ về 0
                         remainingTurns: card.debuffDuration
                     });
-                    this.addLog(`[回合${this.turn}] 💋 敌人防御归零！(${card.debuffDuration}回合)`);
+                    this.addLog(`[Lượt ${this.turn}] 💋 Phòng thủ kẻ địch về 0! (${card.debuffDuration} lượt)`);
                 }
 
-                // 🔧 生命汲取（遗物效果）
+                // 🔧 Hút sinh mệnh (Hiệu ứng Thánh di vật)
                 if (this.relicMods?.lifesteal > 0 && totalDamageDealt > 0) {
                     const heal = this.relicMods.lifesteal;
                     PlayerState.hp = Math.min(PlayerState.maxHp, PlayerState.hp + heal);
-                    this.addLog(`[回合${this.turn}] 🦷 生命汲取+${heal}HP`);
+                    this.addLog(`[Lượt ${this.turn}] 🦷 Hút sinh mệnh +${heal} HP`);
                 }
-                // 🔧 攻击卡/H攻击卡也可能附带护甲（如禁忌祈祷）
+                // 🔧 Thẻ Tấn công/Tấn công H cũng có thể đi kèm giáp (ví dụ: Lời cầu nguyện cấm kỵ)
                 if (card.armorGain) {
                     this.playerArmor += card.armorGain;
-                    this.addLog(`[回合${this.turn}] 🛡️ 获得护甲+${card.armorGain}`);
+                    this.addLog(`[Lượt ${this.turn}] 🛡️ Nhận Giáp +${card.armorGain}`);
                 }
                 break;
 
             case CardType.HEAL:
                 let healAmount = card.value;
-                // 🔧 治疗加成（遗物效果）
+                // 🔧 Thưởng trị liệu (Hiệu ứng Thánh di vật)
                 if (this.relicMods?.healBonus > 0) {
                     healAmount += this.relicMods.healBonus;
                 }
                 PlayerState.hp = Math.min(PlayerState.maxHp, PlayerState.hp + healAmount);
-                // 🔧 治疗卡也可能附带护甲
+                // 🔧 Thẻ Trị liệu cũng có thể đi kèm giáp
                 if (card.armorGain) {
                     this.playerArmor += card.armorGain;
-                    this.addLog(`[回合${this.turn}] 🛡️ 额外护甲+${card.armorGain}`);
+                    this.addLog(`[Lượt ${this.turn}] 🛡️ Giáp cộng thêm +${card.armorGain}`);
                 }
                 break;
 
             case CardType.ARMOR:
                 this.playerArmor += card.value;
-                // 🔧 反伤护甲
+                // 🔧 Giáp phản sát thương
                 if (card.reflect) {
                     this.playerBuffs.push({
-                        name: '反伤',
+                        name: 'Phản sát thương',
                         buffType: 'reflect',
                         value: card.reflect,
                         remainingTurns: 1
                     });
-                    this.addLog(`[回合${this.turn}] 🪞 反伤${card.reflect}已激活`);
+                    this.addLog(`[Lượt ${this.turn}] 🪞 Phản sát thương ${card.reflect} đã kích hoạt`);
                 }
                 break;
 
             case CardType.BUFF:
                 this.playerBuffs.push({ ...card, remainingTurns: card.duration || 1 });
-                // 🔧 Buff卡也可能附带护甲
+                // 🔧 Thẻ Buff cũng có thể đi kèm giáp
                 if (card.armorGain) {
                     this.playerArmor += card.armorGain;
                 }
-                // 🔧 draw类型buff立即抽牌
+                // 🔧 Buff loại draw sẽ rút bài ngay lập tức
                 if (card.buffType === 'draw' && card.value > 0) {
                     this.drawCards(card.value);
-                    this.addLog(`[回合${this.turn}] 🃏 额外抽${card.value}张牌`);
+                    this.addLog(`[Lượt ${this.turn}] 🃏 Rút thêm ${card.value} lá bài`);
                 }
                 break;
 
             case CardType.DEBUFF:
                 this.enemyDebuffs.push({ ...card, remainingTurns: card.duration || 1 });
-                // 🔧 Debuff卡也可能附带护甲
+                // 🔧 Thẻ Debuff cũng có thể đi kèm giáp
                 if (card.armorGain) {
                     this.playerArmor += card.armorGain;
                 }
                 break;
         }
 
-        // 🔧 通用：造成伤害后抽牌
+        // 🔧 Chung: Rút bài sau khi gây sát thương
         if (card.drawCards && card.drawCards > 0) {
             this.drawCards(card.drawCards);
-            this.addLog(`[回合${this.turn}] 🃏 抽${card.drawCards}张牌`);
+            this.addLog(`[Lượt ${this.turn}] 🃏 Rút ${card.drawCards} lá bài`);
         }
 
-        // 🔧 通用：获取能量（如奥术智慧）
+        // 🔧 Chung: Nhận năng lượng (ví dụ: Trí tuệ Bí thuật)
         if (card.gainEnergy && card.gainEnergy > 0) {
             this.currentEnergy += card.gainEnergy;
-            console.log('[战斗] 能量变化:', this.currentEnergy - card.gainEnergy, '+', card.gainEnergy, '=', this.currentEnergy);
-            this.addLog(`[回合${this.turn}] ⚡ 能量+${card.gainEnergy} (当前:${this.currentEnergy})`);
+            console.log('[Trận đấu] Thay đổi năng lượng:', this.currentEnergy - card.gainEnergy, '+', card.gainEnergy, '=', this.currentEnergy);
+            this.addLog(`[Lượt ${this.turn}] ⚡ Năng lượng +${card.gainEnergy} (Hiện tại: ${this.currentEnergy})`);
         }
 
-        // 🔧 通用：获取金币（如捡漏）
+        // 🔧 Chung: Nhận vàng (ví dụ: Nhặt nhạnh)
         if (card.goldGain && card.goldGain > 0) {
             PlayerState.gold += card.goldGain;
             PlayerState.save();
             PlayerState.updateDisplay();
-            this.addLog(`[回合${this.turn}] 💰 金币+${card.goldGain} (当前:${PlayerState.gold})`);
+            this.addLog(`[Lượt ${this.turn}] 💰 Vàng +${card.goldGain} (Hiện tại: ${PlayerState.gold})`);
         }
 
-        // 🔧 通用：自我治疗（如圣光审判、魅魔技能等）
+        // 🔧 Chung: Tự hồi phục (ví dụ: Phán quyết Thánh quang, kỹ năng Mị ma, v.v.)
         if (card.healSelf && card.healSelf > 0) {
             const healAmount = card.healSelf;
             PlayerState.hp = Math.min(PlayerState.maxHp, PlayerState.hp + healAmount);
             PlayerState.save();
-            this.addLog(`[回合${this.turn}] 💚 恢复${healAmount}HP (当前:${PlayerState.hp}/${PlayerState.maxHp})`);
+            this.addLog(`[Lượt ${this.turn}] 💚 Khôi phục ${healAmount} HP (Hiện tại: ${PlayerState.hp}/${PlayerState.maxHp})`);
             this.showHealEffect(healAmount, true);
         }
 
-        // 🆕 应用卡牌词缀效果
+        // 🆕 Áp dụng hiệu ứng thuộc tính (affix) của thẻ bài
         if (card.affix) {
             this.applyCardAffix(card, totalDamageDealt);
         }
     },
 
-    // 结束回合
+    // Kết thúc lượt
     endTurn: function () {
-        // 🔧 毒伤处理（在敌人行动前）
+        // 🔧 Xử lý sát thương độc (trước khi kẻ địch hành động)
         let poisonDamage = 0;
         this.enemyDebuffs.forEach(d => {
             if (d.debuffType === 'poison') {
@@ -4531,69 +4486,69 @@ const BattleSystem = {
         });
         if (poisonDamage > 0) {
             this.currentEnemy.currentHp -= poisonDamage;
-            this.addLog(`[回合${this.turn}] 🧪 毒伤造成${poisonDamage}点伤害`);
+            this.addLog(`[Lượt ${this.turn}] 🧪 Độc tính gây ra ${poisonDamage} điểm sát thương`);
         }
 
-        // 检查敌人是否死亡
+        // Kiểm tra kẻ địch đã chết chưa
         if (this.checkBattleEnd()) return;
 
-        // 敌人回合
+        // Lượt của kẻ địch
         this.enemyTurn();
 
-        // 检查战斗是否结束
+        // Kiểm tra trận đấu kết thúc chưa
         if (this.checkBattleEnd()) return;
 
-        // 🔧 汇总本回合使用的普通技能
+        // 🔧 Tổng hợp các kỹ năng thường đã sử dụng trong lượt này
         if (this.turnActions && this.turnActions.length > 0) {
             const actionSummary = this.turnActions.join('、');
-            this.addLog(`[回合${this.turn}] ⚔️ 使用了：${actionSummary}`);
-            this.turnActions = []; // 清空
+            this.addLog(`[Lượt ${this.turn}] ⚔️ Đã sử dụng: ${actionSummary}`);
+            this.turnActions = []; // Xóa trắng
         }
 
-        // 新回合
+        // Lượt mới
         this.turn++;
         this.currentEnergy = PlayerState.energy;
-        // 🆕 费用Buff加成
+        // 🆕 Thưởng năng lượng từ Buff
         this.playerBuffs.forEach(b => {
             if (b.buffType === 'energy' && b.value > 0) {
                 this.currentEnergy += b.value;
-                // this.addLog(`[回合${this.turn}] ⚡ 额外费用+${b.value}`); // 可选日志
+                // this.addLog(`[Lượt ${this.turn}] ⚡ Năng lượng cộng thêm +${b.value}`); // Log tùy chọn
             }
         });
-        this.playerArmor = 0; // 玩家护甲每回合重置
-        this.enemyArmor = 0;  // 🔧 敌人护甲也每回合重置
+        this.playerArmor = 0; // Giáp người chơi reset mỗi lượt
+        this.enemyArmor = 0;  // 🔧 Giáp kẻ địch cũng reset mỗi lượt
 
-        // 🆕 处理魔法少女变身回合
+        // 🆕 Xử lý lượt biến thân của Thiếu nữ Ma pháp
         if (this.isTransformed) {
             this.transformTurnsLeft--;
             if (this.transformTurnsLeft <= 0) {
-                // 变身结束，判定失败
+                // Hết thời gian biến thân, xử thua
                 this.isTransformed = false;
-                this.addLog(`[回合${this.turn}] 💔 变身结束，力竭倒下... (´;ω;｀)`);
-                this.battleLog.push(`--- 战斗结果: 失败 ---`);
-                this.battleLog.push(`变身时间耗尽，魔法少女力竭倒下`);
+                this.addLog(`[Lượt ${this.turn}] 💔 Biến thân kết thúc, kiệt sức ngã xuống... (´;ω;｀)`);
+                this.battleLog.push(`--- Kết quả trận đấu: Thất bại ---`);
+                this.battleLog.push(`Thời gian biến thân đã hết, Thiếu nữ Ma pháp kiệt sức ngã xuống`);
                 this.transformDefeat();
                 return;
             } else {
-                this.addLog(`[回合${this.turn}] ✨ 变身剩余${this.transformTurnsLeft}回合 (ﾉ◕ヮ◕)ﾉ`);
+                this.addLog(`[Lượt ${this.turn}] ✨ Biến thân còn lại ${this.transformTurnsLeft} lượt (ﾉ◕ヮ◕)ﾉ`);
             }
         }
 
-        // 🔧 每回合回复HP（开局状态效果）
+        // 🔧 Hồi HP mỗi lượt (Hiệu ứng trạng thái ban đầu)
         let hpRegen = this.statusMods?.hpPerTurn || 0;
-        // 加上身体改造效果
+        // Cộng thêm hiệu ứng cải tạo cơ thể
         const bodyMods = typeof BlackMarketSystem !== 'undefined' ? BlackMarketSystem.getBattleMods() : {};
         if (bodyMods.hpPerTurn > 0) hpRegen += bodyMods.hpPerTurn;
 
         if (hpRegen > 0) {
             PlayerState.hp = Math.min(PlayerState.maxHp, PlayerState.hp + hpRegen);
-            this.addLog(`[回合${this.turn}] ♻️ 回合恢复+${hpRegen}HP`);
-            this.showHealEffect(hpRegen, true); // 🔥 显示治疗效果
+            this.addLog(`[Lượt ${this.turn}] ♻️ Khôi phục mỗi lượt +${hpRegen} HP`);
+            this.showHealEffect(hpRegen, true); // 🔥 Hiển thị hiệu ứng hồi máu
         }
 
-        // 🔧 抽牌（基础2张 + 遗物加成 + draw buff加成）
+        // 🔧 Rút bài (Cơ bản 2 lá + Thưởng Thánh di vật + Thưởng draw buff)
         let drawCount = 2;
-        // draw类型buff加成
+        // Thưởng từ draw buff
         this.playerBuffs.forEach(b => {
             if (b.buffType === 'draw' && b.value > 0) {
                 drawCount += b.value;
@@ -4604,28 +4559,28 @@ const BattleSystem = {
         }
         this.drawCards(drawCount);
 
-        // 🔧 手牌上限检查：超过8张需要弃牌
+        // 🔧 Kiểm tra giới hạn bài trên tay: Quá 8 lá cần phải bỏ bớt
         const MAX_HAND_SIZE = 8;
         if (this.hand.length > MAX_HAND_SIZE) {
             const discardCount = this.hand.length - MAX_HAND_SIZE;
-            // 不记录到战斗日志，由弃牌UI直接提示玩家
+            // Không ghi vào battle log, giao diện bỏ bài sẽ thông báo trực tiếp cho người chơi
             this.showDiscardSelection(discardCount);
-            return; // 等待玩家选择弃牌后再继续
+            return; // Chờ người chơi chọn bài bỏ rồi mới tiếp tục
         }
 
-        // 更新Buff/Debuff
+        // Cập nhật Buff/Debuff
         this.updateBuffs();
 
-        // 刷新UI
+        // Làm mới giao diện
         this.updateBattleUI();
     },
 
-    // 🆕 显示弃牌选择界面
+    // 🆕 Hiển thị giao diện chọn bài bỏ
     showDiscardSelection: function (discardCount) {
         this.pendingDiscardCount = discardCount;
         this.selectedDiscards = [];
 
-        // 创建弃牌选择界面
+        // Tạo giao diện chọn bài bỏ
         const modal = document.createElement('div');
         modal.id = 'discardSelectionModal';
         modal.style.cssText = `
@@ -4640,10 +4595,10 @@ const BattleSystem = {
                         border: 2px solid #8b4513; border-radius: 12px; padding: 20px; max-width: 90%; max-height: 80vh;
                         box-shadow: 0 0 30px rgba(139, 69, 19, 0.5);">
                 <h3 style="color: #ffd700; text-align: center; margin-bottom: 15px; font-size: 18px;">
-                    ⚠️ 手牌超过上限！请选择 <span style="color: #ff4757;">${discardCount}</span> 张牌丢弃
+                    ⚠️ Bài trên tay vượt quá giới hạn! Vui lòng chọn <span style="color: #ff4757;">${discardCount}</span> lá để bỏ
                 </h3>
                 <div style="color: #aaa; text-align: center; margin-bottom: 15px; font-size: 12px;">
-                    已选择: <span id="discardSelectedCount" style="color: #ff4757;">0</span> / ${discardCount}
+                    Đã chọn: <span id="discardSelectedCount" style="color: #ff4757;">0</span> / ${discardCount}
                 </div>
                 <div id="discardCardContainer" style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; 
                             max-height: 50vh; overflow-y: auto; padding: 10px;">
@@ -4654,7 +4609,7 @@ const BattleSystem = {
                             style="padding: 10px 30px; background: #444; color: #666; border: 2px solid #666;
                                    border-radius: 8px; cursor: not-allowed; font-size: 14px; font-weight: bold;"
                             disabled>
-                        确认弃牌
+                        Xác nhận bỏ bài
                     </button>
                 </div>
             </div>
@@ -4663,7 +4618,7 @@ const BattleSystem = {
         document.body.appendChild(modal);
     },
 
-    // 生成弃牌选择卡牌HTML
+// Tạo HTML hiển thị thẻ bài chọn bỏ
     generateDiscardCardHTML: function () {
         let html = '';
         this.hand.forEach((card, index) => {
@@ -4674,7 +4629,7 @@ const BattleSystem = {
                      style="width: 100px; padding: 10px; background: linear-gradient(180deg, rgba(40, 30, 25, 0.95) 0%, rgba(25, 18, 15, 0.98) 100%);
                             border: 2px solid ${typeColor}; border-radius: 8px; cursor: pointer; text-align: center;
                             transition: all 0.2s ease;">
-                    <div style="color: #c9b896; font-size: 11px; margin-bottom: 5px;">[${card.cost || 0}费]</div>
+                    <div style="color: #c9b896; font-size: 11px; margin-bottom: 5px;">[${card.cost || 0} phí]</div>
                     <div style="color: #ddd; font-weight: bold; font-size: 13px; margin-bottom: 5px;">${card.name}</div>
                     <div style="color: ${typeColor}; font-size: 20px; margin-bottom: 5px;">
                         ${card.type === CardType.ATTACK || card.type === CardType.H_ATTACK ? card.value || 0 :
@@ -4690,7 +4645,7 @@ const BattleSystem = {
         return html;
     },
 
-    // 切换弃牌选择
+    // Chuyển đổi trạng thái chọn thẻ bài bỏ
     toggleDiscardCard: function (index) {
         const cardEl = document.querySelector(`.discard-card-option[data-index="${index}"]`);
         if (!cardEl) return;
@@ -4698,13 +4653,13 @@ const BattleSystem = {
         const isSelected = this.selectedDiscards.includes(index);
 
         if (isSelected) {
-            // 取消选择
+            // Hủy chọn
             this.selectedDiscards = this.selectedDiscards.filter(i => i !== index);
             cardEl.style.border = `2px solid ${CardTypeColors[this.hand[index].type] || '#666'}`;
             cardEl.style.background = 'linear-gradient(180deg, rgba(40, 30, 25, 0.95) 0%, rgba(25, 18, 15, 0.98) 100%)';
             cardEl.style.transform = 'scale(1)';
         } else {
-            // 添加选择（如果未达上限）
+            // Thêm vào danh sách chọn (nếu chưa đạt giới hạn)
             if (this.selectedDiscards.length < this.pendingDiscardCount) {
                 this.selectedDiscards.push(index);
                 cardEl.style.border = '3px solid #ff4757';
@@ -4713,7 +4668,7 @@ const BattleSystem = {
             }
         }
 
-        // 更新选择计数和按钮状态
+        // Cập nhật số lượng chọn và trạng thái nút bấm
         const countEl = document.getElementById('discardSelectedCount');
         const confirmBtn = document.getElementById('confirmDiscardBtn');
         if (countEl) countEl.textContent = this.selectedDiscards.length;
@@ -4735,58 +4690,58 @@ const BattleSystem = {
         }
     },
 
-    // 确认弃牌
+    // Xác nhận bỏ bài
     confirmDiscard: function () {
         if (this.selectedDiscards.length !== this.pendingDiscardCount) return;
 
-        // 按索引从大到小排序，避免删除时索引错位
+        // Sắp xếp chỉ số từ lớn đến nhỏ để tránh bị sai lệch chỉ số khi xóa
         const sortedIndices = [...this.selectedDiscards].sort((a, b) => b - a);
 
-        // 将选中的牌移到弃牌堆
+        // Chuyển các lá bài đã chọn vào chồng bài bỏ
         sortedIndices.forEach(index => {
             const discardedCard = this.hand.splice(index, 1)[0];
             this.discardPile.push(discardedCard);
-            this.addLog(`[回合${this.turn}] 🗑️ 弃掉了 ${discardedCard.name}`);
+            this.addLog(`[Lượt ${this.turn}] 🗑️ Đã bỏ lá ${discardedCard.name}`);
         });
 
-        // 关闭弃牌选择界面
+        // Đóng giao diện chọn bài bỏ
         const modal = document.getElementById('discardSelectionModal');
         if (modal) modal.remove();
 
-        // 清理状态
+        // Dọn dẹp trạng thái
         this.pendingDiscardCount = 0;
         this.selectedDiscards = [];
 
-        // 继续回合流程
+        // Tiếp tục tiến trình lượt đấu
         this.updateBuffs();
         this.updateBattleUI();
     },
 
-    // 敌人回合（基于意图系统）
+    // Lượt của kẻ địch (dựa trên hệ thống ý định)
     enemyTurn: function () {
-        // 🔧 检查是否被冻结/跳过回合
+        // 🔧 Kiểm tra xem có bị đóng băng/nhảy lượt không
         const skipDebuff = this.enemyDebuffs.find(d => d.debuffType === 'skip' || d.debuffType === 'freeze');
         if (skipDebuff) {
-            this.addLog(`[回合${this.turn}] ❄️ ${this.currentEnemy.name}被冻结，跳过回合`);
+            this.addLog(`[Lượt ${this.turn}] ❄️ ${this.currentEnemy.name} bị đóng băng, nhảy qua lượt`);
             this.generateNextIntent();
             return;
         }
 
-        // 🆕 处理Boss每回合触发的特殊机制
+        // 🆕 Xử lý các cơ chế đặc biệt của Boss kích hoạt mỗi lượt
         this.processBossMechanics();
 
-        // 🆕 召唤物攻击
+        // 🆕 Vật triệu hồi tấn công
         this.processMinionsAttack();
 
         const intent = this.currentIntent;
         if (!intent) {
-            // 如果没有意图，默认攻击
+            // Nếu không có ý định, mặc định là tấn công
             this.executeEnemyAttack(this.currentEnemy.attack);
             this.generateNextIntent();
             return;
         }
 
-        // 🆕 根据意图类型执行行动
+        // 🆕 Thực hiện hành động theo loại ý định
         switch (intent.type) {
             case EnemyIntentType.ATTACK:
                 this.executeEnemyAttack(intent.value);
@@ -4794,45 +4749,45 @@ const BattleSystem = {
 
             case EnemyIntentType.DEFEND:
                 this.enemyArmor += intent.value;
-                this.addLog(`[回合${this.turn}] 🛡️ ${this.currentEnemy.name}进入防御姿态，护甲+${intent.value}`);
+                this.addLog(`[Lượt ${this.turn}] 🛡️ ${this.currentEnemy.name} vào thế phòng ngự, giáp +${intent.value}`);
                 break;
 
             case EnemyIntentType.BUFF:
                 this.enemyBuffs.push({
-                    name: '狂暴',
+                    name: 'Cuồng bạo',
                     buffType: intent.buffType || 'attack',
                     value: intent.value,
                     remainingTurns: intent.duration || 2
                 });
-                this.addLog(`[回合${this.turn}] 💪 ${this.currentEnemy.name}增强了自己，攻击+${intent.value}(${intent.duration}回合)`);
+                this.addLog(`[Lượt ${this.turn}] 💪 ${this.currentEnemy.name} cường hóa bản thân, tấn công +${intent.value} (${intent.duration} lượt)`);
                 break;
 
             case EnemyIntentType.DEBUFF:
                 this.playerDebuffs.push({
-                    name: '虚弱',
+                    name: 'Suy yếu',
                     debuffType: intent.debuffType || 'attack',
                     value: intent.value,
                     remainingTurns: intent.duration || 2
                 });
-                this.addLog(`[回合${this.turn}] 💫 你被削弱了，${intent.debuffType === 'defense' ? '防御' : '攻击'}-${intent.value}(${intent.duration}回合)`);
+                this.addLog(`[Lượt ${this.turn}] 💫 Bạn bị suy yếu, ${intent.debuffType === 'defense' ? 'phòng thủ' : 'tấn công'} -${intent.value} (${intent.duration} lượt)`);
                 break;
 
             case EnemyIntentType.CHARGE:
                 if (intent.isRelease) {
-                    // 蓄力释放 - 造成大伤害
-                    this.addLog(`[回合${this.turn}] 🔥 ${this.currentEnemy.name}释放蓄力攻击！`);
+                    // Giải phóng tích lực - gây sát thương lớn
+                    this.addLog(`[Lượt ${this.turn}] 🔥 ${this.currentEnemy.name} giải phóng đòn tích lực!`);
                     this.executeEnemyAttack(intent.value);
                     this.chargeLevel = 0;
                 } else {
-                    // 开始蓄力
-                    this.addLog(`[回合${this.turn}] 🔥 ${this.currentEnemy.name}开始蓄力，下回合将释放大招！`);
+                    // Bắt đầu tích lực
+                    this.addLog(`[Lượt ${this.turn}] 🔥 ${this.currentEnemy.name} bắt đầu tích lực, lượt sau sẽ tung tuyệt chiêu!`);
                 }
                 break;
 
             case EnemyIntentType.HEAL:
                 const healAmount = Math.min(intent.value, this.currentEnemy.hp - this.currentEnemy.currentHp);
                 this.currentEnemy.currentHp += healAmount;
-                this.addLog(`[回合${this.turn}] ❤️ ${this.currentEnemy.name}恢复了${healAmount}点生命`);
+                this.addLog(`[Lượt ${this.turn}] ❤️ ${this.currentEnemy.name} hồi phục ${healAmount} điểm sinh mệnh`);
                 break;
 
             case EnemyIntentType.SPECIAL:
@@ -4843,67 +4798,67 @@ const BattleSystem = {
                 this.executeEnemyAttack(this.currentEnemy.attack);
         }
 
-        // 🔧 敌人释放H技能（诅咒卡牌）
+        // 🔧 Kẻ địch giải phóng kỹ năng H (Thẻ Nguyền rủa)
         this.enemyHSkill();
 
-        // 🆕 生成下回合意图
+        // 🆕 Tạo ý định cho lượt sau
         this.generateNextIntent();
     },
 
-    // 🆕 执行敌人攻击（提取出来复用）
+    // 🆕 Thực thi tấn công của kẻ địch (tách ra để tái sử dụng)
     executeEnemyAttack: function (baseDamage) {
         let damage = baseDamage;
 
-        // 应用敌人buff加成
+        // Áp dụng thưởng từ buff của kẻ địch
         (this.enemyBuffs || []).forEach(buff => {
             if (buff.buffType === 'attack') {
                 damage += buff.value;
             }
         });
 
-        // 🔧 检查命中率（致盲）
+        // 🔧 Kiểm tra tỷ lệ chính xác (Mù)
         const accuracyDebuff = this.enemyDebuffs.find(d => d.debuffType === 'accuracy');
         if (accuracyDebuff) {
             const hitChance = 100 - accuracyDebuff.value;
             if (Math.random() * 100 > hitChance) {
-                this.addLog(`[回合${this.turn}] 💨 敌人攻击落空`);
+                this.addLog(`[Lượt ${this.turn}] 💨 Đòn tấn công của kẻ địch bị hụt`);
                 return;
             }
         }
 
-        // 应用debuff减攻
+        // Áp dụng debuff giảm công
         this.enemyDebuffs.forEach(debuff => {
             if (debuff.debuffType === 'attack') {
                 damage = Math.max(0, damage - debuff.value);
             }
         });
 
-        // 🔧 应用开局状态效果：敌人攻击减少
+        // 🔧 Áp dụng hiệu ứng trạng thái ban đầu: Giảm tấn công kẻ địch
         if (this.statusMods?.enemyAttackReduce > 0) {
             damage = Math.max(0, damage - this.statusMods.enemyAttackReduce);
         }
 
-        // 🔧 应用身体改造效果：敌人攻击减少
+        // 🔧 Áp dụng hiệu ứng cải tạo cơ thể: Giảm tấn công kẻ địch
         const bodyMods = typeof BlackMarketSystem !== 'undefined' ? BlackMarketSystem.getBattleMods() : {};
         if (bodyMods.enemyAttackReduce > 0) {
             damage = Math.max(0, damage - bodyMods.enemyAttackReduce);
         }
 
-        // 计算护甲吸收
+        // Tính toán hấp thụ của giáp
         if (this.playerArmor > 0) {
             const absorbed = Math.min(this.playerArmor, damage);
             this.playerArmor -= absorbed;
             damage -= absorbed;
         }
 
-        // 🔧 应用玩家防御
+        // 🔧 Áp dụng phòng thủ của người chơi
         let defenseMod = this.statusMods?.defense || 0;
         (this.playerBuffs || []).forEach(b => {
             if (b.buffType === 'defense') {
                 defenseMod += b.value;
             }
         });
-        // 应用玩家debuff减防
+        // Áp dụng debuff giảm thủ của người chơi
         (this.playerDebuffs || []).forEach(d => {
             if (d.debuffType === 'defense') {
                 defenseMod -= d.value;
@@ -4912,17 +4867,17 @@ const BattleSystem = {
         const defenseWithMod = Math.max(0, PlayerState.defense + defenseMod);
         damage = Math.max(0, damage - defenseWithMod);
 
-        // 🔧 应用特殊状态受伤增加
+        // 🔧 Áp dụng tăng sát thương nhận vào từ trạng thái đặc biệt
         if (this.statusMods?.damageTaken > 0) {
             damage = Math.floor(damage * (1 + this.statusMods.damageTaken / 100));
         }
 
-        // 🔧 应用身体改造效果：受伤增加
+        // 🔧 Áp dụng tăng sát thương nhận vào từ cải tạo cơ thể
         if (bodyMods.damageTaken > 0) {
             damage = Math.floor(damage * (1 + bodyMods.damageTaken / 100));
         }
 
-        // 🔧 反伤处理
+        // 🔧 Xử lý phản sát thương
         let reflectDamage = this.relicMods?.reflect || 0;
         const reflectBuff = this.playerBuffs.find(b => b.buffType === 'reflect');
         if (reflectBuff) {
@@ -4930,48 +4885,48 @@ const BattleSystem = {
         }
         if (reflectDamage > 0 && damage > 0) {
             this.currentEnemy.currentHp -= reflectDamage;
-            this.addLog(`[回合${this.turn}] 🪞 反伤${reflectDamage}点`);
+            this.addLog(`[Lượt ${this.turn}] 🪞 Phản sát thương ${reflectDamage} điểm`);
         }
 
         PlayerState.hp -= damage;
 
-        // 🔥 显示玩家受伤效果
+        // 🔥 Hiển thị hiệu ứng người chơi bị trúng đòn
         if (damage > 0) {
             this.showPlayerHitEffect(damage);
         }
 
-        // 🔧 Boss吸血机制
+        // 🔧 Cơ chế hút máu của Boss
         const mech = this.currentEnemy.specialMechanic;
         if (mech && mech.trigger === 'onAttack' && mech.effect?.healPercent > 0) {
             const healAmount = Math.floor(damage * mech.effect.healPercent);
             if (healAmount > 0) {
                 this.currentEnemy.currentHp = Math.min(this.currentEnemy.hp, this.currentEnemy.currentHp + healAmount);
-                this.addLog(`[回合${this.turn}] 🩸 ${mech.name}恢复${healAmount}HP`);
+                this.addLog(`[Lượt ${this.turn}] 🩸 ${mech.name} hồi phục ${healAmount} HP`);
             }
         }
 
-        // 🔧 受伤时回复HP（开局状态 + 身体改造）
+        // 🔧 Hồi HP khi bị trúng đòn (Trạng thái ban đầu + Cải tạo cơ thể)
         if (damage > 0) {
             let hpOnHit = this.statusMods?.hpOnHit || 0;
             if (bodyMods.hpOnHit > 0) hpOnHit += bodyMods.hpOnHit;
             if (hpOnHit > 0) {
                 PlayerState.hp = Math.min(PlayerState.maxHp, PlayerState.hp + hpOnHit);
-                this.addLog(`[回合${this.turn}] 😵 受虐回复+${hpOnHit}HP`);
+                this.addLog(`[Lượt ${this.turn}] 😵 Khôi phục do bị hành hạ +${hpOnHit} HP`);
             }
         }
     },
 
-    // 🆕 处理Boss特殊机制
+    // 🆕 Xử lý cơ chế đặc biệt của Boss
     processBossMechanics: function () {
         const mech = this.currentEnemy.specialMechanic;
         if (!mech) return;
 
-        // 初始化冷却
+        // Khởi tạo thời gian hồi (cooldown)
         if (this.mechanicCooldowns[mech.id] === undefined) {
             this.mechanicCooldowns[mech.id] = 0;
         }
 
-        // 回合冷却触发
+        // Kích hoạt theo lượt hồi
         if (mech.trigger === 'turnCooldown') {
             this.mechanicCooldowns[mech.id]++;
             if (this.mechanicCooldowns[mech.id] >= mech.cooldown) {
@@ -4979,11 +4934,11 @@ const BattleSystem = {
                 this.mechanicCooldowns[mech.id] = 0;
             }
         }
-        // 每回合触发
+        // Kích hoạt mỗi lượt
         else if (mech.trigger === 'everyTurn') {
             this.executeSpecialMechanic(mech);
         }
-        // 血量触发
+        // Kích hoạt theo lượng máu
         else if (mech.trigger === 'hpBelow50' && !this.currentEnemy.mechanicTriggered50) {
             if (this.currentEnemy.currentHp <= this.currentEnemy.hp * 0.5) {
                 this.currentEnemy.mechanicTriggered50 = true;
@@ -4998,102 +4953,102 @@ const BattleSystem = {
         }
     },
 
-    // 🆕 执行Boss特殊机制
+    // 🆕 Thực thi cơ chế đặc biệt của Boss
     executeSpecialMechanic: function (mech) {
         if (!mech || !mech.effect) return;
 
         const effect = mech.effect;
 
         switch (mech.id) {
-            case 'charm': // 魅惑：随机打出玩家手牌
+            case 'charm': // Mê hoặc: Ngẫu nhiên đánh ra thẻ trên tay người chơi
                 if (this.hand.length > 0) {
                     const randomIndex = Math.floor(Math.random() * this.hand.length);
                     const card = this.hand[randomIndex];
-                    this.addLog(`[回合${this.turn}] 💋 ${mech.name}触发！你不由自主地使用了【${card.name}】`);
-                    // 强制使用（不消耗能量）
-                    this.currentEnergy += card.cost; // 补回消耗
+                    this.addLog(`[Lượt ${this.turn}] 💋 ${mech.name} kích hoạt! Bạn không tự chủ được mà sử dụng lá 【${card.name}】`);
+                    // Ép buộc sử dụng (không tiêu tốn năng lượng)
+                    this.currentEnergy += card.cost; // Bù lại năng lượng tiêu hao
                     this.playCard(randomIndex);
                 }
                 break;
 
-            case 'bind': // 束缚：封锁手牌
+            case 'bind': // Trói buộc: Khóa thẻ bài trên tay
                 if (this.hand.length > 0) {
                     const randomIndex = Math.floor(Math.random() * this.hand.length);
                     const card = this.hand[randomIndex];
                     if (!card.locked) {
                         card.locked = true;
                         card.lockedTurns = effect.duration || 2;
-                        this.addLog(`[回合${this.turn}] 🐙 ${mech.name}触发！【${card.name}】被封锁${card.lockedTurns}回合`);
+                        this.addLog(`[Lượt ${this.turn}] 🐙 ${mech.name} kích hoạt! Lá 【${card.name}】 bị khóa trong ${card.lockedTurns} lượt`);
                     }
                 }
                 break;
 
-            case 'spawn': // 召唤
+            case 'spawn': // Triệu hồi
                 this.minions.push({
-                    name: '触手幼体',
+                    name: 'Xúc tu non',
                     hp: effect.minionHp || 15,
                     attack: effect.minionAttack || 5,
                     icon: '🐙'
                 });
-                this.addLog(`[回合${this.turn}] 🌱 ${mech.name}触发！召唤了一只触手幼体`);
+                this.addLog(`[Lượt ${this.turn}] 🌱 ${mech.name} kích hoạt! Triệu hồi một Xúc tu non`);
                 break;
 
-            case 'enrage': // 狂暴
+            case 'enrage': // Cuồng bạo
                 if (effect.attackBonus > 0) {
                     const bonus = Math.floor(this.currentEnemy.attack * effect.attackBonus);
                     this.currentEnemy.attack += bonus;
-                    this.addLog(`[回合${this.turn}] 🔥 ${mech.name}触发！${this.currentEnemy.name}进入狂暴状态，攻击+${bonus}！`);
+                    this.addLog(`[Lượt ${this.turn}] 🔥 ${mech.name} kích hoạt! ${this.currentEnemy.name} vào trạng thái cuồng bạo, tấn công +${bonus}!`);
                 }
                 break;
 
-            case 'dragonBreath': // 龙息
+            case 'dragonBreath': // Long tức
                 if (effect.damageMultiplier > 0) {
                     const breathDamage = Math.floor(this.currentEnemy.attack * effect.damageMultiplier);
-                    this.addLog(`[回合${this.turn}] 🔥 ${mech.name}触发！造成${breathDamage}点伤害！`);
+                    this.addLog(`[Lượt ${this.turn}] 🔥 ${mech.name} kích hoạt! Gây ra ${breathDamage} điểm sát thương!`);
                     this.executeEnemyAttack(breathDamage);
                 }
                 break;
 
-            case 'corruptionAura': // 堕落光环（在onHit触发时处理）
+            case 'corruptionAura': // Hào quang đọa lạc (Xử lý khi trúng đòn - onHit)
                 break;
 
-            case 'divineJudgment': // 神圣审判
+            case 'divineJudgment': // Thánh phán
                 if (effect.fixedDamage > 0) {
                     PlayerState.hp -= effect.fixedDamage;
-                    this.addLog(`[回合${this.turn}] ✝️ ${mech.name}触发！造成${effect.fixedDamage}点固定伤害！`);
+                    this.addLog(`[Lượt ${this.turn}] ✝️ ${mech.name} kích hoạt! Gây ra ${effect.fixedDamage} điểm sát thương cố định!`);
                     this.showPlayerHitEffect(effect.fixedDamage);
                 }
                 break;
 
-            case 'ancientRoar': // 远古咆哮
+            case 'ancientRoar': // Tiếng gầm cổ đại
                 this.isSilenced = true;
-                this.addLog(`[回合${this.turn}] 📢 ${mech.name}触发！你被震慑，下回合无法使用卡牌！`);
+                this.addLog(`[Lượt ${this.turn}] 📢 ${mech.name} kích hoạt! Bạn bị kinh động, lượt sau không thể sử dụng thẻ bài!`);
                 break;
 
-            case 'regeneration': // 自然再生
+            case 'regeneration': // Tái sinh tự nhiên
                 const healAmount = Math.floor(this.currentEnemy.hp * (effect.healPercent || 0.05));
                 this.currentEnemy.currentHp = Math.min(this.currentEnemy.hp, this.currentEnemy.currentHp + healAmount);
-                this.addLog(`[回合${this.turn}] 🌿 ${mech.name}触发！恢复${healAmount}HP`);
+                this.addLog(`[Lượt ${this.turn}] 🌿 ${mech.name} kích hoạt! Hồi phục ${healAmount} HP`);
                 break;
 
-            case 'webTrap': // 蛛网陷阱
+            case 'webTrap': // Bẫy tơ nhện
                 this.drawReduction = effect.value || 2;
-                this.addLog(`[回合${this.turn}] 🕸️ ${mech.name}触发！下回合抽牌-${this.drawReduction}`);
+                this.addLog(`[Lượt ${this.turn}] 🕸️ ${mech.name} kích hoạt! Lượt sau rút bài -${this.drawReduction}`);
                 break;
 
-            case 'voidRift': // 虚空裂隙
+            case 'voidRift': // Khe nứt hư không
                 if (Math.random() < (effect.chance || 0.2) && this.discardPile.length > 0) {
                     const removedCard = this.discardPile.splice(Math.floor(Math.random() * this.discardPile.length), 1)[0];
-                    this.addLog(`[回合${this.turn}] 🌀 ${mech.name}触发！【${removedCard.name}】被虚空吞噬！`);
+                    this.addLog(`[Lượt ${this.turn}] 🌀 ${mech.name} kích hoạt! Lá 【${removedCard.name}】 bị hư không nuốt chửng!`);
                 }
                 break;
 
-            case 'lifeSteal': // 生命汲取（在攻击时处理）
+            case 'lifeSteal': // Hút sinh mệnh (Xử lý khi tấn công)
                 break;
         }
     },
 
-    // 🆕 处理召唤物攻击
+    // 🆕 Xử lý vật triệu hồi tấn công
     processMinionsAttack: function () {
         if (!this.minions || this.minions.length === 0) return;
 
@@ -5101,27 +5056,27 @@ const BattleSystem = {
             if (minion.hp > 0) {
                 const damage = Math.max(0, minion.attack - PlayerState.defense);
                 PlayerState.hp -= damage;
-                this.addLog(`[回合${this.turn}] ${minion.icon} ${minion.name}攻击，造成${damage}点伤害`);
+                this.addLog(`[Lượt ${this.turn}] ${minion.icon} ${minion.name} tấn công, gây ra ${damage} điểm sát thương`);
             }
         });
 
-        // 移除死亡的召唤物
+        // Loại bỏ vật triệu hồi đã chết
         this.minions = this.minions.filter(m => m.hp > 0);
     },
 
-    // 敌人释放H技能
+    // Kẻ địch giải phóng kỹ năng H
     enemyHSkill: function () {
-        // 🔧 每回合15%几率释放H技能
+        // 🔧 Mỗi lượt có 15% tỷ lệ giải phóng kỹ năng H
         if (Math.random() > 0.15) return;
 
-        // 随机选择一张诅咒卡
+        // Ngẫu nhiên chọn một thẻ nguyền rủa
         const curseCard = CurseCardLibrary[Math.floor(Math.random() * CurseCardLibrary.length)];
         if (!curseCard) return;
 
-        // 计算诅咒伤害（诅咒是魔法攻击，护甲只能挡一半）
+        // Tính toán sát thương nguyền rủa (Nguyền rủa là tấn công ma pháp, giáp chỉ chặn được một nửa)
         let curseDamage = curseCard.damage;
 
-        // 护甲只能吸收一半诅咒伤害
+        // Giáp chỉ hấp thụ được một nửa sát thương nguyền rủa
         if (this.playerArmor > 0) {
             const maxAbsorb = Math.floor(curseDamage / 2);
             const absorbed = Math.min(this.playerArmor, maxAbsorb);
@@ -5129,7 +5084,7 @@ const BattleSystem = {
             curseDamage -= absorbed;
         }
 
-        // 防御减伤（诅咒穿透50%防御）
+        // Giảm sát thương từ phòng thủ (Nguyền rủa xuyên 50% phòng thủ)
         let defenseMod = this.statusMods?.defense || 0;
         (this.playerBuffs || []).forEach(b => {
             if (b.buffType === 'defense') defenseMod += b.value;
@@ -5137,59 +5092,59 @@ const BattleSystem = {
         const defenseWithMod = Math.floor((PlayerState.defense + defenseMod) / 2);
         curseDamage = Math.max(0, curseDamage - defenseWithMod);
 
-        // 造成伤害
+        // Gây sát thương
         PlayerState.hp -= curseDamage;
 
-        // 🔥 诅咒伤害效果（紫色特效）
+        // 🔥 Hiệu ứng sát thương nguyền rủa (Kỹ xảo màu tím)
         if (curseDamage > 0) {
             this.showDamageNumber(curseDamage, true, false, false);
             this.shakeScreen(5);
         }
 
-        // 获取详细描述
+        // Lấy mô tả chi tiết
         const statusConfig = SpecialStatusConfig[curseCard.statusId];
         const fullDesc = statusConfig?.fullDesc || curseCard.description;
 
-        // 记录战斗日志 - 详细显示诅咒效果
-        this.addLog(`[回合${this.turn}] ${curseCard.icon} 敌人释放诅咒【${curseCard.name}】`);
+        // Ghi log trận đấu - Hiển thị chi tiết hiệu ứng nguyền rủa
+        this.addLog(`[Lượt ${this.turn}] ${curseCard.icon} Kẻ địch giải phóng nguyền rủa 【${curseCard.name}】`);
 
-        // 🔧 即使伤害为0，50%几率仍然生效（诅咒是魔法效果）
+        // 🔧 Cho dù sát thương bằng 0, vẫn có 50% tỷ lệ có hiệu lực (Nguyền rủa là hiệu ứng ma pháp)
         const curseSucceeds = curseDamage > 0 || Math.random() < 0.5;
         if (curseSucceeds) {
-            const newCurseCard = { ...curseCard, cost: 999 }; // 设置超高费用防止打出
+            const newCurseCard = { ...curseCard, cost: 999 }; // Đặt phí cực cao để ngăn người chơi đánh ra
 
-            // 添加到当前手牌
+            // Thêm vào bài trên tay hiện tại
             this.hand.push(newCurseCard);
 
-            // 添加到卡组
+            // Thêm vào bộ bài
             CardDeckManager.deck.push({ ...newCurseCard });
             saveCardDeck();
-            CardDeckManager.renderDeck(); // 🔧 刷新卡组显示
+            CardDeckManager.renderDeck(); // 🔧 Làm mới hiển thị bộ bài
 
-            // 添加特殊状态效果
+            // Thêm hiệu ứng trạng thái đặc biệt
             SpecialStatusManager.add(curseCard.statusId);
 
-            // 🔧 详细显示诅咒效果
-            this.addLog(`[回合${this.turn}] 💀 中了诅咒！${fullDesc}`);
+            // 🔧 Hiển thị chi tiết hiệu ứng nguyền rủa
+            this.addLog(`[Lượt ${this.turn}] 💀 Đã trúng nguyền rủa! ${fullDesc}`);
         } else {
-            this.addLog(`[回合${this.turn}] 🛡️ 完全格挡！诅咒未生效`);
+            this.addLog(`[Lượt ${this.turn}] 🛡️ Đã đỡ hoàn toàn! Lời nguyền không có hiệu lực`);
         }
     },
 
-    // 更新Buff/Debuff
+    // Cập nhật Buff/Debuff
     updateBuffs: function () {
         this.playerBuffs = this.playerBuffs.filter(b => {
             b.remainingTurns--;
             return b.remainingTurns > 0;
         });
 
-        // 🔧 更新敌人buff（如狂暴）
+        // 🔧 Cập nhật buff kẻ địch (như Cuồng bạo)
         this.enemyBuffs = (this.enemyBuffs || []).filter(b => {
             b.remainingTurns--;
             return b.remainingTurns > 0;
         });
 
-        // 🔧 更新玩家debuff（如虚弱）
+        // 🔧 Cập nhật debuff người chơi (như Suy yếu)
         this.playerDebuffs = (this.playerDebuffs || []).filter(d => {
             d.remainingTurns--;
             return d.remainingTurns > 0;
@@ -5197,9 +5152,9 @@ const BattleSystem = {
 
         this.enemyDebuffs = this.enemyDebuffs.filter(d => {
             d.remainingTurns--;
-            // DOT伤害（不记录日志）
+            // Sát thương duy trì (DOT - không ghi log)
             if (d.debuffType === 'dot' && d.remainingTurns >= 0) {
-                // 🔧 修复：DOT类型使用dotDamage字段而不是value
+                // 🔧 Sửa lỗi: Loại DOT dùng trường dotDamage thay vì value
                 const dotDmg = d.dotDamage || d.value || 0;
                 this.currentEnemy.currentHp -= dotDmg;
             }
@@ -5207,7 +5162,7 @@ const BattleSystem = {
         });
     },
 
-    // 检查战斗是否结束
+    // Kiểm tra trận đấu kết thúc chưa
     checkBattleEnd: function () {
         if (this.currentEnemy.currentHp <= 0) {
             this.victory();
@@ -5220,64 +5175,64 @@ const BattleSystem = {
         return false;
     },
 
-    // 胜利
+    // Chiến thắng
     victory: function () {
-        // 🔧 修复：在战斗结束前，先汇总本回合未记录的技能使用（解决一回合击杀不记录日志的问题）
+        // 🔧 Sửa lỗi: Trước khi kết thúc, tổng hợp các kỹ năng chưa ghi log trong lượt này (Giải quyết vấn đề kết liễu trong 1 lượt không ghi log)
         if (this.turnActions && this.turnActions.length > 0) {
             this.turnActions.forEach(actionName => {
-                this.addLog(`使用 [${actionName}]`);
+                this.addLog(`Sử dụng [${actionName}]`);
             });
-            this.turnActions = []; // 清空
+            this.turnActions = []; // Xóa trắng
         }
 
-        // 🔧 计算基础金币奖励并应用遗物加成
+        // 🔧 Tính toán phần thưởng vàng cơ bản và áp dụng thưởng từ Thánh di vật
         let baseReward = this.currentEnemy.type === 'boss' ? 100 : (this.currentEnemy.type === 'elite' ? 50 : 25);
-        // 应用遗物金币加成
+        // Áp dụng thưởng vàng từ Thánh di vật
         const goldBonusPercent = this.relicMods?.goldBonus || 0;
         if (goldBonusPercent > 0) {
             const bonusGold = Math.floor(baseReward * goldBonusPercent / 100);
             baseReward += bonusGold;
-            console.log('[战斗] 金币加成:', goldBonusPercent + '%', '额外金币:', bonusGold);
+            console.log('[Trận đấu] Thưởng vàng:', goldBonusPercent + '%', 'Vàng thêm:', bonusGold);
         }
         PlayerState.gold += baseReward;
-        // 注：floor++ 已移至 showRouteSelection，此处不再增加
+        // Chú ý: floor++ đã được chuyển sang showRouteSelection, không tăng tại đây nữa
         PlayerState.save();
-        saveCardDeck(); // 🔧 战斗胜利后保存卡组
+        saveCardDeck(); // 🔧 Lưu bộ bài sau khi chiến thắng
         CardDeckManager.renderDeck();
         PlayerState.updateDisplay();
 
-        // 🔧 计算战斗难度
+        // 🔧 Tính toán độ khó trận đấu
         const hpLostPercent = Math.round((1 - PlayerState.hp / PlayerState.maxHp) * 100);
-        let difficultyText = '轻松取胜';
-        if (hpLostPercent >= 70) difficultyText = '险胜，差点没命';
-        else if (hpLostPercent >= 50) difficultyText = '苦战后取胜';
-        else if (hpLostPercent >= 30) difficultyText = '艰难取胜';
-        else if (hpLostPercent >= 10) difficultyText = '小有波折';
+        let difficultyText = 'Thắng lợi dễ dàng';
+        if (hpLostPercent >= 70) difficultyText = 'Thắng suýt sao, suýt chút mất mạng';
+        else if (hpLostPercent >= 50) difficultyText = 'Thắng lợi sau trận khổ chiến';
+        else if (hpLostPercent >= 30) difficultyText = 'Thắng lợi gian nan';
+        else if (hpLostPercent >= 10) difficultyText = 'Có chút sóng gió';
 
-        // 📝 简化战斗日志：只记录结果
-        this.battleLog.push(`--- 战斗结果: 胜利 ---`);
-        this.battleLog.push(`击败${this.currentEnemy.name}，共${this.turn}回合，${difficultyText}`);
+        // 📝 Ghi log trận đấu rút gọn: Chỉ ghi kết quả
+        this.battleLog.push(`--- Kết quả trận đấu: Chiến thắng ---`);
+        this.battleLog.push(`Đánh bại ${this.currentEnemy.name}, tổng cộng ${this.turn} lượt, ${difficultyText}`);
 
-        // 🆕 词缀卡奖励（普通10%，精英50%，Boss100%保底）
+        // 🆕 Thưởng thẻ bài thuộc tính (Thường 10%, Tinh anh 50%, Boss 100% bảo đảm)
         let affixCardReward = null;
         const affixChance = this.currentEnemy.type === 'boss' ? 1.0 : (this.currentEnemy.type === 'elite' ? 0.5 : 0.1);
-        console.log('[词缀] 敌人类型:', this.currentEnemy.type, '词缀几率:', affixChance);
+        console.log('[Thuộc tính] Loại kẻ địch:', this.currentEnemy.type, 'Tỷ lệ thuộc tính:', affixChance);
 
         if (Math.random() < affixChance) {
-            // 🔧 修复：从ProfessionConfig或CardLibrary获取可用卡牌
+            // 🔧 Sửa lỗi: Lấy thẻ bài khả dụng từ ProfessionConfig hoặc CardLibrary
             let professionCards = [];
 
-            // 先尝试从PlayerState.profession获取
+            // Thử lấy từ PlayerState.profession trước
             if (PlayerState.profession?.availableCards?.length > 0) {
                 professionCards = PlayerState.profession.availableCards;
             }
-            // 如果没有，尝试从ProfessionConfig获取
+            // Nếu không có, thử lấy từ ProfessionConfig
             else if (PlayerState.profession?.id && ProfessionConfig[PlayerState.profession.id]?.availableCards) {
                 professionCards = ProfessionConfig[PlayerState.profession.id].availableCards;
             }
-            // 最后尝试使用通用卡牌库
+            // Cuối cùng thử dùng thư viện thẻ bài chung
             else {
-                // 从CardLibrary中获取所有攻击和技能卡（排除诅咒和怪物卡）
+                // Lấy tất cả thẻ tấn công và kỹ năng từ CardLibrary (loại trừ nguyền rủa và thẻ quái vật)
                 professionCards = Object.keys(CardLibrary).filter(id => {
                     const card = CardLibrary[id];
                     return card && card.type !== CardType.CURSE &&
@@ -5287,32 +5242,32 @@ const BattleSystem = {
                 });
             }
 
-            console.log('[词缀] 职业可用卡牌数:', professionCards.length);
+            console.log('[Thuộc tính] Số thẻ nghề nghiệp khả dụng:', professionCards.length);
 
             if (professionCards.length > 0) {
                 const randomCardId = professionCards[Math.floor(Math.random() * professionCards.length)];
                 const cardTemplate = CardLibrary[randomCardId];
-                console.log('[词缀] 选中卡牌ID:', randomCardId, '模板:', cardTemplate?.name);
+                console.log('[Thuộc tính] Đã chọn ID thẻ:', randomCardId, 'Mẫu:', cardTemplate?.name);
 
                 if (cardTemplate) {
                     affixCardReward = { ...cardTemplate };
                     this.addRandomAffixToCard(affixCardReward);
-                    console.log('[词缀] 生成词缀卡:', affixCardReward.name, '词缀:', affixCardReward.affix);
+                    console.log('[Thuộc tính] Tạo thẻ thuộc tính:', affixCardReward.name, 'Thuộc tính:', affixCardReward.affix);
 
-                    // 🔧 不再自动添加，而是等玩家选择
+                    // 🔧 Không tự động thêm nữa mà đợi người chơi chọn
                     this.pendingAffixCard = affixCardReward;
-                    this.battleLog.push(`🌟 发现词缀卡牌【${affixCardReward.name}】！`);
+                    this.battleLog.push(`🌟 Phát hiện thẻ bài thuộc tính 【${affixCardReward.name}】!`);
                 } else {
-                    console.warn('[词缀] 卡牌模板不存在:', randomCardId);
+                    console.warn('[Thuộc tính] Mẫu thẻ bài không tồn tại:', randomCardId);
                 }
             } else {
-                console.warn('[词缀] 没有找到可用卡牌');
+                console.warn('[Thuộc tính] Không tìm thấy thẻ bài khả dụng');
             }
         } else {
-            console.log('[词缀] 随机未触发词缀奖励');
+            console.log('[Thuộc tính] Ngẫu nhiên không kích hoạt thưởng thuộc tính');
         }
 
-        // 保存战斗结果信息
+        // Lưu thông tin kết quả trận đấu
         this.lastBattleResult = {
             enemyName: this.currentEnemy.name,
             reward: baseReward,
@@ -5322,31 +5277,31 @@ const BattleSystem = {
             affixCard: affixCardReward
         };
 
-        // 🆕 词缀卡选择UI
+        // 🆕 Giao diện chọn thẻ bài thuộc tính
         const affixCardHtml = affixCardReward ? `
             <div style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.2), rgba(251, 191, 36, 0.2)); 
                         border: 2px solid #a855f7; border-radius: 12px; padding: 20px; margin: 15px 0; text-align: center;">
                 <div style="color: #fbbf24; font-size: 16px; font-weight: bold; margin-bottom: 10px;">
-                    🌟 发现词缀卡牌！
+                    🌟 Phát hiện thẻ bài thuộc tính!
                 </div>
                 <div style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 15px; margin-bottom: 15px;">
                     <div style="color: #fff; font-size: 18px; font-weight: bold;">${affixCardReward.name}</div>
-                    <div style="color: #a855f7; font-size: 12px; margin-top: 5px;">词缀: ${affixCardReward.affix?.icon || ''} ${affixCardReward.affix?.name || ''}</div>
+                    <div style="color: #a855f7; font-size: 12px; margin-top: 5px;">Thuộc tính: ${affixCardReward.affix?.icon || ''} ${affixCardReward.affix?.name || ''}</div>
                     <div style="color: #888; font-size: 11px; margin-top: 5px;">${affixCardReward.affix?.description || ''}</div>
                     <div style="color: #aaa; font-size: 11px; margin-top: 8px; border-top: 1px solid #444; padding-top: 8px;">
-                        费用: ${affixCardReward.cost}⚡ | ${affixCardReward.description || ''}
+                        Phí: ${affixCardReward.cost}⚡ | ${affixCardReward.description || ''}
                     </div>
                 </div>
                 <div style="display: flex; gap: 15px; justify-content: center;">
                     <button onclick="BattleSystem.learnAffixCard()"
                             style="padding: 10px 25px; background: linear-gradient(135deg, #2ed573, #26de81);
                                    color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold;">
-                        ✓ 学习
+                        ✓ Học
                     </button>
                     <button onclick="BattleSystem.skipAffixCard()"
                             style="padding: 10px 25px; background: linear-gradient(135deg, #666, #444);
                                    color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">
-                        ✗ 跳过
+                        ✗ Bỏ qua
                     </button>
                 </div>
             </div>
@@ -5355,130 +5310,130 @@ const BattleSystem = {
         document.getElementById('battleModal').innerHTML = `
             <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
                 <div style="font-size: 72px; margin-bottom: 20px;">🎉</div>
-                <div style="color: #2ed573; font-size: 32px; font-weight: bold; margin-bottom: 15px;">胜利!</div>
-                <div style="color: #ffd700; font-size: 18px; margin-bottom: 10px;">战胜了 ${this.currentEnemy.name}</div>
-                <div style="color: #888; font-size: 14px; margin-bottom: 10px;">${difficultyText}，获得 ${baseReward} 金币</div>
+                <div style="color: #2ed573; font-size: 32px; font-weight: bold; margin-bottom: 15px;">Chiến thắng!</div>
+                <div style="color: #ffd700; font-size: 18px; margin-bottom: 10px;">Đã chiến thắng ${this.currentEnemy.name}</div>
+                <div style="color: #888; font-size: 14px; margin-bottom: 10px;">${difficultyText}, nhận được ${baseReward} Vàng</div>
                 ${affixCardHtml}
                 <div style="display: flex; gap: 15px; margin-top: 20px;">
                     <button onclick="BattleSystem.skipBattleStory()"
                             style="padding: 12px 30px; background: linear-gradient(135deg, #667eea, #764ba2);
                                    color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">
-                        跳过剧情
+                        Bỏ qua cốt truyện
                     </button>
                     <button onclick="BattleSystem.generateBattleStory()"
                             style="padding: 12px 30px; background: linear-gradient(135deg, #2ed573, #26de81);
                                    color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">
-                        生成剧情
+                        Tạo cốt truyện
                     </button>
                 </div>
             </div>
         `;
     },
 
-    // 🆕 学习词缀卡
+    // 🆕 Học thẻ bài thuộc tính
     learnAffixCard: function () {
         if (this.pendingAffixCard) {
             CardDeckManager.deck.push(this.pendingAffixCard);
             saveCardDeck();
             CardDeckManager.renderDeck();
 
-            // 更新UI显示
+            // Cập nhật hiển thị giao diện
             const cardName = this.pendingAffixCard.name;
             this.pendingAffixCard = null;
 
-            // 显示成功提示
+            // Hiển thị thông báo thành công
             if (typeof showNotification === 'function') {
-                showNotification(`成功学习 ${cardName}！`, 'success');
+                showNotification(`Đã học thành công ${cardName}!`, 'success');
             }
 
-            // 刷新胜利界面，移除词缀卡选择区域
+            // Làm mới giao diện chiến thắng, loại bỏ khu vực chọn thẻ thuộc tính
             this.refreshVictoryUI();
         }
     },
 
-    // 🆕 跳过词缀卡
+    // 🆕 Bỏ qua thẻ bài thuộc tính
     skipAffixCard: function () {
         if (this.pendingAffixCard) {
             const cardName = this.pendingAffixCard.name;
             this.pendingAffixCard = null;
 
             if (typeof showNotification === 'function') {
-                showNotification(`放弃了 ${cardName}`, 'info');
+                showNotification(`Đã từ bỏ ${cardName}`, 'info');
             }
 
-            // 刷新胜利界面
+            // Làm mới giao diện chiến thắng
             this.refreshVictoryUI();
         }
     },
 
-    // 🆕 刷新胜利界面（移除词缀卡选择）
+    // 🆕 Làm mới giao diện chiến thắng (Loại bỏ phần chọn thuộc tính)
     refreshVictoryUI: function () {
         const result = this.lastBattleResult;
         document.getElementById('battleModal').innerHTML = `
             <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
                 <div style="font-size: 72px; margin-bottom: 20px;">🎉</div>
-                <div style="color: #2ed573; font-size: 32px; font-weight: bold; margin-bottom: 15px;">胜利!</div>
-                <div style="color: #ffd700; font-size: 18px; margin-bottom: 10px;">战胜了 ${result.enemyName}</div>
-                <div style="color: #888; font-size: 14px; margin-bottom: 10px;">${result.difficulty}，获得 ${result.reward} 金币</div>
+                <div style="color: #2ed573; font-size: 32px; font-weight: bold; margin-bottom: 15px;">Chiến thắng!</div>
+                <div style="color: #ffd700; font-size: 18px; margin-bottom: 10px;">Đã chiến thắng ${result.enemyName}</div>
+                <div style="color: #888; font-size: 14px; margin-bottom: 10px;">${result.difficulty}, nhận được ${result.reward} Vàng</div>
                 <div style="display: flex; gap: 15px; margin-top: 20px;">
                     <button onclick="BattleSystem.skipBattleStory()"
                             style="padding: 12px 30px; background: linear-gradient(135deg, #667eea, #764ba2);
                                    color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">
-                        跳过剧情
+                        Bỏ qua cốt truyện
                     </button>
                     <button onclick="BattleSystem.generateBattleStory()"
                             style="padding: 12px 30px; background: linear-gradient(135deg, #2ed573, #26de81);
                                    color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">
-                        生成剧情
+                        Tạo cốt truyện
                     </button>
                 </div>
             </div>
         `;
     },
 
-    // 🔧 跳过战斗剧情，记录到历史
+    // 🔧 Bỏ qua cốt truyện trận đấu, ghi lại vào lịch sử
     skipBattleStory: function () {
         const result = this.lastBattleResult;
-        const historyText = `战胜了${result.enemyName}，${result.difficulty}，获得${result.reward}金币`;
+        const historyText = `Đã chiến thắng ${result.enemyName}, ${result.difficulty}, nhận được ${result.reward} vàng`;
         ACJTGame.recordToHistory(historyText);
         this.closeBattle(true);
     },
 
-    // 🔧 生成战斗剧情（包含战斗日志）
+    // 🔧 Tạo cốt truyện trận đấu (bao gồm log trận đấu)
     generateBattleStory: function () {
         const result = this.lastBattleResult;
 
-        // 📝 构建包含战斗日志的提示词
+        // 📝 Xây dựng từ khóa nhắc lệnh bao gồm log trận đấu
         const floor = PlayerState.floor || 1;
         const battleLogText = this.battleLog.join('\n');
-        const prompt = `简单跳过之前的场景，根据以下战斗日志生成战斗剧情：
+        const prompt = `Bỏ qua các cảnh trước đó một cách đơn giản, dựa trên nhật ký trận đấu sau để tạo cốt truyện chiến đấu:
 
-【尖塔第${floor}层】
-【战斗日志】
+【Tầng ${floor} của tòa tháp】
+【Nhật ký trận đấu】
 ${battleLogText}
 
-请根据上述战斗过程，生成一段生动的战斗剧情描写，不要直接描述数值，用剧情表达。`;
+Dựa trên quá trình chiến đấu trên, hãy tạo ra một đoạn miêu tả cốt truyện chiến đấu sinh động, đừng miêu tả trực tiếp các con số chỉ số, hãy dùng cốt truyện để diễn đạt.`;
 
-        // 🔧 生成剧情时不记录到重要历史和矩阵
+        // 🔧 Khi tạo cốt truyện sẽ không ghi vào lịch sử quan trọng và ma trận
         this.closeBattle(false);
         ACJTGame.sendToAI(prompt);
     },
 
-    // 失败
+    // Thất bại
     defeat: function () {
-        // 🔧 修复：在战斗结束前，先汇总本回合未记录的技能使用
+        // 🔧 Sửa lỗi: Trước khi kết thúc, tổng hợp các kỹ năng chưa ghi log
         if (this.turnActions && this.turnActions.length > 0) {
             this.turnActions.forEach(actionName => {
-                this.addLog(`使用 [${actionName}]`);
+                this.addLog(`Sử dụng [${actionName}]`);
             });
-            this.turnActions = []; // 清空
+            this.turnActions = []; // Xóa trắng
         }
 
-        // 📝 简化战斗日志：只记录结果
-        this.battleLog.push(`--- 战斗结果: 失败 ---`);
-        this.battleLog.push(`被${this.currentEnemy.name}击败，共${this.turn}回合`);
+        // 📝 Ghi log trận đấu rút gọn: Chỉ ghi kết quả
+        this.battleLog.push(`--- Kết quả trận đấu: Thất bại ---`);
+        this.battleLog.push(`Bị ${this.currentEnemy.name} đánh bại, tổng cộng ${this.turn} lượt`);
 
-        // 保存失败信息
+        // Lưu thông tin thất bại
         this.lastBattleResult = {
             enemyName: this.currentEnemy.name,
             victory: false,
@@ -5489,24 +5444,24 @@ ${battleLogText}
         document.getElementById('battleModal').innerHTML = `
             <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
                 <div style="font-size: 72px; margin-bottom: 20px;">💀</div>
-                <div style="color: #ff4757; font-size: 32px; font-weight: bold; margin-bottom: 20px;">战败...</div>
-                <div style="color: #888; font-size: 14px; margin-bottom: 30px;">你倒在了${this.currentEnemy.name}面前</div>
+                <div style="color: #ff4757; font-size: 32px; font-weight: bold; margin-bottom: 20px;">Bại trận...</div>
+                <div style="color: #888; font-size: 14px; margin-bottom: 30px;">Bạn đã gục ngã trước ${this.currentEnemy.name}</div>
                 <div style="display: flex; gap: 20px;">
                     <button onclick="BattleSystem.triggerAiChao()"
                             style="padding: 15px 40px; background: linear-gradient(135deg, #ff6b9d, #c44569);
                                    color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 16px;">
-                        艾超
+                        Bị xâm hại
                     </button>
                     <button onclick="BattleSystem.triggerBeg()"
                             style="padding: 15px 40px; background: linear-gradient(135deg, #ffd700, #ff9500);
                                    color: #333; border: none; border-radius: 8px; cursor: pointer; font-size: 16px;">
-                        求饶
+                        Cầu xin
                     </button>
                 </div>
         `;
     },
 
-    // 🆕 魔法少女变身超时失败
+    // 🆕 Thất bại do hết thời gian biến thân của Thiếu nữ Ma pháp
     transformDefeat: function () {
         this.lastBattleResult = {
             enemyName: this.currentEnemy.name,
@@ -5519,71 +5474,70 @@ ${battleLogText}
         document.getElementById('battleModal').innerHTML = `
             <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
                 <div style="font-size: 72px; margin-bottom: 20px;">💔</div>
-                <div style="color: #ff69b4; font-size: 32px; font-weight: bold; margin-bottom: 15px;">变身结束... (´;ω;｀)</div>
-                <div style="color: #ff4757; font-size: 24px; margin-bottom: 15px;">力竭倒下</div>
-                <div style="color: #888; font-size: 14px; margin-bottom: 30px;">魔法少女的变身时间已用尽，倒在了${this.currentEnemy.name}面前</div>
+                <div style="color: #ff69b4; font-size: 32px; font-weight: bold; margin-bottom: 15px;">Biến thân kết thúc... (´;ω;｀)</div>
+                <div style="color: #ff4757; font-size: 24px; margin-bottom: 15px;">Kiệt sức gục ngã</div>
+                <div style="color: #888; font-size: 14px; margin-bottom: 30px;">Thời gian biến thân của Thiếu nữ Ma pháp đã hết, bạn gục ngã trước ${this.currentEnemy.name}</div>
                 <div style="display: flex; gap: 20px;">
                     <button onclick="BattleSystem.triggerAiChao()"
                             style="padding: 15px 40px; background: linear-gradient(135deg, #ff6b9d, #c44569);
                                    color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 16px;">
-                        艾超
+                        Bị xâm hại
                     </button>
                     <button onclick="BattleSystem.triggerBeg()"
                             style="padding: 15px 40px; background: linear-gradient(135deg, #ffd700, #ff9500);
                                    color: #333; border: none; border-radius: 8px; cursor: pointer; font-size: 16px;">
-                        求饶
+                        Cầu xin
                     </button>
                 </div>
             </div>
         `;
     },
 
-    // 触发艾超（发送给AI，包含战斗日志）
-
+    // Kích hoạt bị xâm hại (Gửi cho AI, bao gồm log trận đấu)
     triggerAiChao: function () {
-        const enemyName = this.currentEnemy?.name || '未知敌人';
+        const enemyName = this.currentEnemy?.name || 'Kẻ địch chưa rõ';
 
-        // 📝 构建包含战斗日志的提示词
+        // 📝 Xây dựng từ khóa nhắc lệnh bao gồm log trận đấu
         const floor = PlayerState.floor || 1;
         const battleLogText = this.battleLog.join('\n');
-        const prompt = `简单跳过当前场景，根据以下战斗日志生成战败剧情：
+        const prompt = `Bỏ qua các cảnh trước đó một cách đơn giản, dựa trên nhật ký trận đấu sau để tạo cốt truyện bại trận:
 
-【尖塔第${floor}层】
-【战斗日志】
+【Tầng ${floor} của tòa tháp】
+【Nhật ký trận đấu】
 ${battleLogText}
 
-我被${enemyName}击败了。请根据上述战斗过程，生成一段战败后的剧情描写（被操场景）。`;
+Tôi đã bị ${enemyName} đánh bại. Dựa trên quá trình trận đấu trên, hãy tạo ra một đoạn miêu tả cốt truyện sau khi bại trận (cảnh bị xâm hại).`;
 
-        // 📝 记录到重要历史
-        ACJTGame.recordToHistory(`战败：被${enemyName}击败，遭到侵犯`);
+        // 📝 Ghi vào lịch sử quan trọng
+        ACJTGame.recordToHistory(`Bại trận: Bị ${enemyName} đánh bại và bị xâm hại`);
 
         document.getElementById('battleModal')?.remove();
         ACJTGame.sendToAI(prompt);
     },
 
-    // 触发求饶（发送给AI，包含战斗日志）
+    // Kích hoạt cầu xin (Gửi cho AI, bao gồm log trận đấu)
     triggerBeg: function () {
-        const enemyName = this.currentEnemy?.name || '未知敌人';
+        const enemyName = this.currentEnemy?.name || 'Kẻ địch chưa rõ';
 
-        // 📝 构建包含战斗日志的提示词
+        // 📝 Xây dựng từ khóa nhắc lệnh bao gồm log trận đấu
         const floor = PlayerState.floor || 1;
         const battleLogText = this.battleLog.join('\n');
-        const prompt = `简单跳过当前场景，根据以下战斗日志生成战败剧情：
+        const prompt = `Bỏ qua các cảnh trước đó một cách đơn giản, dựa trên nhật ký trận đấu sau để tạo cốt truyện bại trận:
 
-【尖塔第${floor}层】
-【战斗日志】
+【Tầng ${floor} của tòa tháp】
+【Nhật ký trận đấu】
 ${battleLogText}
 
-我被${enemyName}击败了。请根据上述战斗过程，生成一段战败后的剧情描写（求饶场景）。`;
+Tôi đã bị ${enemyName} đánh bại. Dựa trên quá trình trận đấu trên, hãy tạo ra một đoạn miêu tả cốt truyện sau khi bại trận (cảnh cầu xin).`;
 
-        // 📝 记录到重要历史
-        ACJTGame.recordToHistory(`战败：被${enemyName}击败，向其求饶`);
+        // 📝 Ghi vào lịch sử quan trọng
+        ACJTGame.recordToHistory(`Bại trận: Bị ${enemyName} đánh bại và đã cầu xin tha thứ`);
 
         document.getElementById('battleModal')?.remove();
         ACJTGame.sendToAI(prompt);
     },
 
-    // 关闭战斗
+    // Đóng giao diện chiến đấu
     closeBattle: function (showRoutes = false) {
         document.getElementById('battleModal')?.remove();
         if (showRoutes) {
@@ -5591,7 +5545,7 @@ ${battleLogText}
         }
     },
 
-    // 更新战斗UI
+    // Cập nhật UI trận đấu
     updateBattleUI: function () {
         const modal = document.getElementById('battleModal');
         if (modal) {
@@ -5599,9 +5553,9 @@ ${battleLogText}
         }
     },
 
-    // ==================== 🔥 打击感效果系统 ====================
+    // ==================== 🔥 Hệ thống hiệu ứng cảm giác tấn công ====================
 
-    // 显示伤害数字飘字
+    // Hiển thị số sát thương bay lên
     showDamageNumber: function (damage, isPlayer = false, isCrit = false, isHeal = false) {
         const container = document.getElementById('battleModal');
         if (!container) return;
@@ -5609,8 +5563,8 @@ ${battleLogText}
         const floatNum = document.createElement('div');
         floatNum.className = 'damage-float-number';
 
-        // 根据类型设置颜色和文字
-        let color = '#ff4757'; // 默认红色（伤害）
+        // Thiết lập màu sắc và văn bản dựa trên loại
+        let color = '#ff4757'; // Mặc định màu đỏ (sát thương)
         let text = `-${damage}`;
         let size = isCrit ? '36px' : '28px';
 
@@ -5622,7 +5576,7 @@ ${battleLogText}
             text = `💥${damage}`;
         }
 
-        // 根据目标位置调整
+        // Điều chỉnh vị trí dựa trên mục tiêu
         const xPos = isPlayer ? '25%' : '75%';
         const yOffset = Math.random() * 40 - 20;
 
@@ -5642,11 +5596,11 @@ ${battleLogText}
         floatNum.textContent = text;
         container.appendChild(floatNum);
 
-        // 动画结束后移除
+        // Xóa sau khi kết thúc hoạt ảnh
         setTimeout(() => floatNum.remove(), 1000);
     },
 
-    // 屏幕震动效果
+    // Hiệu ứng rung màn hình
     shakeScreen: function (intensity = 5, duration = 200) {
         const container = document.getElementById('battleModal');
         if (!container) return;
@@ -5659,7 +5613,7 @@ ${battleLogText}
         }, duration);
     },
 
-    // 目标闪烁效果
+    // Hiệu ứng nhấp nháy mục tiêu
     flashTarget: function (isPlayer = false) {
         const targetId = isPlayer ? 'playerArea' : 'enemyArea';
         const target = document.getElementById(targetId);
@@ -5671,26 +5625,26 @@ ${battleLogText}
         }, 300);
     },
 
-    // 综合打击效果（攻击敌人）
+    // Hiệu ứng đánh trúng tổng hợp (Tấn công kẻ địch)
     showHitEffect: function (damage, isCrit = false) {
         this.showDamageNumber(damage, false, isCrit);
         this.shakeScreen(isCrit ? 8 : 4);
         this.flashTarget(false);
     },
 
-    // 综合受伤效果（玩家受伤）
+    // Hiệu ứng trúng đòn tổng hợp (Người chơi bị thương)
     showPlayerHitEffect: function (damage) {
         this.showDamageNumber(damage, true);
         this.shakeScreen(6);
         this.flashTarget(true);
     },
 
-    // 治疗效果
+    // Hiệu ứng trị liệu
     showHealEffect: function (amount, isPlayer = true) {
         this.showDamageNumber(amount, isPlayer, false, true);
     },
 
-    // 🔧 获取敌人debuff显示
+    // 🔧 Lấy hiển thị Debuff của kẻ địch
     getEnemyDebuffDisplay: function () {
         if (!this.enemyDebuffs || this.enemyDebuffs.length === 0) return '';
 
@@ -5716,24 +5670,24 @@ ${battleLogText}
         this.enemyDebuffs.forEach(d => {
             const icon = debuffIcons[d.debuffType] || '❌';
             const color = debuffColors[d.debuffType] || '#ff4757';
-            const valueText = d.debuffType === 'poison' ? `${d.value}伤` : '';
+            const valueText = d.debuffType === 'poison' ? `${d.value} sát thương` : '';
             html += `<div style="background: rgba(0,0,0,0.4); border: 1px solid ${color}; 
                      border-radius: 6px; padding: 3px 8px; font-size: 10px; color: ${color};"
                      title="${d.name || d.debuffType}: ${d.value}">
-                ${icon}${valueText} ${d.remainingTurns}回合
+                ${icon}${valueText} ${d.remainingTurns} lượt
             </div>`;
         });
         html += '</div>';
         return html;
     },
 
-    // 🔧 获取玩家特殊状态显示
+// 🔧 Lấy hiển thị trạng thái đặc biệt của người chơi
     getPlayerStatusDisplay: function () {
         const mods = this.statusMods || {};
         const relicMods = this.relicMods || {};
 
         const effects = [];
-        // 基础属性修正
+        // Điều chỉnh thuộc tính cơ bản
         if (mods.attack !== 0) {
             effects.push(`<span style="color: ${mods.attack > 0 ? '#2ed573' : '#ff4757'};">⚔️${mods.attack > 0 ? '+' : ''}${mods.attack}</span>`);
         }
@@ -5741,36 +5695,36 @@ ${battleLogText}
             effects.push(`<span style="color: ${mods.defense > 0 ? '#2ed573' : '#ff4757'};">🛡️${mods.defense > 0 ? '+' : ''}${mods.defense}</span>`);
         }
         if (mods.damageTaken !== 0) {
-            effects.push(`<span style="color: #ff4757;">受伤+${mods.damageTaken}%</span>`);
+            effects.push(`<span style="color: #ff4757;">Sát thương nhận +${mods.damageTaken}%</span>`);
         }
-        // H伤害加成
+        // Thưởng sát thương H
         if (mods.hDamageBonus > 0) {
-            effects.push(`<span style="color: #ff6b9d;">💗H伤+${mods.hDamageBonus}%</span>`);
+            effects.push(`<span style="color: #ff6b9d;">💗Sát thương H +${mods.hDamageBonus}%</span>`);
         }
-        // 每回合回血
+        // Hồi máu mỗi lượt
         if (mods.hpPerTurn > 0) {
-            effects.push(`<span style="color: #2ed573;">♻️回合+${mods.hpPerTurn}HP</span>`);
+            effects.push(`<span style="color: #2ed573;">♻️Lượt +${mods.hpPerTurn}HP</span>`);
         }
-        // 受伤回血
+        // Hồi máu khi bị trúng đòn
         if (mods.hpOnHit > 0) {
-            effects.push(`<span style="color: #ffa502;">😵受击+${mods.hpOnHit}HP</span>`);
+            effects.push(`<span style="color: #ffa502;">😵Trúng đòn +${mods.hpOnHit}HP</span>`);
         }
-        // 敌人攻击减少
+        // Giảm tấn công kẻ địch
         if (mods.enemyAttackReduce > 0) {
-            effects.push(`<span style="color: #70a1ff;">🌺敌攻-${mods.enemyAttackReduce}</span>`);
+            effects.push(`<span style="color: #70a1ff;">🌺Công địch -${mods.enemyAttackReduce}</span>`);
         }
-        // 遗物效果
+        // Hiệu ứng Thánh di vật
         if (relicMods.lifesteal > 0) {
-            effects.push(`<span style="color: #ff6b81;">🦷吸血+${relicMods.lifesteal}</span>`);
+            effects.push(`<span style="color: #ff6b81;">🦷Hút máu +${relicMods.lifesteal}</span>`);
         }
         if (relicMods.healBonus > 0) {
-            effects.push(`<span style="color: #2ed573;">💚治疗+${relicMods.healBonus}</span>`);
+            effects.push(`<span style="color: #2ed573;">💚Trị liệu +${relicMods.healBonus}</span>`);
         }
         if (relicMods.drawBonus > 0) {
-            effects.push(`<span style="color: #ffd700;">🃏抽牌+${relicMods.drawBonus}</span>`);
+            effects.push(`<span style="color: #ffd700;">🃏Rút bài +${relicMods.drawBonus}</span>`);
         }
         if (relicMods.reflect > 0) {
-            effects.push(`<span style="color: #70a1ff;">🪞反伤${relicMods.reflect}</span>`);
+            effects.push(`<span style="color: #70a1ff;">🪞Phản đòn ${relicMods.reflect}</span>`);
         }
 
         if (effects.length === 0) return '';
@@ -5778,7 +5732,7 @@ ${battleLogText}
         return `
             <div style="background: linear-gradient(135deg, rgba(102,126,234,0.1), rgba(255,107,157,0.1)); 
                  border: 1px solid rgba(102,126,234,0.3); border-radius: 10px; padding: 10px; margin-bottom: 12px; text-align: center;">
-                <div style="color: #888; font-size: 11px; margin-bottom: 6px;">✨ 特殊效果</div>
+                <div style="color: #888; font-size: 11px; margin-bottom: 6px;">✨ Hiệu ứng đặc biệt</div>
                 <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; font-size: 11px;">
                     ${effects.join(' ')}
                 </div>
@@ -5786,19 +5740,19 @@ ${battleLogText}
         `;
     },
 
-    // 🔧 获取玩家有效攻击力（基础 + 状态修正 + buff - debuff）
+    // 🔧 Lấy sức tấn công thực tế (Cơ bản + Điều chỉnh trạng thái + Buff - Debuff)
     getPlayerEffectiveAttack: function () {
         let base = PlayerState.attack || 0;
         let bonus = this.statusMods?.attack || 0;
 
-        // 加上 buff 的攻击加成
+        // Cộng thưởng tấn công từ buff
         (this.playerBuffs || []).forEach(b => {
             if (b.buffType === 'attack') {
                 bonus += b.value;
             }
         });
 
-        // 🔧 减去 debuff 的攻击削弱
+        // 🔧 Trừ suy giảm tấn công từ debuff
         (this.playerDebuffs || []).forEach(d => {
             if (d.debuffType === 'attack') {
                 bonus -= d.value;
@@ -5813,19 +5767,19 @@ ${battleLogText}
         return `<span style="color: #fff; font-weight: bold;">${total}</span>`;
     },
 
-    // 🔧 获取玩家有效防御力（基础 + 状态修正 + buff - debuff）
+    // 🔧 Lấy sức phòng thủ thực tế (Cơ bản + Điều chỉnh trạng thái + Buff - Debuff)
     getPlayerEffectiveDefense: function () {
         let base = PlayerState.defense || 0;
         let bonus = this.statusMods?.defense || 0;
 
-        // 加上 buff 的防御加成
+        // Cộng thưởng phòng thủ từ buff
         (this.playerBuffs || []).forEach(b => {
             if (b.buffType === 'defense') {
                 bonus += b.value;
             }
         });
 
-        // 🔧 减去 debuff 的防御削弱
+        // 🔧 Trừ suy giảm phòng thủ từ debuff
         (this.playerDebuffs || []).forEach(d => {
             if (d.debuffType === 'defense') {
                 bonus -= d.value;
@@ -5840,7 +5794,7 @@ ${battleLogText}
         return `<span style="color: #fff; font-weight: bold;">${total}</span>`;
     },
 
-    // 🔧 获取玩家增益/减益显示（战斗属性面板内）
+    // 🔧 Hiển thị Tăng ích/Giảm ích của người chơi (trong bảng thuộc tính chiến đấu)
     getPlayerBuffDisplay: function () {
         const buffs = this.playerBuffs || [];
         const debuffs = this.playerDebuffs || [];
@@ -5849,20 +5803,20 @@ ${battleLogText}
 
         let html = '<div style="margin-top: 8px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 6px;">';
 
-        // 显示增益
+        // Hiển thị Buff
         if (buffs.length > 0) {
-            html += '<div style="color: #2ed573; font-size: 10px; margin-bottom: 4px;">✨ 增益效果</div>';
+            html += '<div style="color: #2ed573; font-size: 10px; margin-bottom: 4px;">✨ Hiệu ứng Tăng ích</div>';
             buffs.forEach(b => {
-                html += `<div style="color: #2ed573; font-size: 10px;">• ${b.name} (${b.remainingTurns}回合)</div>`;
+                html += `<div style="color: #2ed573; font-size: 10px;">• ${b.name} (${b.remainingTurns} lượt)</div>`;
             });
         }
 
-        // 🔧 显示减益
+        // 🔧 Hiển thị Debuff
         if (debuffs.length > 0) {
-            html += '<div style="color: #ff4757; font-size: 10px; margin-bottom: 4px; margin-top: 4px;">💀 减益效果</div>';
+            html += '<div style="color: #ff4757; font-size: 10px; margin-bottom: 4px; margin-top: 4px;">💀 Hiệu ứng Giảm ích</div>';
             debuffs.forEach(d => {
-                const typeText = d.debuffType === 'defense' ? '防御' : '攻击';
-                html += `<div style="color: #ff4757; font-size: 10px;">• ${d.name || '虚弱'} ${typeText}-${d.value} (${d.remainingTurns}回合)</div>`;
+                const typeText = d.debuffType === 'defense' ? 'Phòng thủ' : 'Tấn công';
+                html += `<div style="color: #ff4757; font-size: 10px;">• ${d.name || 'Suy yếu'} ${typeText} -${d.value} (${d.remainingTurns} lượt)</div>`;
             });
         }
 
@@ -5870,32 +5824,32 @@ ${battleLogText}
         return html;
     },
 
-    // 🔧 获取敌人有效攻击力（考虑 debuff 和 buff）
+    // 🔧 Lấy sức tấn công thực tế của kẻ địch (xét cả debuff và buff)
     getEnemyEffectiveAttack: function () {
         let attack = this.currentEnemy?.attack || 0;
         const originalAttack = attack;
 
-        // 🔧 应用敌人攻击力 buff（如狂暴）
+        // 🔧 Áp dụng buff tấn công của kẻ địch (như Cuồng bạo)
         (this.enemyBuffs || []).forEach(b => {
             if (b.buffType === 'attack') {
                 attack += b.value;
             }
         });
 
-        // 应用攻击力 debuff
+        // Áp dụng debuff tấn công
         (this.enemyDebuffs || []).forEach(d => {
             if (d.debuffType === 'attack') {
                 attack = Math.max(0, attack - d.value);
             }
         });
 
-        // 应用身体改造效果：敌人攻击减少
+        // Áp dụng cải tạo cơ thể: Giảm tấn công kẻ địch
         const bodyMods = typeof BlackMarketSystem !== 'undefined' ? BlackMarketSystem.getBattleMods() : {};
         if (bodyMods.enemyAttackReduce > 0) {
             attack = Math.max(0, attack - bodyMods.enemyAttackReduce);
         }
 
-        // 如果有变化，显示带增益/减益的格式
+        // Nếu có thay đổi, hiển thị định dạng kèm tăng/giảm
         if (attack > originalAttack) {
             return `${attack}<span style="color: #ff4757; font-size: 10px;">(↑${attack - originalAttack})</span>`;
         } else if (attack < originalAttack) {
@@ -5904,68 +5858,68 @@ ${battleLogText}
         return attack;
     },
 
-    // 🔧 获取敌人有效防御力（考虑 debuff）
+    // 🔧 Lấy sức phòng thủ thực tế của kẻ địch (xét debuff)
     getEnemyEffectiveDefense: function () {
         let defense = this.currentEnemy?.defense || 0;
         const originalDefense = defense;
         let isDefenseZero = false;
 
-        // 应用防御力 debuff
+        // Áp dụng debuff phòng thủ
         (this.enemyDebuffs || []).forEach(d => {
             if (d.debuffType === 'defense') {
                 defense = Math.max(0, defense - d.value);
             }
-            // 🔧 防御归零效果（见龙卸甲）
+            // 🔧 Hiệu ứng phòng thủ về 0 (Kiến Long Tạ Giáp)
             if (d.debuffType === 'defenseZero') {
                 defense = 0;
                 isDefenseZero = true;
             }
         });
 
-        // 如果防御归零，特殊显示
+        // Nếu phòng thủ về 0, hiển thị đặc biệt
         if (isDefenseZero) {
-            return `0<span style="color: #ff6b9d; font-size: 10px;">(归零)</span>`;
+            return `0<span style="color: #ff6b9d; font-size: 10px;">(Về 0)</span>`;
         }
-        // 如果有变化，显示带减益的格式
+        // Nếu có thay đổi, hiển thị định dạng kèm giảm ích
         if (defense !== originalDefense) {
             return `${defense}<span style="color: #2ed573; font-size: 10px;">(↓${originalDefense - defense})</span>`;
         }
         return defense;
     },
 
-    // 🔧 获取敌人 debuff 显示（战斗属性面板内）
+    // 🔧 Hiển thị Debuff của kẻ địch (trong bảng thuộc tính chiến đấu)
     getEnemyDebuffDisplay: function () {
         if (!this.enemyDebuffs || this.enemyDebuffs.length === 0) return '';
 
         const debuffIcons = {
             'attack': '⚔️↓',
             'defense': '🛡️↓',
-            'defenseZero': '💋',  // 见龙卸甲
+            'defenseZero': '💋',  // Kiến Long Tạ Giáp
             'dot': '🩸',
             'accuracy': '👁️↓',
             'skip': '😱'
         };
 
         let html = '<div style="margin-top: 8px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 6px;">';
-        html += '<div style="color: #ff4757; font-size: 10px; margin-bottom: 4px;">💀 负面效果</div>';
+        html += '<div style="color: #ff4757; font-size: 10px; margin-bottom: 4px;">💀 Hiệu ứng tiêu cực</div>';
         this.enemyDebuffs.forEach(d => {
             const icon = debuffIcons[d.debuffType] || '❌';
-            // 🔧 defenseZero类型特殊显示
+            // Hiển thị đặc biệt cho loại defenseZero
             if (d.debuffType === 'defenseZero') {
-                html += `<div style="color: #ff6b9d; font-size: 10px;" title="防御力归零">• ${icon} ${d.name} (${d.remainingTurns}回合)</div>`;
+                html += `<div style="color: #ff6b9d; font-size: 10px;" title="Phòng thủ về 0">• ${icon} ${d.name} (${d.remainingTurns} lượt)</div>`;
             } else {
-                // 🔧 修复：DOT类型显示dotDamage，其他类型显示value
+                // 🔧 Sửa lỗi: Loại DOT hiển thị dotDamage, các loại khác hiển thị value
                 const displayValue = d.debuffType === 'dot' ? (d.dotDamage || d.value || 0) : (d.value || 0);
-                html += `<div style="color: #ffa502; font-size: 10px;" title="${d.description}">• ${icon} ${d.name} -${displayValue} (${d.remainingTurns}回合)</div>`;
+                html += `<div style="color: #ffa502; font-size: 10px;" title="${d.description}">• ${icon} ${d.name} -${displayValue} (${d.remainingTurns} lượt)</div>`;
             }
         });
         html += '</div>';
         return html;
     },
 
-    // ==================== 🆕 卡牌词缀系统 ====================
+    // ==================== 🆕 Hệ thống Thuộc tính Thẻ bài (Affix) ====================
 
-    // 应用词缀效果
+    // Áp dụng hiệu ứng thuộc tính
     applyCardAffix: function (card, damageDealt = 0) {
         if (!card.affix) return;
 
@@ -5973,7 +5927,7 @@ ${battleLogText}
         const effect = affix.effect;
 
         switch (effect.type) {
-            case 'dot': // 持续伤害
+            case 'dot': // Sát thương duy trì
                 this.enemyDebuffs.push({
                     name: affix.name,
                     debuffType: 'dot',
@@ -5982,71 +5936,71 @@ ${battleLogText}
                     remainingTurns: effect.duration,
                     description: affix.description
                 });
-                this.addLog(`[词缀] ${affix.icon} ${affix.name}触发，造成${effect.damage}点持续伤害/${effect.duration}回合`);
+                this.addLog(`[Thuộc tính] ${affix.icon} ${affix.name} kích hoạt, gây ra ${effect.damage} điểm sát thương duy trì / ${effect.duration} lượt`);
                 break;
 
-            case 'freeze': // 冻结
+            case 'freeze': // Đóng băng
                 if (Math.random() < effect.chance) {
                     this.enemyDebuffs.push({
-                        name: '冻结',
+                        name: 'Đóng băng',
                         debuffType: 'freeze',
                         value: 1,
                         remainingTurns: effect.duration || 1,
-                        description: '无法行动'
+                        description: 'Không thể hành động'
                     });
-                    this.addLog(`[词缀] ${affix.icon} 冰冻触发！敌人被冻结${effect.duration}回合！`);
+                    this.addLog(`[Thuộc tính] ${affix.icon} Đóng băng kích hoạt! Kẻ địch bị đóng băng trong ${effect.duration} lượt!`);
                 }
                 break;
 
-            case 'lifesteal': // 吸血
+            case 'lifesteal': // Hút máu
                 if (damageDealt > 0) {
                     const heal = Math.floor(damageDealt * effect.percent);
                     if (heal > 0) {
                         PlayerState.hp = Math.min(PlayerState.maxHp, PlayerState.hp + heal);
-                        this.addLog(`[词缀] ${affix.icon} 吸血${heal}HP`);
+                        this.addLog(`[Thuộc tính] ${affix.icon} Hút máu +${heal} HP`);
                         this.showHealEffect(heal, true);
                     }
                 }
                 break;
 
-            case 'draw': // 抽牌
+            case 'draw': // Rút bài
                 this.drawCards(effect.count);
-                this.addLog(`[词缀] ${affix.icon} 迅捷触发，抽${effect.count}张牌`);
+                this.addLog(`[Thuộc tính] ${affix.icon} Tấn tốc kích hoạt, rút thêm ${effect.count} lá bài`);
                 break;
 
-            case 'armor': // 护甲
+            case 'armor': // Giáp
                 this.playerArmor += effect.value;
-                this.addLog(`[词缀] ${affix.icon} 坚固触发，护甲+${effect.value}`);
+                this.addLog(`[Thuộc tính] ${affix.icon} Kiên cố kích hoạt, giáp +${effect.value}`);
                 break;
 
-            case 'heal': // 治疗
+            case 'heal': // Trị liệu
                 PlayerState.hp = Math.min(PlayerState.maxHp, PlayerState.hp + effect.value);
-                this.addLog(`[词缀] ${affix.icon} 祝福触发，恢复${effect.value}HP`);
+                this.addLog(`[Thuộc tính] ${affix.icon} Chúc phúc kích hoạt, khôi phục ${effect.value} HP`);
                 this.showHealEffect(effect.value, true);
                 break;
 
-            case 'empower': // 强化（增加效果但增加堕落）
+            case 'empower': // Cường hóa (tăng hiệu quả nhưng tăng đọa lạc)
                 PlayerState.corruption += effect.corruption;
                 PlayerState.save();
                 PlayerState.updateDisplay();
-                this.addLog(`[词缀] ${affix.icon} 诅咒触发，效果+50%，堕落+${effect.corruption}`);
+                this.addLog(`[Thuộc tính] ${affix.icon} Lời nguyền kích hoạt, hiệu quả +50%, đọa lạc +${effect.corruption}`);
                 break;
 
-            case 'echo': // 回响
+            case 'echo': // Vang vọng
                 if (Math.random() < effect.chance) {
-                    this.addLog(`[词缀] ${affix.icon} 回响触发！效果再次发动！`);
-                    // 创建卡牌副本并移除词缀，防止无限循环
+                    this.addLog(`[Thuộc tính] ${affix.icon} Vang vọng kích hoạt! Hiệu ứng được phát động thêm lần nữa!`);
+                    // Tạo bản sao thẻ bài và gỡ thuộc tính để tránh vòng lặp vô hạn
                     const cardCopy = { ...card, affix: null };
                     this.executeCard(cardCopy);
                 }
                 break;
 
-            case 'random': // 混沌
+            case 'random': // Hỗn độn
                 const otherAffixes = Object.values(CardAffixConfig).filter(a => a.id !== 'chaos');
                 if (otherAffixes.length > 0) {
                     const randomAffix = otherAffixes[Math.floor(Math.random() * otherAffixes.length)];
-                    this.addLog(`[词缀] 🌀 混沌触发 ${randomAffix.icon}${randomAffix.name}效果！`);
-                    // 使用随机词缀效果
+                    this.addLog(`[Thuộc tính] 🌀 Hỗn độn kích hoạt hiệu ứng ${randomAffix.icon}${randomAffix.name}!`);
+                    // Sử dụng hiệu ứng thuộc tính ngẫu nhiên
                     const tempCard = { affix: randomAffix };
                     this.applyCardAffix(tempCard, damageDealt);
                 }
@@ -6054,45 +6008,45 @@ ${battleLogText}
         }
     },
 
-    // 为随机卡牌添加词缀（战斗奖励时调用）
+    // Thêm thuộc tính ngẫu nhiên cho thẻ bài (gọi khi nhận phần thưởng trận đấu)
     addRandomAffixToCard: function (card) {
-        console.log('[词缀] addRandomAffixToCard被调用, 卡牌:', card?.name);
+        console.log('[Thuộc tính] addRandomAffixToCard được gọi, thẻ bài:', card?.name);
 
-        // 已有词缀的卡牌不再添加
+        // Thẻ đã có thuộc tính sẽ không thêm nữa
         if (card.affix) {
-            console.log('[词缀] 卡牌已有词缀，跳过');
+            console.log('[Thuộc tính] Thẻ bài đã có thuộc tính, bỏ qua');
             return card;
         }
 
-        // 诅咒卡不能获得词缀
+        // Thẻ nguyền rủa không thể nhận thuộc tính
         if (card.type === CardType.CURSE) {
-            console.log('[词缀] 诅咒卡不能获得词缀');
+            console.log('[Thuộc tính] Thẻ Nguyền rủa không thể nhận thuộc tính');
             return card;
         }
 
-        // 按稀有度权重选择词缀
+        // Chọn thuộc tính ngẫu nhiên theo trọng số độ hiếm
         const affix = this.rollRandomAffix();
-        console.log('[词缀] rollRandomAffix返回:', affix);
+        console.log('[Thuộc tính] rollRandomAffix trả về:', affix);
 
         if (affix) {
             card.affix = affix;
-            // 在名称前添加词缀图标
+            // Thêm biểu tượng thuộc tính vào trước tên
             card.originalName = card.name;
             card.name = `${affix.icon}${card.name}`;
-            console.log('[词缀] 成功添加词缀! 新名称:', card.name);
+            console.log('[Thuộc tính] Đã thêm thành công thuộc tính! Tên mới:', card.name);
         } else {
-            console.warn('[词缀] rollRandomAffix返回null!');
+            console.warn('[Thuộc tính] rollRandomAffix trả về null!');
         }
         return card;
     },
 
-    // 按权重随机词缀
+    // Ngẫu nhiên thuộc tính theo trọng số
     rollRandomAffix: function () {
         const affixes = Object.values(CardAffixConfig);
         const totalWeight = Object.values(AffixRarityWeights).reduce((a, b) => a + b, 0);
         let random = Math.random() * totalWeight;
 
-        // 先确定稀有度
+        // Xác định độ hiếm trước
         let selectedRarity = 'common';
         for (const [rarity, weight] of Object.entries(AffixRarityWeights)) {
             random -= weight;
@@ -6102,14 +6056,14 @@ ${battleLogText}
             }
         }
 
-        // 从该稀有度中随机选一个
+        // Chọn ngẫu nhiên một thuộc tính trong độ hiếm đó
         const rarityAffixes = affixes.filter(a => a.rarity === selectedRarity);
         if (rarityAffixes.length === 0) return null;
 
         return rarityAffixes[Math.floor(Math.random() * rarityAffixes.length)];
     },
 
-    // 获取词缀显示文本
+    // Lấy văn bản hiển thị của thuộc tính
     getAffixDisplayText: function (affix) {
         if (!affix) return '';
         const rarityColors = {
@@ -6123,18 +6077,18 @@ ${battleLogText}
     }
 };
 
-// ==================== 商店系统 ====================
+// ==================== Hệ thống Cửa hàng ====================
 const ShopSystem = {
     currentCards: [],
     currentRelics: [],
-    purchasedItems: [], // 🔧 记录本次购买的物品
+    purchasedItems: [], // 🔧 Ghi lại các vật phẩm đã mua lần này
 
-    // 打开商店
+    // Mở cửa hàng
     openShop: function () {
-        // 随机生成商品（只卖圣遗物，不卖卡牌）
+        // Tạo hàng ngẫu nhiên (chỉ bán Thánh di vật, không bán thẻ bài)
         this.currentCards = [];
         this.currentRelics = this.generateShopRelics(5);
-        this.purchasedItems = []; // 🔧 清空购买记录
+        this.purchasedItems = []; // 🔧 Xóa lịch sử mua
 
         const modal = document.createElement('div');
         modal.id = 'shopModal';
@@ -6149,26 +6103,26 @@ const ShopSystem = {
         document.body.appendChild(modal);
     },
 
-    // 生成商店卡牌（根据职业和堕落值过滤）
+    // Tạo thẻ bài trong cửa hàng (lọc theo nghề nghiệp và đọa lạc)
     generateShopCards: function (count) {
         const cards = [];
         const playerCorruption = PlayerState.corruption || 0;
         const playerProfession = PlayerState.profession?.id;
 
-        // 过滤可用卡牌
+        // Lọc thẻ khả dụng
         const available = CardLibrary.filter(card => {
-            // 检查职业限制
+            // Kiểm tra giới hạn nghề nghiệp
             if (card.professionRequired && card.professionRequired !== playerProfession) {
                 return false;
             }
-            // 检查堕落值解锁条件（H技能卡）
+            // Kiểm tra điều kiện đọa lạc (đối với thẻ kỹ năng H)
             if (card.corruptionRequired !== undefined && card.corruptionRequired > playerCorruption) {
                 return false;
             }
             return true;
         });
 
-        // 如果是修女职业，额外添加修女专属卡到池子
+        // Nếu là nghề Tu nữ, thêm các thẻ đặc thù Tu nữ vào danh sách
         if (playerProfession === 'nun') {
             const prof = ProfessionConfig.nun;
             if (prof.professionCardPool) {
@@ -6181,7 +6135,7 @@ const ShopSystem = {
             }
         }
 
-        // 随机选择卡牌
+        // Chọn thẻ ngẫu nhiên
         const shuffled = [...available].sort(() => Math.random() - 0.5);
         for (let i = 0; i < count && shuffled.length > 0; i++) {
             const card = { ...shuffled.splice(0, 1)[0] };
@@ -6191,7 +6145,7 @@ const ShopSystem = {
         return cards;
     },
 
-    // 生成商店圣遗物
+    // Tạo Thánh di vật trong cửa hàng
     generateShopRelics: function (count) {
         const relics = [];
         const available = Object.values(RelicConfig).filter(r => !PlayerState.relics.includes(r.id));
@@ -6202,7 +6156,7 @@ const ShopSystem = {
         return relics;
     },
 
-    // 生成商店HTML
+    // Tạo HTML Cửa hàng
     generateShopHTML: function () {
         let cardsHtml = '';
         this.currentCards.forEach((card, index) => {
@@ -6210,8 +6164,8 @@ const ShopSystem = {
             const canBuy = PlayerState.gold >= card.shopPrice;
             cardsHtml += `
                 <div style="background: linear-gradient(135deg, rgba(30,30,50,0.95) 0%, rgba(20,20,35,0.98) 100%);
-                           border: 2px solid ${canBuy ? typeColor : '#333'}; border-radius: 8px;
-                           padding: 15px; width: 120px; text-align: center; opacity: ${canBuy ? 1 : 0.5};">
+                            border: 2px solid ${canBuy ? typeColor : '#333'}; border-radius: 8px;
+                            padding: 15px; width: 120px; text-align: center; opacity: ${canBuy ? 1 : 0.5};">
                     <div style="color: #ffd700; font-size: 11px; text-align: right;">${card.cost}⚡</div>
                     <div style="color: #fff; font-size: 14px; font-weight: bold; margin-bottom: 5px;">${card.name}</div>
                     <div style="color: ${typeColor}; font-size: 20px; font-weight: bold; margin-bottom: 8px;">${card.value}</div>
@@ -6226,11 +6180,11 @@ const ShopSystem = {
         });
 
         let relicsHtml = '';
-        // 🔧 计算商店折扣
+        // 🔧 Tính toán giảm giá cửa hàng
         const shopDiscount = this.getShopDiscount();
 
         this.currentRelics.forEach((relic, index) => {
-            // 🔧 应用商店折扣
+            // 🔧 Áp dụng giảm giá
             const discountedPrice = shopDiscount > 0
                 ? Math.floor(relic.price * (100 - shopDiscount) / 100)
                 : relic.price;
@@ -6241,8 +6195,8 @@ const ShopSystem = {
 
             relicsHtml += `
                 <div style="background: linear-gradient(135deg, rgba(50,30,50,0.95) 0%, rgba(35,20,35,0.98) 100%);
-                           border: 2px solid ${canBuy ? '#ffd700' : '#333'}; border-radius: 8px;
-                           padding: 15px; width: 140px; text-align: center; opacity: ${canBuy ? 1 : 0.5};">
+                            border: 2px solid ${canBuy ? '#ffd700' : '#333'}; border-radius: 8px;
+                            padding: 15px; width: 140px; text-align: center; opacity: ${canBuy ? 1 : 0.5};">
                     <div style="font-size: 36px; margin-bottom: 10px;">${relic.icon}</div>
                     <div style="color: #ffd700; font-size: 14px; font-weight: bold; margin-bottom: 5px;">${relic.name}</div>
                     <div style="color: #aaa; font-size: 11px; margin-bottom: 10px;">${relic.desc}</div>
@@ -6255,30 +6209,30 @@ const ShopSystem = {
             `;
         });
 
-        // 🔧 获取折扣信息
+        // 🔧 Hiển thị thông tin giảm giá
         const discountText = shopDiscount > 0
-            ? `<div style="color: #2ed573; font-size: 14px; margin-bottom: 20px;">🏷️ 商店折扣: ${shopDiscount}%</div>`
+            ? `<div style="color: #2ed573; font-size: 14px; margin-bottom: 20px;">🏷️ Giảm giá cửa hàng: ${shopDiscount}%</div>`
             : '';
 
         return `
-            <div style="color: #2ed573; font-size: 28px; font-weight: bold; margin-bottom: 10px;">🏪 商店</div>
-            <div style="color: #ffd700; font-size: 16px; margin-bottom: 10px;">💰 金币: ${PlayerState.gold}</div>
+            <div style="color: #2ed573; font-size: 28px; font-weight: bold; margin-bottom: 10px;">🏪 Cửa Hàng</div>
+            <div style="color: #ffd700; font-size: 16px; margin-bottom: 10px;">💰 Vàng: ${PlayerState.gold}</div>
             ${discountText}
             
-            <div style="color: #fff; font-size: 18px; margin-bottom: 15px;">🏆 圣遗物</div>
+            <div style="color: #fff; font-size: 18px; margin-bottom: 15px;">🏆 Cổ Vật</div>
             <div style="display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; margin-bottom: 30px; max-width: 800px;">
-                ${relicsHtml || '<div style="color: #666;">没有圣遗物出售</div>'}
+                ${relicsHtml || '<div style="color: #666;">Không có Cổ Vật nào để bán</div>'}
             </div>
             
             <button onclick="ShopSystem.closeShop()"
                     style="padding: 12px 40px; background: linear-gradient(135deg, #667eea, #764ba2);
                            color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">
-                离开商店
+                Rời khỏi cửa hàng
             </button>
         `;
     },
 
-    // 购买卡牌
+    // Mua thẻ bài
     buyCard: function (index) {
         const card = this.currentCards[index];
         if (!card || PlayerState.gold < card.shopPrice) return;
@@ -6286,7 +6240,7 @@ const ShopSystem = {
         PlayerState.gold -= card.shopPrice;
         CardDeckManager.deck.push({ ...card });
         this.currentCards.splice(index, 1);
-        this.purchasedItems.push(card.name); // 🔧 记录购买
+        this.purchasedItems.push(card.name); // 🔧 Ghi lại lịch sử mua
 
         saveCardDeck();
         PlayerState.save();
@@ -6296,12 +6250,12 @@ const ShopSystem = {
         this.refreshShopUI();
     },
 
-    // 购买圣遗物
+    // Mua Thánh di vật
     buyRelic: function (index) {
         const relic = this.currentRelics[index];
         if (!relic) return;
 
-        // 🔧 计算折扣价格
+        // 🔧 Tính giá sau khi giảm
         const shopDiscount = this.getShopDiscount();
         const discountedPrice = shopDiscount > 0
             ? Math.floor(relic.price * (100 - shopDiscount) / 100)
@@ -6311,9 +6265,9 @@ const ShopSystem = {
 
         PlayerState.gold -= discountedPrice;
         PlayerState.relics.push(relic.id);
-        this.purchasedItems.push(relic.name); // 🔧 记录购买
+        this.purchasedItems.push(relic.name); // 🔧 Ghi lại lịch sử mua
 
-        // 应用效果
+        // Áp dụng hiệu quả
         if (relic.effect.maxHp) PlayerState.maxHp += relic.effect.maxHp;
         if (relic.effect.attack) PlayerState.attack += relic.effect.attack;
         if (relic.effect.defense) PlayerState.defense += relic.effect.defense;
@@ -6329,7 +6283,7 @@ const ShopSystem = {
         this.refreshShopUI();
     },
 
-    // 🔧 获取商店折扣百分比（从遗物效果中计算）
+    // 🔧 Lấy phần trăm giảm giá cửa hàng (từ hiệu ứng Thánh di vật)
     getShopDiscount: function () {
         let totalDiscount = 0;
         (PlayerState.relics || []).forEach(relicId => {
@@ -6341,15 +6295,15 @@ const ShopSystem = {
         return totalDiscount;
     },
 
-    // 刷新商店UI
+    // Làm mới UI Cửa hàng
     refreshShopUI: function () {
         const modal = document.getElementById('shopModal');
         if (modal) modal.innerHTML = this.generateShopHTML();
     },
 
-    // 关闭商店
+    // Đóng cửa hàng
     closeShop: function () {
-        // 🔧 如果有购买物品，显示两个按钮
+        // 🔧 Nếu có mua vật phẩm, hiển thị hai lựa chọn
         if (this.purchasedItems.length > 0) {
             const modal = document.getElementById('shopModal');
             if (modal) {
@@ -6357,18 +6311,18 @@ const ShopSystem = {
                 modal.innerHTML = `
                     <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
                         <div style="font-size: 72px; margin-bottom: 20px;">🛒</div>
-                        <div style="color: #2ed573; font-size: 24px; font-weight: bold; margin-bottom: 15px;">购物完成!</div>
-                        <div style="color: #ffd700; font-size: 14px; margin-bottom: 20px;">购买了: ${itemsText}</div>
+                        <div style="color: #2ed573; font-size: 24px; font-weight: bold; margin-bottom: 15px;">Mua sắm hoàn tất!</div>
+                        <div style="color: #ffd700; font-size: 14px; margin-bottom: 20px;">Đã mua: ${itemsText}</div>
                         <div style="display: flex; gap: 15px; margin-top: 20px;">
                             <button onclick="ShopSystem.skipShopStory()"
                                     style="padding: 12px 30px; background: linear-gradient(135deg, #667eea, #764ba2);
                                            color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">
-                                跳过剧情
+                                Bỏ qua cốt truyện
                             </button>
                             <button onclick="ShopSystem.generateShopStory()"
                                     style="padding: 12px 30px; background: linear-gradient(135deg, #2ed573, #26de81);
                                            color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">
-                                生成剧情
+                                Tạo cốt truyện
                             </button>
                         </div>
                     </div>
@@ -6380,31 +6334,31 @@ const ShopSystem = {
         RouteSystem.showRouteSelection();
     },
 
-    // 🔧 跳过商店剧情
+    // 🔧 Bỏ qua cốt truyện cửa hàng
     skipShopStory: function () {
         const itemsText = this.purchasedItems.join('、');
-        const historyText = `在尖塔商店购买了${itemsText}`;
+        const historyText = `Đã mua ${itemsText} tại cửa hàng trong tòa tháp`;
         ACJTGame.recordToHistory(historyText);
         document.getElementById('shopModal')?.remove();
         RouteSystem.showRouteSelection();
     },
 
-    // 🔧 生成商店剧情
+    // 🔧 Tạo cốt truyện cửa hàng
     generateShopStory: function () {
         const itemsText = this.purchasedItems.join('、');
         const floor = PlayerState.floor || 1;
-        const prompt = `简单跳过之前的场景，生成新剧情：【尖塔第${floor}层】我在神秘商店购买了${itemsText}`;
-        // 🔧 生成剧情时不记录到重要历史和矩阵
+        const prompt = `Bỏ qua các cảnh trước đó một cách đơn giản, tạo cốt truyện mới: 【Tầng ${floor} của tòa tháp】 Tôi đã mua ${itemsText} tại cửa hàng bí ẩn`;
+        // Khi tạo cốt truyện sẽ không ghi vào lịch sử quan trọng
         document.getElementById('shopModal')?.remove();
         ACJTGame.sendToAI(prompt);
     }
 };
 
-// ==================== 温泉/休息系统 ====================
+// ==================== Hệ thống Suối nước nóng / Nghỉ ngơi ====================
 const RestSystem = {
-    // 打开温泉
+    // Mở suối nước nóng
     openRest: function () {
-        // 检查是否已有modal，有则更新内容，无则创建新的
+        // Kiểm tra modal đã tồn tại chưa, nếu có thì cập nhật, nếu không thì tạo mới
         let modal = document.getElementById('restModal');
         if (!modal) {
             modal = document.createElement('div');
@@ -6417,7 +6371,7 @@ const RestSystem = {
             document.body.appendChild(modal);
         }
 
-        // 检查是否有诅咒卡牌可删除
+        // Kiểm tra xem có thẻ Nguyền rủa nào để xóa không
         const curseCards = CardDeckManager.deck.filter(c => c.type === CardType.CURSE);
         const hasCurseCards = curseCards.length > 0;
         const canAfford = PlayerState.gold >= 50;
@@ -6425,45 +6379,45 @@ const RestSystem = {
 
         modal.innerHTML = `
             <div style="font-size: 72px; margin-bottom: 20px;">♨️</div>
-            <div style="color: #70a1ff; font-size: 28px; font-weight: bold; margin-bottom: 10px;">温泉</div>
-            <div style="color: #888; font-size: 14px; margin-bottom: 40px;">选择你想做的事情</div>
+            <div style="color: #70a1ff; font-size: 28px; font-weight: bold; margin-bottom: 10px;">Suối nước nóng</div>
+            <div style="color: #888; font-size: 14px; margin-bottom: 40px;">Hãy chọn điều bạn muốn làm</div>
             
             <div style="display: flex; gap: 20px; flex-wrap: wrap; justify-content: center;">
                 <div class="route-card" onclick="RestSystem.rest()">
                     <div class="route-icon">😴</div>
-                    <div class="route-name">休息</div>
-                    <div class="route-desc">恢复 30% 最大HP</div>
+                    <div class="route-name">Nghỉ ngơi</div>
+                    <div class="route-desc">Hồi phục 30% HP tối đa</div>
                 </div>
                 
                 <div class="route-card" onclick="RestSystem.showUpgradeCards()">
                     <div class="route-icon">⬆️</div>
-                    <div class="route-name">升级卡牌</div>
-                    <div class="route-desc">强化一张卡牌</div>
+                    <div class="route-name">Nâng cấp thẻ</div>
+                    <div class="route-desc">Cường hóa một lá bài</div>
                 </div>
                 
                 <div class="route-card" onclick="${canPurify ? 'RestSystem.showPurifyCards()' : ''}" 
                      style="${canPurify ? '' : 'opacity: 0.5; cursor: not-allowed;'}">
                     <div class="route-icon">🧹</div>
-                    <div class="route-name">净化 (50💰)</div>
-                    <div class="route-desc">${!hasCurseCards ? '无诅咒卡牌' : (!canAfford ? '金币不足' : '删除一张诅咒卡')}</div>
+                    <div class="route-name">Thanh tẩy (50💰)</div>
+                    <div class="route-desc">${!hasCurseCards ? 'Không có thẻ Nguyền rủa' : (!canAfford ? 'Không đủ vàng' : 'Xóa một thẻ Nguyền rủa')}</div>
                 </div>
             </div>
             
             <button onclick="RestSystem.closeRest()" 
                     style="margin-top: 30px; padding: 10px 40px; background: #333; color: #888; border: 1px solid #444; border-radius: 6px; cursor: pointer; font-size: 14px;">
-                关闭
+                Đóng
             </button>
         `;
     },
 
-    // 显示净化诅咒卡牌界面
+    // Hiển thị giao diện thanh tẩy thẻ Nguyền rủa
     showPurifyCards: function () {
         const curseCards = CardDeckManager.deck.filter(c => c.type === CardType.CURSE);
         if (curseCards.length === 0 || PlayerState.gold < 50) return;
 
         let cardsHtml = '';
         curseCards.forEach((card, idx) => {
-            // 找到在deck中的实际索引
+            // Tìm chỉ số thực tế trong bộ bài deck
             const deckIndex = CardDeckManager.deck.findIndex(c => c.id === card.id && c.type === CardType.CURSE);
             cardsHtml += `
                 <div onclick="RestSystem.purifyCard(${deckIndex})" 
@@ -6480,95 +6434,94 @@ const RestSystem = {
         });
 
         document.getElementById('restModal').innerHTML = `
-            <div style="color: #ff6b81; font-size: 24px; font-weight: bold; margin-bottom: 10px;">🧹 净化仪式</div>
-            <div style="color: #ffd700; font-size: 14px; margin-bottom: 10px;">💰 花费50金币删除一张诅咒卡牌</div>
-            <div style="color: #888; font-size: 12px; margin-bottom: 30px;">当前金币: ${PlayerState.gold}</div>
+            <div style="color: #ff6b81; font-size: 24px; font-weight: bold; margin-bottom: 10px;">🧹 Nghi thức Thanh tẩy</div>
+            <div style="color: #ffd700; font-size: 14px; margin-bottom: 10px;">💰 Chi tiêu 50 vàng để xóa một lá bài Nguyền rủa</div>
+            <div style="color: #888; font-size: 12px; margin-bottom: 30px;">Vàng hiện có: ${PlayerState.gold}</div>
             <div style="display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; max-width: 600px; margin-bottom: 30px;">
                 ${cardsHtml}
             </div>
             <button onclick="RestSystem.openRest()"
                     style="padding: 10px 30px; background: #333; color: #fff; border: none; border-radius: 6px; cursor: pointer;">
-                返回
+                Quay lại
             </button>
         `;
     },
 
-    // 净化（删除）诅咒卡牌
+    // Thanh tẩy (Xóa) thẻ Nguyền rủa
     purifyCard: function (deckIndex) {
         if (PlayerState.gold < 50) return;
 
         const card = CardDeckManager.deck[deckIndex];
         if (!card || card.type !== CardType.CURSE) return;
 
-        // 扣除金币
+        // Trừ vàng
         PlayerState.gold -= 50;
         PlayerState.save();
 
-        // 移除卡牌
+        // Xóa thẻ bài
         CardDeckManager.deck.splice(deckIndex, 1);
         saveCardDeck();
 
-        // 🔧 检查卡组中是否还有相同的诅咒卡
+        // 🔧 Kiểm tra trong bộ bài còn thẻ nguyền rủa cùng loại không
         const hasSameCurse = CardDeckManager.deck.some(c => c.statusId === card.statusId && c.type === CardType.CURSE);
 
-        console.log(`[温泉净化] 净化卡牌: ${card.name}, statusId: ${card.statusId}, 剩余同类诅咒: ${hasSameCurse}`);
+        console.log(`[Thanh tẩy suối nước nóng] Thanh tẩy thẻ bài: ${card.name}, statusId: ${card.statusId}, Còn nguyền rủa cùng loại: ${hasSameCurse}`);
 
-        // 🔧 只有当卡组中没有相同诅咒卡时，才移除特殊状态
+        // 🔧 Chỉ khi bộ bài không còn lá nguyền rủa cùng loại mới xóa trạng thái đặc biệt
         if (card.statusId && !hasSameCurse) {
-            // 不再检查 source，只要有匹配的 statusId 就移除
             if (SpecialStatusManager.statuses[card.statusId]) {
                 SpecialStatusManager.remove(card.statusId);
-                console.log('[温泉净化] 清除特殊状态:', card.statusId);
-                // 🔧 立即强制更新显示，以防万一
+                console.log('[Thanh tẩy suối nước nóng] Xóa trạng thái đặc biệt:', card.statusId);
+                // Cập nhật hiển thị ngay lập tức
                 SpecialStatusManager.updateDisplay();
             } else {
-                console.warn('[温泉净化] 未找到对应的特殊状态:', card.statusId);
+                console.warn('[Thanh tẩy suối nước nóng] Không tìm thấy trạng thái đặc biệt tương ứng:', card.statusId);
             }
         } else if (hasSameCurse) {
-            console.log('[温泉净化] 卡组中还有相同诅咒卡，保留特殊状态:', card.statusId);
+            console.log('[Thanh tẩy suối nước nóng] Bộ bài vẫn còn thẻ cùng loại, giữ nguyên trạng thái đặc biệt:', card.statusId);
         } else {
-            console.log('[温泉净化] 卡牌没有statusId，无法清除对应状态');
+            console.log('[Thanh tẩy suối nước nóng] Thẻ không có statusId, không thể xóa trạng thái tương ứng');
         }
 
-        // 保存净化信息
+        // Lưu thông tin thanh tẩy
         this.lastPurifyCard = card;
 
-        // 记录到重要历史
-        const historyText = `在温泉中净化了诅咒卡【${card.name}】`;
+        // Ghi vào lịch sử quan trọng
+        const historyText = `Đã thanh tẩy thẻ bài Nguyền rủa 【${card.name}】 tại suối nước nóng`;
         ACJTGame.recordToHistory(historyText);
 
-        // 🔧 显示跳过/生成剧情选项
+        // 🔧 Hiển thị lựa chọn Bỏ qua / Tạo cốt truyện
         document.getElementById('restModal').innerHTML = `
             <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
                 <div style="font-size: 72px; margin-bottom: 20px;">✨</div>
-                <div style="color: #2ed573; font-size: 24px; font-weight: bold; margin-bottom: 15px;">净化成功!</div>
-                <div style="color: #fff; font-size: 16px; margin-bottom: 10px;">${card.icon || '💀'} ${card.name} 已被清除</div>
-                <div style="color: #ffd700; font-size: 14px; margin-bottom: 20px;">-50💰 剩余: ${PlayerState.gold}金币</div>
+                <div style="color: #2ed573; font-size: 24px; font-weight: bold; margin-bottom: 15px;">Thanh tẩy thành công!</div>
+                <div style="color: #fff; font-size: 16px; margin-bottom: 10px;">${card.icon || '💀'} ${card.name} đã được xóa bỏ</div>
+                <div style="color: #ffd700; font-size: 14px; margin-bottom: 20px;">-50💰 Còn lại: ${PlayerState.gold} vàng</div>
                 <div style="display: flex; gap: 15px; justify-content: center;">
                     <button onclick="RestSystem.skipPurifyStory()"
                             style="padding: 12px 30px; background: linear-gradient(135deg, #667eea, #764ba2);
                                    color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">
-                        跳过剧情
+                        Bỏ qua cốt truyện
                     </button>
                     <button onclick="RestSystem.generatePurifyStory()"
                             style="padding: 12px 30px; background: linear-gradient(135deg, #ff6b9d, #c44569);
                                    color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">
-                        生成剧情
+                        Tạo cốt truyện
                     </button>
                 </div>
             </div>
         `;
     },
 
-    // 跳过净化剧情
+// Bỏ qua cốt truyện thanh tẩy
     skipPurifyStory: function () {
         const card = this.lastPurifyCard;
         this.closeRest();
-        // 🔧 刷新所有显示
+        // 🔧 Làm mới tất cả hiển thị
         CardDeckManager.renderDeck();
         SpecialStatusManager.updateDisplay();
         PlayerState.updateDisplay();
-        // 🔧 检查并更新催眠状态UI
+        // 🔧 Kiểm tra và cập nhật giao diện ghi đè trạng thái thôi miên
         if (window.HypnosisOptionOverride) {
             if (window.HypnosisOptionOverride.shouldOverride()) {
                 window.HypnosisOptionOverride.applyOverride();
@@ -6578,21 +6531,21 @@ const RestSystem = {
             }
         }
         if (typeof showNotification === 'function') {
-            showNotification(`✨ 净化了诅咒【${card?.name || '未知'}】`, 'success');
+            showNotification(`✨ Đã thanh tẩy nguyền rủa 【${card?.name || 'Chưa rõ'}】`, 'success');
         }
     },
 
-    // 生成净化剧情
+    // Tạo cốt truyện thanh tẩy
     generatePurifyStory: function () {
         const card = this.lastPurifyCard;
         const statusConfig = card?.statusId ? SpecialStatusConfig[card.statusId] : null;
         const fullDesc = statusConfig?.fullDesc || card?.description || '';
         this.closeRest();
-        // 🔧 刷新所有显示
+        // 🔧 Làm mới tất cả hiển thị
         CardDeckManager.renderDeck();
         SpecialStatusManager.updateDisplay();
         PlayerState.updateDisplay();
-        // 🔧 检查并更新催眠状态UI
+        // 🔧 Kiểm tra và cập nhật giao diện ghi đè trạng thái thôi miên
         if (window.HypnosisOptionOverride) {
             if (window.HypnosisOptionOverride.shouldOverride()) {
                 window.HypnosisOptionOverride.applyOverride();
@@ -6601,13 +6554,13 @@ const RestSystem = {
                 window.HypnosisOptionOverride.removeOverride();
             }
         }
-        const prompt = `简单跳过之前的场景，开始新剧情：【温泉净化】我在温泉中进行了净化仪式，花费50金币清除了身上的诅咒【${card?.name || '未知'}】。该诅咒的效果是：${fullDesc}。请生成一段净化过程的剧情，描写诅咒被清除时的感觉。`;
+        const prompt = `Bỏ qua các cảnh trước đó một cách đơn giản, tạo cốt truyện mới: 【Thanh tẩy suối nước nóng】 Tôi đã thực hiện nghi thức thanh tẩy tại suối nước nóng, tiêu tốn 50 vàng để xóa bỏ nguyền rủa 【${card?.name || 'Chưa rõ'}】 trên người. Hiệu ứng của nguyền rủa đó là: ${fullDesc}. Hãy tạo một đoạn cốt truyện về quá trình thanh tẩy, miêu tả cảm giác khi nguyền rủa bị loại bỏ.`;
         ACJTGame.sendToAI(prompt);
     },
 
-    // 休息恢复
+    // Nghỉ ngơi hồi phục
     rest: function () {
-        // 应用特殊状态的休息效果（如淫纹增加堕落值）
+        // Áp dụng hiệu ứng nghỉ ngơi của trạng thái đặc biệt (ví dụ: Dâm văn làm tăng đọa lạc)
         SpecialStatusManager.onRest();
 
         const healAmount = Math.floor(PlayerState.maxHp * 0.3);
@@ -6615,62 +6568,62 @@ const RestSystem = {
         PlayerState.save();
         PlayerState.updateDisplay();
 
-        // 检查是否有堕落值增加
+        // Kiểm tra xem có tăng đọa lạc hay không
         let extraInfo = '';
         const corruptionStatuses = SpecialStatusManager.getActive().filter(s => s.effect === 'corruptionPerRest');
         if (corruptionStatuses.length > 0) {
             const totalCorruption = corruptionStatuses.reduce((sum, s) => sum + s.value, 0);
-            extraInfo = `<div style="color: #9c88ff; font-size: 12px; margin-top: 10px;">⚠️ 特殊状态影响：堕落值 +${totalCorruption}</div>`;
+            extraInfo = `<div style="color: #9c88ff; font-size: 12px; margin-top: 10px;">⚠️ Ảnh hưởng trạng thái đặc biệt: Đọa lạc +${totalCorruption}</div>`;
         }
 
-        // 🔧 保存休息结果
+        // 🔧 Lưu kết quả nghỉ ngơi
         this.lastRestResult = { healAmount };
 
         document.getElementById('restModal').innerHTML = `
             <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
                 <div style="font-size: 72px; margin-bottom: 20px;">💚</div>
-                <div style="color: #2ed573; font-size: 24px; font-weight: bold; margin-bottom: 15px;">恢复了 ${healAmount} 点生命值</div>
-                <div style="color: #888; font-size: 14px; margin-bottom: 10px;">当前生命: ${PlayerState.hp}/${PlayerState.maxHp}</div>
+                <div style="color: #2ed573; font-size: 24px; font-weight: bold; margin-bottom: 15px;">Đã hồi phục ${healAmount} điểm sinh mệnh</div>
+                <div style="color: #888; font-size: 14px; margin-bottom: 10px;">Sinh mệnh hiện tại: ${PlayerState.hp}/${PlayerState.maxHp}</div>
                 ${extraInfo}
                 <div style="display: flex; gap: 15px; margin-top: 20px;">
                     <button onclick="RestSystem.skipRestStory()"
                             style="padding: 12px 30px; background: linear-gradient(135deg, #667eea, #764ba2);
                                    color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">
-                        跳过剧情
+                        Bỏ qua cốt truyện
                     </button>
                     <button onclick="RestSystem.generateRestStory()"
                             style="padding: 12px 30px; background: linear-gradient(135deg, #2ed573, #26de81);
                                    color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">
-                        生成剧情
+                        Tạo cốt truyện
                     </button>
                 </div>
             </div>
         `;
     },
 
-    // 🔧 跳过温泉剧情
+    // 🔧 Bỏ qua cốt truyện suối nước nóng
     skipRestStory: function () {
         const result = this.lastRestResult;
-        const historyText = `在温泉中休息，恢复了${result.healAmount}点生命值`;
+        const historyText = `Nghỉ ngơi tại suối nước nóng, hồi phục ${result.healAmount} điểm sinh mệnh`;
         ACJTGame.recordToHistory(historyText);
         this.closeRest();
     },
 
-    // 🔧 生成温泉剧情
+    // 🔧 Tạo cốt truyện suối nước nóng
     generateRestStory: function () {
         const result = this.lastRestResult;
         const floor = PlayerState.floor || 1;
-        const prompt = `简单跳过之前的场景，生成新剧情：【尖塔第${floor}层】我在温泉中泡澡休息，恢复了${result.healAmount}点体力，感觉神清气爽`;
-        // 🔧 生成剧情时不记录到重要历史和矩阵
+        const prompt = `Bỏ qua các cảnh trước đó một cách đơn giản, tạo cốt truyện mới: 【Tầng ${floor} của tòa tháp】 Tôi đang ngâm mình nghỉ ngơi trong suối nước nóng, hồi phục ${result.healAmount} điểm thể lực, cảm thấy tinh thần sảng khoái`;
+        // 🔧 Khi tạo cốt truyện sẽ không ghi vào lịch sử quan trọng
         this.closeRest();
         ACJTGame.sendToAI(prompt);
     },
 
-    // 显示升级卡牌
+    // Hiển thị nâng cấp thẻ bài
     showUpgradeCards: function () {
         let cardsHtml = '';
         CardDeckManager.deck.forEach((card, index) => {
-            if (card.upgraded) return; // 已升级的跳过
+            if (card.upgraded) return; // Bỏ qua thẻ đã nâng cấp
             const typeColor = CardTypeColors[card.type] || '#666';
             cardsHtml += `
                 <div onclick="RestSystem.upgradeCard(${index})" 
@@ -6686,44 +6639,44 @@ const RestSystem = {
         });
 
         document.getElementById('restModal').innerHTML = `
-            <div style="color: #ffa502; font-size: 24px; font-weight: bold; margin-bottom: 20px;">选择要升级的卡牌</div>
+            <div style="color: #ffa502; font-size: 24px; font-weight: bold; margin-bottom: 20px;">Chọn thẻ bài muốn nâng cấp</div>
             <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; max-width: 500px; margin-bottom: 30px;">
-                ${cardsHtml || '<div style="color: #666;">没有可升级的卡牌</div>'}
+                ${cardsHtml || '<div style="color: #666;">Không có thẻ bài nào có thể nâng cấp</div>'}
             </div>
             <button onclick="RestSystem.closeRest()"
                     style="padding: 10px 30px; background: #333; color: #fff; border: none; border-radius: 6px; cursor: pointer;">
-                取消
+                Hủy bỏ
             </button>
         `;
     },
 
-    // 升级卡牌
+    // Nâng cấp thẻ bài
     upgradeCard: function (index) {
         const card = CardDeckManager.deck[index];
         if (!card || card.upgraded) return;
 
-        // 根据卡牌类型进行不同的升级
+        // Tiến hành nâng cấp khác nhau dựa trên loại thẻ
         let upgradeMsg = '';
         if (card.type === CardType.BUFF) {
-            // BUFF类型：抽牌类增加抽牌数，能量类增加能量数
+            // Loại BUFF: Tăng số lá rút hoặc tăng năng lượng nhận được
             if (card.drawCards) {
                 card.drawCards += 1;
-                upgradeMsg = `抽牌数提升至 ${card.drawCards}张`;
+                upgradeMsg = `Số lá rút tăng lên ${card.drawCards} lá`;
             } else if (card.gainEnergy) {
                 card.gainEnergy += 1;
-                upgradeMsg = `能量获取提升至 +${card.gainEnergy}`;
+                upgradeMsg = `Năng lượng nhận được tăng lên +${card.gainEnergy}`;
             } else if (card.value) {
                 card.value += 3;
-                upgradeMsg = `数值提升至 ${card.value}`;
+                upgradeMsg = `Chỉ số tăng lên ${card.value}`;
             } else {
-                upgradeMsg = `效果增强`;
+                upgradeMsg = `Hiệu quả được tăng cường`;
             }
         } else if (card.value !== undefined) {
-            // 其他有value字段的卡牌：增加3点数值
+            // Các thẻ khác có trường value: tăng 3 điểm chỉ số
             card.value += 3;
-            upgradeMsg = `数值提升至 ${card.value}`;
+            upgradeMsg = `Chỉ số tăng lên ${card.value}`;
         } else {
-            upgradeMsg = `效果增强`;
+            upgradeMsg = `Hiệu quả được tăng cường`;
         }
 
         card.upgraded = true;
@@ -6735,34 +6688,34 @@ const RestSystem = {
         document.getElementById('restModal').innerHTML = `
             <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
                 <div style="font-size: 72px; margin-bottom: 20px;">⬆️</div>
-                <div style="color: #ffa502; font-size: 24px; font-weight: bold; margin-bottom: 15px;">升级成功!</div>
+                <div style="color: #ffa502; font-size: 24px; font-weight: bold; margin-bottom: 15px;">Nâng cấp thành công!</div>
                 <div style="color: #fff; font-size: 16px; margin-bottom: 30px;">${card.name} ${upgradeMsg}</div>
                 <button onclick="RestSystem.closeRest()"
                         style="padding: 12px 40px; background: linear-gradient(135deg, #667eea, #764ba2);
                                color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">
-                    继续前进
+                    Tiếp tục tiến bước
                 </button>
             </div>
         `;
     },
 
-    // 关闭温泉
+    // Đóng suối nước nóng
     closeRest: function () {
         document.getElementById('restModal')?.remove();
         RouteSystem.showRouteSelection();
     }
 };
 
-// ==================== 城镇系统（旅馆/妓院） ====================
+// ==================== Hệ thống Thị trấn (Nhà nghỉ / Nhà thổ) ====================
 const TownSystem = {
-    // 打开旅馆
+    // Mở nhà nghỉ
     openHotel: function () {
         if (PlayerState.floor > 1) {
-            alert('只有在城镇（第0-1层）才能使用旅馆！');
+            alert('Chỉ có thể sử dụng nhà nghỉ khi ở thị trấn (Tầng 0-1)!');
             return;
         }
         if (PlayerState.gold < 25) {
-            alert('金币不足！需要25金币。');
+            alert('Không đủ vàng! Cần 25 vàng.');
             return;
         }
 
@@ -6777,21 +6730,21 @@ const TownSystem = {
         modal.innerHTML = `
             <div style="background: linear-gradient(135deg, #2d3436, #636e72); border-radius: 16px; padding: 30px; max-width: 400px; text-align: center;">
                 <div style="font-size: 64px; margin-bottom: 15px;">🏨</div>
-                <div style="color: #fff; font-size: 24px; font-weight: bold; margin-bottom: 10px;">旅馆休息</div>
-                <div style="color: #ffd700; font-size: 16px; margin-bottom: 20px;">支付 25 金币，完全恢复体力</div>
+                <div style="color: #fff; font-size: 24px; font-weight: bold; margin-bottom: 10px;">Nghỉ ngơi tại nhà nghỉ</div>
+                <div style="color: #ffd700; font-size: 16px; margin-bottom: 20px;">Trả 25 vàng để hồi phục hoàn toàn thể lực</div>
                 <div style="color: #888; font-size: 14px; margin-bottom: 25px;">
-                    当前HP: ${PlayerState.hp}/${PlayerState.maxHp}<br>
-                    当前金币: ${PlayerState.gold}
+                    HP hiện tại: ${PlayerState.hp}/${PlayerState.maxHp}<br>
+                    Vàng hiện tại: ${PlayerState.gold}
                 </div>
                 <div style="display: flex; gap: 15px; justify-content: center;">
                     <button onclick="TownSystem.confirmHotel()"
                             style="padding: 12px 30px; background: linear-gradient(135deg, #2ed573, #26de81);
                                    color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">
-                        确认入住
+                        Xác nhận ở lại
                     </button>
                     <button onclick="TownSystem.closeModal('hotelModal')"
                             style="padding: 12px 30px; background: #555; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">
-                        取消
+                        Hủy bỏ
                     </button>
                 </div>
             </div>
@@ -6799,7 +6752,7 @@ const TownSystem = {
         document.body.appendChild(modal);
     },
 
-    // 确认入住旅馆
+    // Xác nhận ở nhà nghỉ
     confirmHotel: function () {
         PlayerState.gold -= 25;
         const healedAmount = PlayerState.maxHp - PlayerState.hp;
@@ -6810,119 +6763,118 @@ const TownSystem = {
         document.getElementById('hotelModal').innerHTML = `
             <div style="background: linear-gradient(135deg, #2d3436, #636e72); border-radius: 16px; padding: 30px; max-width: 400px; text-align: center;">
                 <div style="font-size: 64px; margin-bottom: 15px;">😴</div>
-                <div style="color: #2ed573; font-size: 24px; font-weight: bold; margin-bottom: 15px;">休息完毕!</div>
+                <div style="color: #2ed573; font-size: 24px; font-weight: bold; margin-bottom: 15px;">Đã nghỉ ngơi xong!</div>
                 <div style="color: #fff; font-size: 16px; margin-bottom: 25px;">
-                    恢复了 ${healedAmount} 点体力<br>
-                    当前HP: ${PlayerState.hp}/${PlayerState.maxHp}
+                    Đã hồi phục ${healedAmount} điểm thể lực<br>
+                    HP hiện tại: ${PlayerState.hp}/${PlayerState.maxHp}
                 </div>
                 <div style="display: flex; gap: 15px; justify-content: center;">
                     <button onclick="TownSystem.skipHotelStory()"
                             style="padding: 12px 30px; background: linear-gradient(135deg, #667eea, #764ba2);
                                    color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">
-                        跳过剧情
+                        Bỏ qua cốt truyện
                     </button>
                     <button onclick="TownSystem.generateHotelStory()"
                             style="padding: 12px 30px; background: linear-gradient(135deg, #ff6b9d, #c44569);
                                    color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">
-                        生成剧情
+                        Tạo cốt truyện
                     </button>
                 </div>
             </div>
         `;
     },
 
-    // 跳过旅馆剧情
+    // Bỏ qua cốt truyện nhà nghỉ
     skipHotelStory: function () {
-        ACJTGame.recordToHistory('在旅馆休息了一晚，恢复了全部体力');
+        ACJTGame.recordToHistory('Đã nghỉ ngơi một đêm tại nhà nghỉ, hồi phục toàn bộ thể lực');
         this.closeModal('hotelModal');
     },
 
-    // 生成旅馆剧情
+    // Tạo cốt truyện nhà nghỉ
     generateHotelStory: function () {
         this.closeModal('hotelModal');
-        const prompt = `简单跳过当前场景，开始新剧情：【尖塔城镇】我在旅馆休息了一晚，恢复了全部体力。请生成一段旅馆休息的剧情，可以描写旅馆的环境、休息的过程，或者发生的小插曲。`;
-        // 🔧 生成剧情时不记录到重要历史和矩阵
+        const prompt = `Bỏ qua các cảnh trước đó một cách đơn giản, tạo cốt truyện mới: 【Thị trấn tòa tháp】 Tôi đã nghỉ ngơi một đêm tại nhà nghỉ, hồi phục toàn bộ thể lực. Hãy tạo một đoạn cốt truyện về việc nghỉ ngơi tại nhà nghỉ, có thể miêu tả môi trường nhà nghỉ, quá trình nghỉ ngơi hoặc một vài sự việc nhỏ xảy ra.`;
         ACJTGame.sendToAI(prompt);
     },
 
-    // 妓院配置数据
+    // Cấu hình dữ liệu nhà thổ
     brothelConfig: {
-        genders: ['男', '女', '扶她'],
+        genders: ['Nam', 'Nữ', 'Futanari'],
         races: [
-            // 人类系
-            '人类', '混血人类', '贵族人类', '平民人类', '流浪人类',
-            // 精灵系
-            '精灵', '暗精灵', '高等精灵', '木精灵', '血精灵', '月精灵', '星精灵',
-            // 兽人系
-            '兽人', '猪人', '牛头人', '狗头人', '狼人', '虎人', '狮人', '豹人', '熊人', '狐人',
-            // 爬行系
-            '蜥蜴人', '龙人', '蛇人', '鳄鱼人', '变色龙人',
-            // 水生系
-            '鱼人', '鲨鱼人', '章鱼人', '海妖', '人鱼',
-            // 魔物系
-            '哥布林', '半身人', '矮人', '巨魔', '食人魔', '地精',
-            // 恶魔系
-            '魅魔', '梦魔', '恶魔', '堕天使', '地狱犬人',
-            // 不死系
-            '吸血鬼', '幽灵', '骷髅人', '僵尸',
-            // 其他
-            '史莱姆人', '元素人', '机械人', '半机械人', '触手怪', '昆虫人', '蜘蛛人', '蝎人'
+            // Hệ người
+            'Người', 'Người lai', 'Quý tộc', 'Dân thường', 'Kẻ lang thang',
+            // Hệ Tinh linh
+            'Tinh linh', 'Hắc tinh linh', 'Cao cấp tinh linh', 'Mộc tinh linh', 'Huyết tinh linh', 'Nguyệt tinh linh', 'Tinh tú tinh linh',
+            // Hệ Thú nhân
+            'Thú nhân', 'Trư nhân', 'Ngưu đầu nhân', 'Cẩu đầu nhân', 'Lang nhân', 'Hổ nhân', 'Sư nhân', 'Báo nhân', 'Hùng nhân', 'Hồ nhân',
+            // Hệ bò sát
+            'Thằn lằn nhân', 'Long nhân', 'Xà nhân', 'Sấu nhân', 'Tắc kè nhân',
+            // Hệ dưới nước
+            'Ngư nhân', 'Sáp nhân', 'Chương ngư nhân', 'Hải yêu', 'Nhân ngư',
+            // Hệ Ma vật
+            'Goblin', 'Bán thân nhân', 'Người lùn', 'Khổng lồ nhân', 'Thực nhân ma', 'Địa tinh',
+            // Hệ Ác ma
+            'Mị ma', 'Mộng ma', 'Ác ma', 'Đọa thiên sứ', 'Địa ngục khuyển nhân',
+            // Hệ Bất tử
+            'Hút máu quỷ', 'U linh', 'Khô lâu nhân', 'Cương thi',
+            // Khác
+            'Slime nhân', 'Nguyên tố nhân', 'Cơ giới nhân', 'Bán cơ giới nhân', 'Xúc tu quái', 'Côn trùng nhân', 'Nhện nhân', 'Bọ cạp nhân'
         ],
         fetishes: [
-            // 基础性爱
-            '舔小穴', '足交', '肛交', '插入小穴', '口交', '乳交', '手交', '腋交', '股交', '腹交',
-            '深喉', '颜射', '内射', '舔脚', '舔肛', '舔腋下', '舔乳头', '吸吮乳头', '咬乳头',
+            // Quan hệ cơ bản
+            'Liếm tiểu huyệt', 'Túc giao', 'Hậu đình giao', 'Chèn vào tiểu huyệt', 'Khẩu giao', 'Nhũ giao', 'Thủ giao', 'Dịch giao', 'Cổ giao', 'Phúc giao',
+            'Thâm hầu', 'Nhan xạ', 'Nội xạ', 'Liếm chân', 'Liếm hậu môn', 'Liếm nách', 'Liếm đầu ngực', 'Mút đầu ngực', 'Cắn đầu ngực',
 
-            // 体位
-            '69式', '骑乘位', '后入式', '传教士', '侧位', '站立位', '倒立位', '压迫位', '背德位',
+            // Tư thế
+            '69', 'Cưỡi ngựa', 'Hậu nhập', 'Truyền giáo sĩ', 'Nằm nghiêng', 'Đứng', 'Trồng cây chuối', 'Áp chế', 'Bối đức',
 
             // BDSM
-            '束缚play', '滴蜡', '鞭打', '窒息play', '绳缚', '手铐', '脚镣', '口球', '眼罩', '项圈',
-            '调教', '羞辱', '惩罚', '奴隶play', '主仆play', '宠物play', '踩踏', '践踏', '窒息',
+            'Trói buộc play', 'Nhỏ nến', 'Quất roi', 'Ngạt thở play', 'Thừng phược', 'Còng tay', 'Xiềng chân', 'Bịt miệng', 'Bịt mắt', 'Vòng cổ',
+            'Điều giáo', 'Sỉ nhục', 'Trừng phạt', 'Nô lệ play', 'Chủ tớ play', 'Thú cưng play', 'Dẫm đạp', 'Chà đạp', 'Làm ngạt',
 
-            // 角色扮演
-            '角色扮演', '制服诱惑', '护士装', '女仆装', '学生装', '教师装', '警察装', '囚犯装',
-            '修女装', '和服', '旗袍', '兔女郎', '猫女装', '狗女装',
+            // Nhập vai
+            'Nhập vai', 'Đồng phục quyến rũ', 'Y tá', 'Hầu gái', 'Học sinh', 'Giáo viên', 'Cảnh sát', 'Tù nhân',
+            'Tu nữ', 'Kimono', 'Sườn xám', 'Thỏ ngọc', 'Mèo nữ', 'Chó nữ',
 
-            // 特殊play
-            '多人运动', '3P', '4P', '群交', '轮奸', '观看自慰', '被观看', '偷窥', '露出',
-            '野外play', '公共场所', '车震', '浴室play', '厨房play',
+            // Play đặc biệt
+            'Quan hệ nhiều người', '3P', '4P', 'Quần giao', 'Luân gian', 'Xem thủ dâm', 'Bị xem', 'Quay lén', 'Phô bày',
+            'Dã ngoại play', 'Nơi công cộng', 'Xê chấn', 'Phòng tắm play', 'Phòng bếp play',
 
-            // 体液
-            '吞精', '饮尿', '潮吹', '喷奶', '流口水', '吐舌', '舔汗',
+            // Thể dịch
+            'Nuốt tinh', 'Uống nước tiểu', 'Thủy triều (squirt)', 'Phun sữa', 'Chảy nước miếng', 'Lè lưỡi', 'Liếm mồ hôi',
 
-            // 强度
-            '连续高潮', '强制高潮', '高潮忍耐', '粗暴对待', '温柔爱抚', '缓慢折磨', '快速抽插',
-            '深度插入', '浅层摩擦', '边缘控制',
+            // Cường độ
+            'Cao trào liên tục', 'Ép buộc cao trào', 'Nhịn cao trào', 'Đối xử thô bạo', 'Vuốt ve dịu dàng', 'Giày vò chậm rãi', 'Đâm rút nhanh',
+            'Đâm sâu', 'Ma sát nông', 'Kiểm soát cực hạn (edge)',
 
-            // 特殊癖好
-            '恋足', '恋乳', '恋臀', '恋腋', '恋发', '恋袜', '恋鞋', '恋内衣',
-            '闻体味', '舔体味', '汗臭', '脚臭', '腋臭',
+            // Sở thích đặc biệt
+            'Luyến túc', 'Luyến nhũ', 'Luyến đồn', 'Luyến dịch', 'Luyến phát', 'Luyến tất (vớ)', 'Luyến hài (giày)', 'Luyến nội y',
+            'Ngửi mùi cơ thể', 'Liếm mùi cơ thể', 'Mùi mồ hôi', 'Mùi chân', 'Mùi nách',
 
-            // 道具
-            '震动棒', '跳蛋', '假阳具', '肛塞', '乳夹', '阴夹', '扩张器', '贞操带',
+            // Đạo cụ
+            'Gậy rung', 'Trứng rung', 'Dương vật giả', 'Nút hậu môn', 'Kẹp ngực', 'Kẹp âm hộ', 'Dụng cụ mở rộng', 'Đai trinh tiết',
 
-            // 极端
-            '窒息', '电击', '针刺', '灌肠', '扩张', '拳交', '双穴', '三穴齐开',
-            '兽交幻想', '触手play', '产卵play', '膨腹', '催眠', '药物',
+            // Cực hạn
+            'Làm ngạt', 'Điện giật', 'Châm kim', 'Thụt rửa', 'Mở rộng', 'Quyền giao (fisting)', 'Song huyệt', 'Tam huyệt tề khai',
+            'Ảo tưởng thú giao', 'Xúc tu play', 'Sản noãn play', 'Bụng to', 'Thôi miên', 'Thuốc',
 
-            // 心理
-            '羞耻play', '言语羞辱', '强制表演', '拍照', '录像', '直播', '展示',
-            '服从训练', '破处', '夺取初吻', '禁欲后释放'
+            // Tâm lý
+            'Nhục nhã play', 'Sỉ nhục bằng lời nói', 'Ép buộc biểu diễn', 'Chụp ảnh', 'Quay phim', 'Livestream', 'Trưng bày',
+            'Huấn luyện phục tùng', 'Phá trinh', 'Đoạt nụ hôn đầu', 'Giải tỏa sau khi cấm dục'
         ]
     },
 
-    // 生成随机客人
+    // Tạo khách hàng ngẫu nhiên
     generateRandomClient: function () {
         const config = this.brothelConfig;
         const gender = config.genders[Math.floor(Math.random() * config.genders.length)];
         const race = config.races[Math.floor(Math.random() * config.races.length)];
 
-        // 随机选择3个不重复的性癖
+        // Chọn ngẫu nhiên 3 sở thích không trùng lặp
         const shuffled = [...config.fetishes].sort(() => 0.5 - Math.random());
         const selectedFetishes = shuffled.slice(0, 3);
 
-        // 随机出价 50-200
+        // Giá ngẫu nhiên từ 50-200
         const price = Math.floor(Math.random() * 151) + 50;
 
         return {
@@ -6933,21 +6885,21 @@ const TownSystem = {
         };
     },
 
-    // 打开妓院
+    // Mở nhà thổ
     openBrothel: function () {
         if (PlayerState.floor > 1) {
-            alert('只有在城镇（第0-1层）才能使用妓院！');
+            alert('Chỉ có thể sử dụng nhà thổ khi ở thị trấn (Tầng 0-1)!');
             return;
         }
 
-        // 生成3个随机客人
+        // Tạo 3 khách hàng ngẫu nhiên
         const clients = [
             this.generateRandomClient(),
             this.generateRandomClient(),
             this.generateRandomClient()
         ];
 
-        // 保存客人信息
+        // Lưu thông tin khách hàng
         this.currentClients = clients;
 
         const modal = document.createElement('div');
@@ -6972,14 +6924,13 @@ const TownSystem = {
                  onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 12px 40px rgba(255, 215, 0, 0.4), inset 0 0 30px rgba(255, 215, 0, 0.2)'; this.style.borderColor='rgba(255, 215, 0, 0.9)'"
                  onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 8px 32px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(255, 215, 0, 0.1)'; this.style.borderColor='rgba(255, 215, 0, 0.6)'">
                 
-                <!-- 装饰性光晕 -->
                 <div style="position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; 
                             background: radial-gradient(circle, rgba(255, 215, 0, 0.1) 0%, transparent 70%);
                             pointer-events: none;"></div>
                 
                 <div style="position: relative; z-index: 1;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                        <div style="color: #ffd700; font-size: 18px; font-weight: bold; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);">客人 ${index + 1}</div>
+                        <div style="color: #ffd700; font-size: 18px; font-weight: bold; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);">Khách hàng ${index + 1}</div>
                         <div style="color: #ffd700; font-size: 20px; font-weight: bold; 
                                     background: rgba(0, 0, 0, 0.4); padding: 4px 12px; border-radius: 20px;
                                     border: 2px solid rgba(255, 215, 0, 0.5);
@@ -6989,13 +6940,13 @@ const TownSystem = {
                     <div style="background: rgba(0, 0, 0, 0.3); padding: 10px; border-radius: 8px; margin-bottom: 10px;
                                 border: 1px solid rgba(255, 215, 0, 0.2);">
                         <div style="color: #fff; margin-bottom: 6px; font-size: 14px; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);">
-                            <span style="color: #ffd700; font-weight: bold;">性别：</span><span style="color: #ffe4b5;">${client.gender}</span>
-                            <span style="color: #ffd700; font-weight: bold; margin-left: 15px;">种族：</span><span style="color: #ffe4b5;">${client.race}</span>
+                            <span style="color: #ffd700; font-weight: bold;">Giới tính:</span><span style="color: #ffe4b5;">${client.gender}</span>
+                            <span style="color: #ffd700; font-weight: bold; margin-left: 15px;">Chủng tộc:</span><span style="color: #ffe4b5;">${client.race}</span>
                         </div>
                     </div>
                     
                     <div style="margin-bottom: 12px;">
-                        <div style="color: #ffd700; margin-bottom: 8px; font-size: 14px; font-weight: bold; text-shadow: 0 0 8px rgba(255, 215, 0, 0.5);">性癖偏好：</div>
+                        <div style="color: #ffd700; margin-bottom: 8px; font-size: 14px; font-weight: bold; text-shadow: 0 0 8px rgba(255, 215, 0, 0.5);">Sở thích (Fetish):</div>
                         <div style="display: flex; flex-wrap: wrap; gap: 8px;">
                             ${client.fetishes.map(f => `
                                 <span style="background: linear-gradient(135deg, rgba(255, 107, 157, 0.4), rgba(255, 71, 87, 0.4)); 
@@ -7019,7 +6970,7 @@ const TownSystem = {
                                    transition: all 0.3s ease;"
                             onmouseover="this.style.background='linear-gradient(135deg, #ff6b81, #ff4757)'; this.style.transform='scale(1.05)'; this.style.boxShadow='0 6px 20px rgba(255, 71, 87, 0.6)'"
                             onmouseout="this.style.background='linear-gradient(135deg, #ff4757, #ff6b81)'; this.style.transform='scale(1)'; this.style.boxShadow='0 4px 15px rgba(255, 71, 87, 0.4)'">
-                        选择此客人
+                        Chọn vị khách này
                     </button>
                 </div>
             </div>
@@ -7036,12 +6987,10 @@ const TownSystem = {
                         position: relative;
                         overflow-y: auto;">
                 
-                <!-- 顶部遮罩渐变 -->
                 <div style="position: absolute; top: 0; left: 0; right: 0; height: 150px;
                             background: linear-gradient(to bottom, rgba(0, 0, 0, 0.7), transparent);
                             pointer-events: none; z-index: 0;"></div>
                 
-                <!-- 底部遮罩渐变 -->
                 <div style="position: absolute; bottom: 0; left: 0; right: 0; height: 100px;
                             background: linear-gradient(to top, rgba(0, 0, 0, 0.6), transparent);
                             pointer-events: none; z-index: 0;"></div>
@@ -7054,8 +7003,8 @@ const TownSystem = {
                         <div style="font-size: 72px; margin-bottom: 10px; filter: drop-shadow(0 0 20px rgba(255, 107, 157, 0.8));">🏮</div>
                         <div style="color: #ffd700; font-size: 32px; font-weight: bold; margin-bottom: 10px;
                                     text-shadow: 0 0 20px rgba(255, 215, 0, 0.8), 0 4px 8px rgba(0, 0, 0, 0.8);
-                                    font-family: 'STKaiti', 'KaiTi', serif;">妓院接客</div>
-                        <div style="color: #ffe4b5; font-size: 16px; text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);">请选择一位客人进行服务</div>
+                                    font-family: 'STKaiti', 'KaiTi', serif;">Tiếp khách tại nhà thổ</div>
+                        <div style="color: #ffe4b5; font-size: 16px; text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);">Vui lòng chọn một vị khách để phục vụ</div>
                     </div>
                     
                     <style>
@@ -7091,7 +7040,7 @@ const TownSystem = {
                                    transition: all 0.3s ease;"
                             onmouseover="this.style.background='rgba(0, 0, 0, 0.85)'; this.style.borderColor='rgba(255, 215, 0, 0.8)'; this.style.boxShadow='0 6px 20px rgba(255, 215, 0, 0.3)'"
                             onmouseout="this.style.background='rgba(0, 0, 0, 0.7)'; this.style.borderColor='rgba(255, 215, 0, 0.5)'; this.style.boxShadow='0 4px 15px rgba(0, 0, 0, 0.5)'">
-                        离开妓院
+                        Rời khỏi nhà thổ
                     </button>
                 </div>
             </div>
@@ -7099,7 +7048,7 @@ const TownSystem = {
         document.body.appendChild(modal);
     },
 
-    // 选择客人
+    // Chọn khách hàng
     selectClient: function (index) {
         const client = this.currentClients[index];
         this.selectedClient = client;
@@ -7108,45 +7057,45 @@ const TownSystem = {
         modal.innerHTML = `
             <div style="background: linear-gradient(135deg, #c44569, #ff6b9d); border-radius: 16px; padding: 25px; max-width: 400px; text-align: center;">
                 <div style="font-size: 64px; margin-bottom: 15px;">💰</div>
-                <div style="color: #ffd700; font-size: 22px; font-weight: bold; margin-bottom: 12px;">接客完成!</div>
+                <div style="color: #ffd700; font-size: 22px; font-weight: bold; margin-bottom: 12px;">Phục vụ hoàn tất!</div>
                 <div style="color: #fff; font-size: 14px; margin-bottom: 8px;">
-                    客人信息: ${client.gender} · ${client.race}
+                    Thông tin khách: ${client.gender} · ${client.race}
                 </div>
                 <div style="color: #fff; font-size: 13px; margin-bottom: 8px;">
-                    性癖: ${client.fetishes.join('、')}
+                    Sở thích: ${client.fetishes.join('、')}
                 </div>
                 <div style="color: #fff; font-size: 15px; margin-bottom: 20px;">
-                    获得 ${client.price} 金币<br>
-                    堕落值 +5 | 当前金币: ${PlayerState.gold + client.price}
+                    Nhận được ${client.price} vàng<br>
+                    Đọa lạc +5 | Vàng hiện tại: ${PlayerState.gold + client.price}
                 </div>
                 <div style="display: flex; gap: 15px; justify-content: center;">
                     <button onclick="TownSystem.skipBrothelStory()"
                             style="padding: 10px 25px; background: linear-gradient(135deg, #667eea, #764ba2);
                                    color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">
-                        跳过剧情
+                        Bỏ qua cốt truyện
                     </button>
                     <button onclick="TownSystem.generateBrothelStory()"
                             style="padding: 10px 25px; background: linear-gradient(135deg, #ff6b9d, #c44569);
                                    color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">
-                        生成剧情
+                        Tạo cốt truyện
                     </button>
                 </div>
             </div>
         `;
 
-        // 更新玩家状态
+        // Cập nhật trạng thái người chơi
         PlayerState.gold += client.price;
         PlayerState.corruption += 5;
         PlayerState.save();
         PlayerState.updateDisplay();
 
-        // 同步堕落值到变量表单
+        // Đồng bộ điểm đọa lạc vào biến trạng thái (nếu có)
         if (typeof gameState !== 'undefined' && gameState.variables) {
             gameState.variables.corruption = PlayerState.corruption;
         }
     },
 
-    // 更新卖春预览
+    // Cập nhật xem trước bán trinh/bán xuân (nếu cần)
     updateBrothelPreview: function () {
         const vaginal = parseInt(document.getElementById('brothelVaginal')?.value) || 0;
         const anal = parseInt(document.getElementById('brothelAnal')?.value) || 0;
@@ -7157,11 +7106,11 @@ const TownSystem = {
         const total = vaginal + anal + breast + oral + foot + hand;
         const preview = document.getElementById('brothelPreview');
         if (preview) {
-            preview.innerHTML = `总计: ${total} 次 | 预计获得: ${40 * total} 金币 | 堕落值 +${5 * total}`;
+            preview.innerHTML = `Tổng cộng: ${total} lần | Dự kiến nhận: ${40 * total} vàng | Đọa lạc +${5 * total}`;
         }
     },
 
-    // 获取卖春详情
+    // Lấy chi tiết phục vụ
     getBrothelDetails: function () {
         return {
             vaginal: parseInt(document.getElementById('brothelVaginal')?.value) || 0,
@@ -7173,26 +7122,26 @@ const TownSystem = {
         };
     },
 
-    // 生成卖春描述文本
+    // Tạo văn bản mô tả phục vụ
     getBrothelDescription: function (details) {
         const parts = [];
-        if (details.vaginal > 0) parts.push(`小穴${details.vaginal}次`);
-        if (details.anal > 0) parts.push(`菊穴${details.anal}次`);
-        if (details.breast > 0) parts.push(`乳交${details.breast}次`);
-        if (details.oral > 0) parts.push(`口交${details.oral}次`);
-        if (details.foot > 0) parts.push(`足交${details.foot}次`);
-        if (details.hand > 0) parts.push(`手交${details.hand}次`);
-        return parts.length > 0 ? parts.join('、') : '无';
+        if (details.vaginal > 0) parts.push(`Âm đạo ${details.vaginal} lần`);
+        if (details.anal > 0) parts.push(`Hậu môn ${details.anal} lần`);
+        if (details.breast > 0) parts.push(`Nhũ giao ${details.breast} lần`);
+        if (details.oral > 0) parts.push(`Khẩu giao ${details.oral} lần`);
+        if (details.foot > 0) parts.push(`Túc giao ${details.foot} lần`);
+        if (details.hand > 0) parts.push(`Thủ giao ${details.hand} lần`);
+        return parts.length > 0 ? parts.join('、') : 'Không';
     },
 
-    // 确认卖春
+    // Xác nhận phục vụ tại nhà thổ
     confirmBrothel: function () {
         const details = this.getBrothelDetails();
         const times = details.vaginal + details.anal + details.breast + details.oral + details.foot + details.hand;
 
         if (times <= 0) {
             if (typeof showNotification === 'function') {
-                showNotification('❗ 请至少选择一种服务', 'warning');
+                showNotification('❗ Vui lòng chọn ít nhất một loại dịch vụ', 'warning');
             }
             return;
         }
@@ -7205,12 +7154,10 @@ const TownSystem = {
         PlayerState.save();
         PlayerState.updateDisplay();
 
-        // 同步堕落值到变量表单
         if (typeof gameState !== 'undefined' && gameState.variables) {
             gameState.variables.corruption = PlayerState.corruption;
         }
 
-        // 保存详情用于后续剧情
         this.lastBrothelDetails = details;
         this.lastBrothelTimes = times;
         this.lastBrothelGold = goldGain;
@@ -7221,31 +7168,31 @@ const TownSystem = {
         document.getElementById('brothelModal').innerHTML = `
             <div style="background: linear-gradient(135deg, #c44569, #ff6b9d); border-radius: 16px; padding: 25px; max-width: 400px; text-align: center;">
                 <div style="font-size: 64px; margin-bottom: 15px;">💰</div>
-                <div style="color: #ffd700; font-size: 22px; font-weight: bold; margin-bottom: 12px;">交易完成!</div>
+                <div style="color: #ffd700; font-size: 22px; font-weight: bold; margin-bottom: 12px;">Giao dịch hoàn tất!</div>
                 <div style="color: #fff; font-size: 14px; margin-bottom: 8px;">
-                    服务内容: ${descText}
+                    Nội dung phục vụ: ${descText}
                 </div>
                 <div style="color: #fff; font-size: 15px; margin-bottom: 20px;">
-                    共计 ${times} 次 | 获得 ${goldGain} 金币<br>
-                    堕落值 +${corruptionGain} | 当前金币: ${PlayerState.gold}
+                    Tổng cộng ${times} lần | Nhận được ${goldGain} vàng<br>
+                    Đọa lạc +${corruptionGain} | Vàng hiện tại: ${PlayerState.gold}
                 </div>
                 <div style="display: flex; gap: 15px; justify-content: center;">
                     <button onclick="TownSystem.skipBrothelStory()"
                             style="padding: 10px 25px; background: linear-gradient(135deg, #667eea, #764ba2);
                                    color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">
-                        跳过剧情
+                        Bỏ qua cốt truyện
                     </button>
                     <button onclick="TownSystem.generateBrothelStory()"
                             style="padding: 10px 25px; background: linear-gradient(135deg, #ff6b9d, #c44569);
                                    color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">
-                        生成剧情
+                        Tạo cốt truyện
                     </button>
                 </div>
             </div>
         `;
     },
 
-    // 跳过妓院剧情
+    // Bỏ qua cốt truyện nhà thổ
     skipBrothelStory: function () {
         const client = this.selectedClient;
         if (!client) {
@@ -7253,10 +7200,9 @@ const TownSystem = {
             return;
         }
 
-        const description = `接待了喜欢${client.fetishes.join('、')}的${client.race}${client.gender}，赚了${client.price}金币`;
+        const description = `Đã tiếp đón một vị khách chủng tộc ${client.race}, giới tính ${client.gender} có sở thích ${client.fetishes.join('、')}, kiếm được ${client.price} vàng`;
         ACJTGame.recordToHistory(description);
 
-        // 记录到矩阵（如果有矩阵系统）
         if (typeof window.matrixManager !== 'undefined' && window.matrixManager.addEvent) {
             window.matrixManager.addEvent({
                 type: 'brothel',
@@ -7268,7 +7214,7 @@ const TownSystem = {
         this.closeModal('brothelModal');
     },
 
-    // 生成妓院剧情
+    // Tạo cốt truyện nhà thổ
     generateBrothelStory: function () {
         const client = this.selectedClient;
         if (!client) {
@@ -7278,18 +7224,17 @@ const TownSystem = {
 
         this.closeModal('brothelModal');
 
-        const prompt = `简单跳过当前场景，开始新剧情：【妓院卖春】我在妓院接待了一位客人。客人信息：性别${client.gender}、种族${client.race}、喜欢的性癖有${client.fetishes.join('、')}。我为这位客人提供了服务，获得了${client.price}金币。请生成一段详细的卖春剧情，描写服务过程中的细节、客人的反应以及主角的心理变化。堕落值增加了5点。`;
+        const prompt = `Bỏ qua các cảnh trước đó một cách đơn giản, tạo cốt truyện mới: 【Tiếp khách nhà thổ】 Tôi đã tiếp một vị khách tại nhà thổ. Thông tin khách: Giới tính ${client.gender}, chủng tộc ${client.race}, sở thích ${client.fetishes.join('、')}. Tôi đã phục vụ vị khách này và nhận được ${client.price} vàng. Hãy tạo một đoạn cốt truyện chi tiết về việc tiếp khách, miêu tả chi tiết quá trình phục vụ, phản ứng của khách và sự thay đổi tâm lý của nhân vật chính. Điểm đọa lạc tăng thêm 5 điểm.`;
 
-        // 生成剧情时记录到重要历史和矩阵
         ACJTGame.sendToAI(prompt);
     },
 
-    // 关闭弹窗
+    // Đóng cửa sổ pop-up
     closeModal: function (modalId) {
         document.getElementById(modalId)?.remove();
     },
 
-    // 更新按钮状态（第0层和第1层可用）
+    // Cập nhật trạng thái các nút (chỉ khả dụng tại Tầng 0 và Tầng 1)
     updateButtons: function () {
         const hotelBtn = document.getElementById('hotelBtn');
         const brothelBtn = document.getElementById('brothelBtn');
@@ -7315,9 +7260,9 @@ const TownSystem = {
         }
     },
 
-    // ==================== 教堂系统 ====================
+    // ==================== Hệ thống Giáo đường ====================
 
-    // 获取可清除的诅咒状态数量
+    // Lấy số lượng trạng thái nguyền rủa có thể xóa
     getCurseStatusCount: function () {
         let count = 0;
         Object.keys(SpecialStatusManager.statuses).forEach(statusId => {
@@ -7334,46 +7279,45 @@ const TownSystem = {
     openChurch: function () {
         if (PlayerState.floor > 1) {
             if (typeof showNotification === 'function') {
-                showNotification('❗ 只能在城镇(第0-1层)访问教堂', 'warning');
+                showNotification('❗ Chỉ có thể ghé thăm giáo đường khi ở thị trấn (Tầng 0-1)', 'warning');
             }
             return;
         }
 
         const curseCards = CardDeckManager.deck.filter(c => c.type === CardType.CURSE);
         const curseStatusCount = this.getCurseStatusCount();
-        // 可以洗礼的条件：有诅咒卡或有诅咒状态，且有足够金币
+        // Điều kiện để làm lễ rửa tội: Có thẻ nguyền rủa hoặc trạng thái nguyền rủa, và có đủ vàng
         const canPurify = (curseCards.length > 0 || curseStatusCount > 0) && PlayerState.gold >= 300;
 
-        // 创建教堂弹窗
         const modal = document.createElement('div');
         modal.id = 'churchModal';
         modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 10000;';
         modal.innerHTML = `
             <div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border-radius: 16px; padding: 30px; max-width: 500px; text-align: center;">
                 <div style="font-size: 60px; margin-bottom: 15px;">⛪</div>
-                <div style="color: #ffd700; font-size: 24px; font-weight: bold; margin-bottom: 10px;">教堂 - 洗礼仪式</div>
+                <div style="color: #ffd700; font-size: 24px; font-weight: bold; margin-bottom: 10px;">Giáo đường - Lễ Rửa Tội</div>
                 <div style="color: #aaa; font-size: 14px; margin-bottom: 20px;">
-                    花费300金币，清除所有诅咒卡牌和负面状态
+                    Tiêu tốn 300 vàng để xóa bỏ toàn bộ thẻ bài nguyền rủa và trạng thái tiêu cực
                 </div>
                 <div style="color: #ff6b81; font-size: 16px; margin-bottom: 5px;">
-                    诅咒卡牌: ${curseCards.length} 张
+                    Thẻ bài nguyền rủa: ${curseCards.length} lá
                 </div>
                 <div style="color: #ff6b81; font-size: 16px; margin-bottom: 10px;">
-                    诅咒状态: ${curseStatusCount} 个
+                    Trạng thái nguyền rủa: ${curseStatusCount} cái
                 </div>
                 <div style="color: #ffd700; font-size: 14px; margin-bottom: 25px;">
-                    当前金币: ${PlayerState.gold}
+                    Vàng hiện có: ${PlayerState.gold}
                 </div>
                 <div style="display: flex; gap: 15px; justify-content: center;">
                     <button onclick="TownSystem.confirmChurch()" ${canPurify ? '' : 'disabled'}
                             style="padding: 12px 30px; background: ${canPurify ? 'linear-gradient(135deg, #ffd700, #ffb347)' : '#555'};
                                    color: ${canPurify ? '#000' : '#888'}; border: none; border-radius: 8px; 
                                    cursor: ${canPurify ? 'pointer' : 'not-allowed'}; font-size: 14px; font-weight: bold;">
-                        洗礼仪式 (300💰)
+                        Lễ Rửa Tội (300💰)
                     </button>
                     <button onclick="TownSystem.closeModal('churchModal')"
                             style="padding: 12px 30px; background: #555; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">
-                        取消
+                        Hủy bỏ
                     </button>
                 </div>
             </div>
@@ -7381,17 +7325,14 @@ const TownSystem = {
         document.body.appendChild(modal);
     },
 
-    // 确认洗礼
+    // Xác nhận làm lễ rửa tội
     confirmChurch: function () {
         const curseCards = CardDeckManager.deck.filter(c => c.type === CardType.CURSE);
         const curseStatusCount = this.getCurseStatusCount();
-        // 必须有诅咒卡或诅咒状态才能洗礼
         if ((curseCards.length === 0 && curseStatusCount === 0) || PlayerState.gold < 300) return;
 
-        // 扣除金币
         PlayerState.gold -= 300;
 
-        // 收集所有诅咒卡的 statusId
         const curseStatusIds = new Set();
         const removedCurses = [];
         curseCards.forEach(card => {
@@ -7401,24 +7342,15 @@ const TownSystem = {
             }
         });
 
-        // 🔧 清除所有诅咒相关的特殊状态（更可靠的逻辑）
         const removedStatuses = [];
         Object.keys(SpecialStatusManager.statuses).forEach(statusId => {
             const status = SpecialStatusManager.statuses[statusId];
 
-            // 保护条件：
-            // 1. ID以 start_ 开头（开局选择的状态）
-            // 2. ID以 mod_ 开头（黑市改造）
-            // 3. source 是 'starting' 或 'blackmarket'
             const isStartingStatus = statusId.startsWith('start_');
             const isBodyMod = statusId.startsWith('mod_');
             const isProtectedSource = status.source === 'starting' || status.source === 'blackmarket';
             const isProtected = isStartingStatus || isBodyMod || isProtectedSource;
 
-            // 清除条件（非保护状态且满足以下任一）：
-            // 1. statusId 在诅咒卡列表中
-            // 2. source 是 'curse'
-            // 3. source 未定义（旧数据兼容，教堂洗礼清除所有非保护的旧状态）
             const isFromCurseCard = curseStatusIds.has(statusId);
             const isCurseSource = status.source === 'curse';
             const isOldData = status.source === undefined;
@@ -7428,15 +7360,13 @@ const TownSystem = {
             }
         });
 
-        // 移除收集到的状态
         removedStatuses.forEach(statusId => {
             SpecialStatusManager.remove(statusId);
         });
 
-        console.log('[教堂洗礼] 清除了诅咒卡:', removedCurses);
-        console.log('[教堂洗礼] 清除了特殊状态:', removedStatuses);
+        console.log('[Giáo đường rửa tội] Đã xóa thẻ nguyền rủa:', removedCurses);
+        console.log('[Giáo đường rửa tội] Đã xóa trạng thái đặc biệt:', removedStatuses);
 
-        // 从卡组中移除所有诅咒卡
         CardDeckManager.deck = CardDeckManager.deck.filter(c => c.type !== CardType.CURSE);
         saveCardDeck();
         CardDeckManager.renderDeck();
@@ -7444,345 +7374,340 @@ const TownSystem = {
         PlayerState.save();
         PlayerState.updateDisplay();
 
-        // 保存洗礼信息
         this.lastChurchCurses = removedCurses;
         this.lastChurchStatuses = removedStatuses;
 
-        // 记录到重要历史
         const allRemoved = [...removedCurses, ...removedStatuses.filter(s => !removedCurses.includes(s))];
-        const historyText = `在教堂进行洗礼仪式，清除了${removedCurses.length}张诅咒卡和${removedStatuses.length}个诅咒状态：${allRemoved.join('、')}`;
+        const historyText = `Đã làm lễ rửa tội tại giáo đường, xóa bỏ ${removedCurses.length} thẻ nguyền rủa và ${removedStatuses.length} trạng thái nguyền rủa: ${allRemoved.join('、')}`;
         ACJTGame.recordToHistory(historyText);
 
-        // 显示跳过/生成选项
-        const cursesText = removedCurses.length > 0 ? removedCurses.join('、') : '无';
-        const statusesText = removedStatuses.length > 0 ? removedStatuses.join('、') : '无';
+        const cursesText = removedCurses.length > 0 ? removedCurses.join('、') : 'Không';
+        const statusesText = removedStatuses.length > 0 ? removedStatuses.join('、') : 'Không';
 
         document.getElementById('churchModal').innerHTML = `
             <div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border-radius: 16px; padding: 30px; max-width: 500px; text-align: center;">
                 <div style="font-size: 72px; margin-bottom: 20px;">✨</div>
-                <div style="color: #ffd700; font-size: 24px; font-weight: bold; margin-bottom: 15px;">洗礼完成!</div>
+                <div style="color: #ffd700; font-size: 24px; font-weight: bold; margin-bottom: 15px;">Rửa tội hoàn tất!</div>
                 <div style="color: #2ed573; font-size: 16px; margin-bottom: 5px;">
-                    清除诅咒卡: ${removedCurses.length} 张
+                    Xóa thẻ nguyền rủa: ${removedCurses.length} lá
                 </div>
                 <div style="color: #2ed573; font-size: 16px; margin-bottom: 10px;">
-                    清除诅咒状态: ${removedStatuses.length} 个
+                    Xóa trạng thái nguyền rủa: ${removedStatuses.length} cái
                 </div>
                 <div style="color: #ff6b81; font-size: 11px; margin-bottom: 5px; max-height: 60px; overflow-y: auto;">
                     ${statusesText}
                 </div>
                 <div style="color: #ffd700; font-size: 14px; margin-bottom: 20px;">
-                    -300💰 剩余: ${PlayerState.gold}金币
+                    -300💰 Còn lại: ${PlayerState.gold} vàng
                 </div>
                 <div style="display: flex; gap: 15px; justify-content: center;">
                     <button onclick="TownSystem.skipChurchStory()"
                             style="padding: 12px 30px; background: linear-gradient(135deg, #667eea, #764ba2);
                                    color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">
-                        跳过剧情
+                        Bỏ qua cốt truyện
                     </button>
                     <button onclick="TownSystem.generateChurchStory()"
                             style="padding: 12px 30px; background: linear-gradient(135deg, #ffd700, #ffb347);
                                    color: #000; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">
-                        生成剧情
+                        Tạo cốt truyện
                     </button>
                 </div>
             </div>
         `;
     },
 
-    // 跳过教堂剧情
+    // Bỏ qua cốt truyện giáo đường
     skipChurchStory: function () {
         const curseCount = this.lastChurchCurses?.length || 0;
         const statusCount = this.lastChurchStatuses?.length || 0;
         this.closeModal('churchModal');
-        // 🔧 刷新所有显示
         CardDeckManager.renderDeck();
         SpecialStatusManager.updateDisplay();
         PlayerState.updateDisplay();
         if (typeof showNotification === 'function') {
-            showNotification(`✨ 洗礼完成，清除了${curseCount}张诅咒卡和${statusCount}个诅咒状态`, 'success');
+            showNotification(`✨ Rửa tội hoàn tất, đã xóa ${curseCount} thẻ nguyền rủa và ${statusCount} trạng thái nguyền rủa`, 'success');
         }
     },
 
-    // 生成教堂剧情
+    // Tạo cốt truyện giáo đường
     generateChurchStory: function () {
         const curses = this.lastChurchCurses || [];
         const statuses = this.lastChurchStatuses || [];
         const allRemoved = [...curses, ...statuses.filter(s => !curses.includes(s))];
         this.closeModal('churchModal');
-        // 🔧 刷新所有显示
         CardDeckManager.renderDeck();
         SpecialStatusManager.updateDisplay();
         PlayerState.updateDisplay();
-        const prompt = `简单跳过之前的场景，开始新剧情：【教堂洗礼仪式】我在教堂花费300金币进行了洗礼仪式，清除了身上的${curses.length}张诅咒卡和${statuses.length}个诅咒状态：${allRemoved.join('、')}。请生成一段洗礼过程的剧情，描写牧师如何帮我驱除诅咒，以及诅咒被清除时的感觉。`;
+        const prompt = `Bỏ qua các cảnh trước đó một cách đơn giản, tạo cốt truyện mới: 【Lễ rửa tội tại giáo đường】 Tôi đã tiêu tốn 300 vàng tại giáo đường để thực hiện nghi thức rửa tội, xóa sạch ${curses.length} lá thẻ nguyền rủa và ${statuses.length} trạng thái nguyền rủa: ${allRemoved.join('、')}. Hãy tạo một đoạn cốt truyện về quá trình rửa tội, miêu tả cách linh mục giúp tôi trục xuất nguyền rủa, cũng như cảm giác khi nguyền rủa biến mất.`;
         ACJTGame.sendToAI(prompt);
     }
 };
 
-// ==================== 身体改造配置（40种） ====================
+// ==================== Cấu hình Cải tạo Cơ thể (40 loại) ====================
 const BodyModConfig = {
-    // ========== 魔族系 (8种) ==========
+    // ========== Hệ Ma tộc (8 loại) ==========
     succubus: {
-        id: 'succubus', name: '魅魔化', icon: '😈', price: 200,
-        description: '将身体改造为魅魔体质，散发诱惑气息',
+        id: 'succubus', name: 'Mị ma hóa', icon: '😈', price: 200,
+        description: 'Cải tạo cơ thể thành thể chất Mị ma, tỏa ra hơi thở quyến rũ',
         effects: { corruption: 50, attack: 3, defense: 3 },
-        effectText: '堕落+50, 攻击+3, 防御+3'
+        effectText: 'Đọa lạc +50, Tấn công +3, Phòng thủ +3'
     },
     demon_blood: {
-        id: 'demon_blood', name: '淫魔血脉', icon: '🩸', price: 300,
-        description: '注入淫魔血液，获得强大的魔族力量',
+        id: 'demon_blood', name: 'Huyết mạch Dâm ma', icon: '🩸', price: 300,
+        description: 'Tiêm huyết dịch Dâm ma, nhận được sức mạnh Ma tộc hùng mạnh',
         effects: { corruption: 60, attack: 5, defense: 5 },
-        effectText: '堕落+60, 攻击+5, 防御+5'
+        effectText: 'Đọa lạc +60, Tấn công +5, Phòng thủ +5'
     },
     demon_tail: {
-        id: 'demon_tail', name: '尾巴移植', icon: '🦯', price: 120,
-        description: '移植魔族尾巴，增强平衡和战斗能力',
+        id: 'demon_tail', name: 'Cấy ghép đuôi', icon: '🦯', price: 120,
+        description: 'Cấy ghép đuôi Ma tộc, tăng cường khả năng thăng bằng và chiến đấu',
         effects: { corruption: 25, attack: 2, defense: 2 },
-        effectText: '堕落+25, 攻击+2, 防御+2'
+        effectText: 'Đọa lạc +25, Tấn công +2, Phòng thủ +2'
     },
     demon_horns: {
-        id: 'demon_horns', name: '角质生长', icon: '🦌', price: 100,
-        description: '头顶长出魔族犄角，增加攻击力',
+        id: 'demon_horns', name: 'Mọc sừng', icon: '🦌', price: 100,
+        description: 'Trên đầu mọc ra sừng Ma tộc, tăng sức tấn công',
         effects: { corruption: 30, attack: 4 },
-        effectText: '堕落+30, 攻击+4'
+        effectText: 'Đọa lạc +30, Tấn công +4'
     },
     demon_wings: {
-        id: 'demon_wings', name: '翅膀移植', icon: '🦇', price: 180,
-        description: '移植魔族翅膀，可以短距离飞行',
+        id: 'demon_wings', name: 'Cấy ghép cánh', icon: '🦇', price: 180,
+        description: 'Cấy ghép cánh Ma tộc, có thể bay ở khoảng cách ngắn',
         effects: { corruption: 35, attack: 3, defense: 3 },
-        effectText: '堕落+35, 攻击+3, 防御+3'
+        effectText: 'Đọa lạc +35, Tấn công +3, Phòng thủ +3'
     },
     demon_eyes: {
-        id: 'demon_eyes', name: '魔眼移植', icon: '👁️', price: 150,
-        description: '获得魔族的妖异双眸，可以魅惑敌人',
+        id: 'demon_eyes', name: 'Cấy ghép Ma nhãn', icon: '👁️', price: 150,
+        description: 'Sở hữu đôi mắt yêu dị của Ma tộc, có thể mê hoặc kẻ thù',
         effects: { corruption: 35, enemyAttackReduce: 3 },
-        effectText: '堕落+35, 敌人攻击-3'
+        effectText: 'Đọa lạc +35, Tấn công kẻ địch -3'
     },
     demon_claws: {
-        id: 'demon_claws', name: '魔爪改造', icon: '🖐️', price: 140,
-        description: '手指变为锐利的魔爪',
+        id: 'demon_claws', name: 'Cải tạo Ma trảo', icon: '🖐️', price: 140,
+        description: 'Ngón tay biến thành ma trảo sắc nhọn',
         effects: { corruption: 30, attack: 5 },
-        effectText: '堕落+30, 攻击+5'
+        effectText: 'Đọa lạc +30, Tấn công +5'
     },
     full_demon: {
-        id: 'full_demon', name: '完全魔化', icon: '👿', price: 500,
-        description: '完全变成魔族，获得极大力量但堕落到底',
+        id: 'full_demon', name: 'Ma hóa hoàn toàn', icon: '👿', price: 500,
+        description: 'Hoàn toàn biến thành Ma tộc, nhận sức mạnh cực đại nhưng đọa lạc đến cùng cực',
         effects: { corruption: 100, attack: 10, defense: 5, maxHp: 30 },
-        effectText: '堕落+100, 攻击+10, 防御+5, HP+30'
+        effectText: 'Đọa lạc +100, Tấn công +10, Phòng thủ +5, HP +30'
     },
 
-    // ========== 胸部改造 (6种) ==========
+    // ========== Cải tạo Ngực (6 loại) ==========
     breast_enlarge: {
-        id: 'breast_enlarge', name: '丰胸手术', icon: '🍈', price: 80,
-        description: '使用魔法药剂增大胸部',
+        id: 'breast_enlarge', name: 'Phẫu thuật nâng ngực', icon: '🍈', price: 80,
+        description: 'Sử dụng dược tề ma pháp để làm ngực to lên',
         effects: { corruption: 20, defense: 2 },
-        effectText: '堕落+20, 防御+2'
+        effectText: 'Đọa lạc +20, Phòng thủ +2'
     },
     magic_breast: {
-        id: 'magic_breast', name: '魔乳改造', icon: '🥛', price: 150,
-        description: '使胸部能够分泌魔力乳汁',
+        id: 'magic_breast', name: 'Cải tạo Ma nhũ', icon: '🥛', price: 150,
+        description: 'Khiến ngực có thể tiết ra sữa ma lực',
         effects: { corruption: 30, defense: 4 },
-        effectText: '堕落+30, 防御+4'
+        effectText: 'Đọa lạc +30, Phòng thủ +4'
     },
     nipple_ring: {
-        id: 'nipple_ring', name: '乳环穿刺', icon: '💎', price: 90,
-        description: '在乳头穿上银色的环饰',
+        id: 'nipple_ring', name: 'Xuyên khuyên ngực', icon: '💎', price: 90,
+        description: 'Xuyên vòng bạc trang trí vào đầu ngực',
         effects: { corruption: 20, hDamageBonus: 5 },
-        effectText: '堕落+20, H伤害+5'
+        effectText: 'Đọa lạc +20, Sát thương H +5'
     },
     lactation: {
-        id: 'lactation', name: '永久泌乳', icon: '🍼', price: 130,
-        description: '使胸部永久分泌乳汁',
+        id: 'lactation', name: 'Tiết sữa vĩnh viễn', icon: '🍼', price: 130,
+        description: 'Khiến ngực vĩnh viễn tiết sữa',
         effects: { corruption: 30, hpPerTurn: 1, defense: 2 },
-        effectText: '堕落+30, 每回合+1HP, 防御+2'
+        effectText: 'Đọa lạc +30, Mỗi lượt +1HP, Phòng thủ +2'
     },
     breast_tattoo: {
-        id: 'breast_tattoo', name: '胸部淫纹', icon: '🎀', price: 100,
-        description: '在胸部刻上淫靡的纹路',
+        id: 'breast_tattoo', name: 'Dâm văn vùng ngực', icon: '🎀', price: 100,
+        description: 'Khắc lên vùng ngực những đường văn dâm mị',
         effects: { corruption: 25, hDamageBonus: 5 },
-        effectText: '堕落+25, H伤害+5'
+        effectText: 'Đọa lạc +25, Sát thương H +5'
     },
     mega_breast: {
-        id: 'mega_breast', name: '巨乳化', icon: '🎈', price: 200,
-        description: '使胸部增大到极限',
+        id: 'mega_breast', name: 'Cực đại hóa ngực', icon: '🎈', price: 200,
+        description: 'Khiến ngực to lên đến giới hạn',
         effects: { corruption: 40, defense: 5, attack: -1 },
-        effectText: '堕落+40, 防御+5, 攻击-1'
+        effectText: 'Đọa lạc +40, Phòng thủ +5, Tấn công -1'
     },
 
-    // ========== 下体改造 (8种) ==========
+    // ========== Cải tạo Hạ bộ (8 loại) ==========
     pussy_enhance: {
-        id: 'pussy_enhance', name: '蜜穴强化', icon: '🌸', price: 160,
-        description: '强化阴道肌肉，提升H技能威力',
+        id: 'pussy_enhance', name: 'Cường hóa mật huyệt', icon: '🌸', price: 160,
+        description: 'Tăng cường cơ âm đạo, nâng cao uy lực kỹ năng H',
         effects: { corruption: 40, hDamageBonus: 15 },
-        effectText: '堕落+40, H技能伤害+15'
+        effectText: 'Đọa lạc +40, Sát thương kỹ năng H +15'
     },
     anal_develop: {
-        id: 'anal_develop', name: '菊穴开发', icon: '🍑', price: 140,
-        description: '开发后穴，获得新的快感来源',
+        id: 'anal_develop', name: 'Khai phá cúc huyệt', icon: '🍑', price: 140,
+        description: 'Khai phá hậu huyệt, nhận được nguồn khoái cảm mới',
         effects: { corruption: 35, defense: 3 },
-        effectText: '堕落+35, 防御+3'
+        effectText: 'Đọa lạc +35, Phòng thủ +3'
     },
     womb_corrupt: {
-        id: 'womb_corrupt', name: '子宫堕落', icon: '💜', price: 200,
-        description: '使子宫完全堕落，获得魔族繁殖力',
+        id: 'womb_corrupt', name: 'Tử cung đọa lạc', icon: '💜', price: 200,
+        description: 'Khiến tử cung hoàn toàn đọa lạc, nhận được khả năng sinh sản của Ma tộc',
         effects: { corruption: 50, maxHp: 20 },
-        effectText: '堕落+50, 最大HP+20'
+        effectText: 'Đọa lạc +50, HP tối đa +20'
     },
     clit_enhance: {
-        id: 'clit_enhance', name: '阴蒂强化', icon: '💢', price: 120,
-        description: '使阴蒂变得更加敏感',
+        id: 'clit_enhance', name: 'Cường hóa âm vật', icon: '💢', price: 120,
+        description: 'Khiến âm vật trở nên cực kỳ nhạy cảm',
         effects: { corruption: 30, hDamageBonus: 10, hpOnHit: 1 },
-        effectText: '堕落+30, H伤害+10, 受伤+1HP'
+        effectText: 'Đọa lạc +30, Sát thương H +10, Trúng đòn +1HP'
     },
     double_pussy: {
-        id: 'double_pussy', name: '双穴改造', icon: '🔮', price: 250,
-        description: '改造出第二个阴道',
+        id: 'double_pussy', name: 'Cải tạo song huyệt', icon: '🔮', price: 250,
+        description: 'Cải tạo ra âm đạo thứ hai',
         effects: { corruption: 55, hDamageBonus: 10 },
-        effectText: '堕落+55, H伤害+10'
+        effectText: 'Đọa lạc +55, Sát thương H +10'
     },
     tentacle_womb: {
-        id: 'tentacle_womb', name: '触手子宫', icon: '🦑', price: 280,
-        description: '子宫内植入触手，可主动捕获',
+        id: 'tentacle_womb', name: 'Tử cung xúc tu', icon: '🦑', price: 280,
+        description: 'Cấy xúc tu vào trong tử cung, có thể chủ động bắt giữ',
         effects: { corruption: 60, attack: 4, hDamageBonus: 10 },
-        effectText: '堕落+60, 攻击+4, H伤害+10'
+        effectText: 'Đọa lạc +60, Tấn công +4, Sát thương H +10'
     },
     egg_laying: {
-        id: 'egg_laying', name: '产卵体质', icon: '🥚', price: 180,
-        description: '获得魔族产卵能力',
+        id: 'egg_laying', name: 'Thể chất đẻ trứng', icon: '🥚', price: 180,
+        description: 'Nhận được khả năng đẻ trứng của Ma tộc',
         effects: { corruption: 45, maxHp: 15, hpPerTurn: 1 },
-        effectText: '堕落+45, HP+15, 每回合+1HP'
+        effectText: 'Đọa lạc +45, HP +15, Mỗi lượt +1HP'
     },
     virgin_restore: {
-        id: 'virgin_restore', name: '处女膜再生', icon: '🌹', price: 100,
-        description: '使处女膜能够自动再生',
+        id: 'virgin_restore', name: 'Tái tạo màng trinh', icon: '🌹', price: 100,
+        description: 'Khiến màng trinh có khả năng tự động tái tạo',
         effects: { corruption: 20, defense: 2 },
-        effectText: '堕落+20, 防御+2'
+        effectText: 'Đọa lạc +20, Phòng thủ +2'
     },
 
-    // ========== 体质改造 (10种) ==========
+    // ========== Cải tạo Thể chất (10 loại) ==========
     lewd_tattoo: {
-        id: 'lewd_tattoo', name: '淫纹刻印', icon: '🔯', price: 120,
-        description: '在身体刻上淫纹，增强H技能',
+        id: 'lewd_tattoo', name: 'Khắc ấn dâm văn', icon: '🔯', price: 120,
+        description: 'Khắc dâm văn lên cơ thể, tăng cường kỹ năng H',
         effects: { corruption: 30, hDamageBonus: 10 },
-        effectText: '堕落+30, H技能伤害+10'
+        effectText: 'Đọa lạc +30, Sát thương kỹ năng H +10'
     },
     charm_body: {
-        id: 'charm_body', name: '媚体改造', icon: '💃', price: 180,
-        description: '全身改造为充满魅力的身体',
+        id: 'charm_body', name: 'Cải tạo mị thể', icon: '💃', price: 180,
+        description: 'Cải tạo toàn thân thành một cơ thể đầy mê hoặc',
         effects: { corruption: 40, attack: 5 },
-        effectText: '堕落+40, 攻击+5'
+        effectText: 'Đọa lạc +40, Tấn công +5'
     },
     sensitive_body: {
-        id: 'sensitive_body', name: '敏感体质', icon: '💗', price: 100,
-        description: '增加身体敏感度，战斗中恢复体力',
+        id: 'sensitive_body', name: 'Thể chất nhạy cảm', icon: '💗', price: 100,
+        description: 'Tăng độ nhạy cảm của cơ thể, hồi phục thể lực trong chiến đấu',
         effects: { corruption: 25, hpPerTurn: 2 },
-        effectText: '堕落+25, 每回合回复2HP'
+        effectText: 'Đọa lạc +25, Mỗi lượt hồi 2HP'
     },
     heat_body: {
-        id: 'heat_body', name: '发情体质', icon: '🔥', price: 150,
-        description: '身体永远处于微微发情状态',
+        id: 'heat_body', name: 'Thể chất phát tình', icon: '🔥', price: 150,
+        description: 'Cơ thể luôn trong trạng thái phát tình nhẹ',
         effects: { corruption: 35, attack: 4 },
-        effectText: '堕落+35, 攻击+4'
+        effectText: 'Đọa lạc +35, Tấn công +4'
     },
     body_enhance: {
-        id: 'body_enhance', name: '肉体强化', icon: '💪', price: 100,
-        description: '强化肉体，提升生命上限',
+        id: 'body_enhance', name: 'Cường hóa nhục thân', icon: '💪', price: 100,
+        description: 'Tăng cường nhục thân, nâng giới hạn sinh mệnh',
         effects: { corruption: 20, maxHp: 15 },
-        effectText: '堕落+20, 最大HP+15'
+        effectText: 'Đọa lạc +20, HP tối đa +15'
     },
     elastic_body: {
-        id: 'elastic_body', name: '柔韧身体', icon: '🤸', price: 130,
-        description: '身体变得极其柔软灵活',
+        id: 'elastic_body', name: 'Cơ thể dẻo dai', icon: '🤸', price: 130,
+        description: 'Cơ thể trở nên cực kỳ mềm mại và linh hoạt',
         effects: { corruption: 25, defense: 4 },
-        effectText: '堕落+25, 防御+4'
+        effectText: 'Đọa lạc +25, Phòng thủ +4'
     },
     regeneration: {
-        id: 'regeneration', name: '再生能力', icon: '♻️', price: 200,
-        description: '获得缓慢的再生能力',
+        id: 'regeneration', name: 'Khả năng tái sinh', icon: '♻️', price: 200,
+        description: 'Nhận được khả năng tái sinh chậm rãi',
         effects: { corruption: 35, hpPerTurn: 3 },
-        effectText: '堕落+35, 每回合+3HP'
+        effectText: 'Đọa lạc +35, Mỗi lượt +3HP'
     },
     pain_pleasure: {
-        id: 'pain_pleasure', name: '痛觉转换', icon: '😵', price: 170,
-        description: '将痛苦转化为快感',
+        id: 'pain_pleasure', name: 'Chuyển hóa đau đớn', icon: '😵', price: 170,
+        description: 'Chuyển hóa đau đớn thành khoái cảm',
         effects: { corruption: 40, hpOnHit: 4, defense: -2 },
-        effectText: '堕落+40, 受伤+4HP, 防御-2'
+        effectText: 'Đọa lạc +40, Trúng đòn +4HP, Phòng thủ -2'
     },
     immortal_body: {
-        id: 'immortal_body', name: '不死之躯', icon: '☠️', price: 350,
-        description: '获得近乎不死的身体',
+        id: 'immortal_body', name: 'Thân thể bất tử', icon: '☠️', price: 350,
+        description: 'Nhận được một cơ thể gần như bất tử',
         effects: { corruption: 70, maxHp: 40, hpPerTurn: 2 },
-        effectText: '堕落+70, HP+40, 每回合+2HP'
+        effectText: 'Đọa lạc +70, HP +40, Mỗi lượt +2HP'
     },
     slime_body: {
-        id: 'slime_body', name: '史莱姆化', icon: '🫧', price: 220,
-        description: '身体变得像史莱姆一样柔软',
+        id: 'slime_body', name: 'Slime hóa', icon: '🫧', price: 220,
+        description: 'Cơ thể trở nên mềm dẻo như Slime',
         effects: { corruption: 45, defense: 6, attack: -2 },
-        effectText: '堕落+45, 防御+6, 攻击-2'
+        effectText: 'Đọa lạc +45, Phòng thủ +6, Tấn công -2'
     },
 
-    // ========== 特殊改造 (8种) ==========
+    // ========== Cải tạo Đặc biệt (8 loại) ==========
     tentacle_implant: {
-        id: 'tentacle_implant', name: '触手植入', icon: '🐙', price: 220,
-        description: '在体内植入触手器官，可自主攻击',
+        id: 'tentacle_implant', name: 'Cấy ghép xúc tu', icon: '🐙', price: 220,
+        description: 'Cấy cơ quan xúc tu vào cơ thể, có thể tự động tấn công',
         effects: { corruption: 45, attack: 6 },
-        effectText: '堕落+45, 攻击+6'
+        effectText: 'Đọa lạc +45, Tấn công +6'
     },
     pheromone_gland: {
-        id: 'pheromone_gland', name: '媚香腺体', icon: '🌺', price: 130,
-        description: '植入媚香腺体，散发迷惑敌人的气息',
+        id: 'pheromone_gland', name: 'Tuyến hương quyến rũ', icon: '🌺', price: 130,
+        description: 'Cấy tuyến hương quyến rũ, tỏa ra hơi thở làm mê muội kẻ thù',
         effects: { corruption: 30, enemyAttackReduce: 2 },
-        effectText: '堕落+30, 敌人攻击-2'
+        effectText: 'Đọa lạc +30, Tấn công kẻ địch -2'
     },
     pleasure_nerve: {
-        id: 'pleasure_nerve', name: '快感神经', icon: '⚡', price: 170,
-        description: '改造神经系统，将痛苦转化为快感',
+        id: 'pleasure_nerve', name: 'Thần kinh khoái cảm', icon: '⚡', price: 170,
+        description: 'Cải tạo hệ thần kinh, chuyển hóa đau đớn thành khoái cảm',
         effects: { corruption: 45, hpOnHit: 3 },
-        effectText: '堕落+45, 受伤时回复3HP'
+        effectText: 'Đọa lạc +45, Hồi 3HP khi trúng đòn'
     },
     mind_corrupt: {
-        id: 'mind_corrupt', name: '精神污染', icon: '🧠', price: 160,
-        description: '接受精神污染，加速堕落',
+        id: 'mind_corrupt', name: 'Ô nhiễm tinh thần', icon: '🧠', price: 160,
+        description: 'Chấp nhận ô nhiễm tinh thần, tăng tốc đọa lạc',
         effects: { corruption: 40, corruptionPerRest: 5 },
-        effectText: '堕落+40, 每次休息堕落+5'
+        effectText: 'Đọa lạc +40, Mỗi khi nghỉ ngơi đọa lạc +5'
     },
     eternal_heat: {
-        id: 'eternal_heat', name: '永久发情', icon: '❤️‍🔥', price: 250,
-        description: '身体永久处于发情状态，大幅提升攻击',
+        id: 'eternal_heat', name: 'Phát tình vĩnh viễn', icon: '❤️‍🔥', price: 250,
+        description: 'Cơ thể vĩnh viễn trong trạng thái phát tình, tăng mạnh tấn công',
         effects: { corruption: 55, attack: 8, damageTaken: 10 },
-        effectText: '堕落+55, 攻击+8, 受伤+10'
+        effectText: 'Đọa lạc +55, Tấn công +8, Sát thương nhận +10'
     },
     parasite_core: {
-        id: 'parasite_core', name: '寄生核心', icon: '🦠', price: 280,
-        description: '植入魔族寄生核心，获得额外生命',
+        id: 'parasite_core', name: 'Hạt nhân ký sinh', icon: '🦠', price: 280,
+        description: 'Cấy hạt nhân ký sinh Ma tộc, nhận thêm sinh mệnh',
         effects: { corruption: 50, maxHp: 30, corruptionPerRest: 3 },
-        effectText: '堕落+50, HP+30, 休息堕落+3'
+        effectText: 'Đọa lạc +50, HP +30, Nghỉ ngơi đọa lạc +3'
     },
     charm_voice: {
-        id: 'charm_voice', name: '魅音改造', icon: '🎤', price: 140,
-        description: '声音变得充满魅惑',
+        id: 'charm_voice', name: 'Cải tạo mị âm', icon: '🎤', price: 140,
+        description: 'Giọng nói trở nên đầy mê hoặc',
         effects: { corruption: 30, enemyAttackReduce: 3, attack: 2 },
-        effectText: '堕落+30, 敌人攻击-3, 攻击+2'
+        effectText: 'Đọa lạc +30, Tấn công kẻ địch -3, Tấn công +2'
     },
     symbiote: {
-        id: 'symbiote', name: '共生体', icon: '🖤', price: 400,
-        description: '与魔族共生体融合',
+        id: 'symbiote', name: 'Vật cộng sinh', icon: '🖤', price: 400,
+        description: 'Dung hợp với vật cộng sinh Ma tộc',
         effects: { corruption: 80, attack: 8, defense: 4, hDamageBonus: 15 },
-        effectText: '堕落+80, 攻击+8, 防御+4, H伤害+15'
+        effectText: 'Đọa lạc +80, Tấn công +8, Phòng thủ +4, Sát thương H +15'
     }
 };
 
-// ==================== 黑市系统 ====================
+// ==================== Hệ thống Chợ Đen ====================
 const BlackMarketSystem = {
-    purchasedMods: [], // 已购买的改造
+    purchasedMods: [], // Các cải tạo đã mua
 
-    // 打开黑市
+    // Mở chợ đen
     open: function () {
         if (PlayerState.floor > 1) {
-            alert('只有在城镇（第0-1层）才能进入黑市！');
+            alert('Chỉ có thể vào chợ đen khi ở thị trấn (Tầng 0-1)!');
             return;
         }
 
-        // 加载已购买的改造
+        // Tải các cải tạo đã mua
         this.loadPurchased();
 
         const modal = document.createElement('div');
@@ -7793,7 +7718,7 @@ const BlackMarketSystem = {
         document.body.appendChild(modal);
     },
 
-    // 生成商店HTML
+    // Tạo HTML cửa hàng
     generateShopHTML: function () {
         let itemsHtml = '';
 
@@ -7809,43 +7734,43 @@ const BlackMarketSystem = {
                     <div class="market-item-effect">${mod.effectText}</div>
                     <div class="market-item-price">💰 ${mod.price}</div>
                     ${isPurchased ?
-                    `<div style="color: #888; font-size: 12px; margin-top: auto;">已购买</div>` :
+                    `<div style="color: #888; font-size: 12px; margin-top: auto;">Đã mua</div>` :
                     `<button onclick="BlackMarketSystem.purchase('${mod.id}')"
                                  class="market-btn-buy"
                                  ${canAfford ? '' : 'disabled'}>
-                            购买
+                            Mua
                         </button>`
                 }
                 </div>
             `;
         });
 
-        // 属性强化区域
+        // Khu vực cường hóa thuộc tính
         const canAffordStat = PlayerState.gold >= 200;
         const statUpgradeHtml = `
             <div style="display: flex; gap: 20px; justify-content: center; margin-bottom: 30px;">
                 <div class="market-item market-stat-card attack" style="width: 220px;">
                     <div class="market-item-icon">⚔️</div>
-                    <div class="market-item-name" style="color: #ff6b6b;">攻击强化</div>
-                    <div class="market-item-desc" style="color: #ccc;">当前攻击: ${PlayerState.attack}</div>
-                    <div class="market-item-price">💰 200 → +1攻击</div>
+                    <div class="market-item-name" style="color: #ff6b6b;">Cường hóa Tấn công</div>
+                    <div class="market-item-desc" style="color: #ccc;">Tấn công hiện tại: ${PlayerState.attack}</div>
+                    <div class="market-item-price">💰 200 → +1 Tấn công</div>
                     <button onclick="BlackMarketSystem.purchaseStat('attack')"
                             class="market-btn-buy"
                             style="background: linear-gradient(135deg, #ff6b6b, #ee5a5a);"
                             ${canAffordStat ? '' : 'disabled'}>
-                        强化
+                        Cường hóa
                     </button>
                 </div>
                 <div class="market-item market-stat-card defense" style="width: 220px;">
                     <div class="market-item-icon">🛡️</div>
-                    <div class="market-item-name" style="color: #74b9ff;">防御强化</div>
-                    <div class="market-item-desc" style="color: #ccc;">当前防御: ${PlayerState.defense}</div>
-                    <div class="market-item-price">💰 200 → +1防御</div>
+                    <div class="market-item-name" style="color: #74b9ff;">Cường hóa Phòng thủ</div>
+                    <div class="market-item-desc" style="color: #ccc;">Phòng thủ hiện tại: ${PlayerState.defense}</div>
+                    <div class="market-item-price">💰 200 → +1 Phòng thủ</div>
                     <button onclick="BlackMarketSystem.purchaseStat('defense')"
                             class="market-btn-buy"
                             style="background: linear-gradient(135deg, #74b9ff, #5da4e8);"
                             ${canAffordStat ? '' : 'disabled'}>
-                        强化
+                        Cường hóa
                     </button>
                 </div>
             </div>
@@ -7853,20 +7778,20 @@ const BlackMarketSystem = {
 
         return `
             <div class="market-header">
-                <div class="market-title">🔮 黑市交易</div>
+                <div class="market-title">🔮 Giao dịch Chợ Đen</div>
                 <div class="market-status-bar">
-                    <div class="market-status-item">💰 金币 <span style="color: #ffd700;">${PlayerState.gold}</span></div>
-                    <div class="market-status-item">⚔️ 攻击 <span style="color: #ff6b6b;">${PlayerState.attack}</span></div>
-                    <div class="market-status-item">🛡️ 防御 <span style="color: #74b9ff;">${PlayerState.defense}</span></div>
-                    <div class="market-status-item">💜 堕落 <span style="color: #ff6b9d;">${PlayerState.corruption}</span></div>
+                    <div class="market-status-item">💰 Vàng <span style="color: #ffd700;">${PlayerState.gold}</span></div>
+                    <div class="market-status-item">⚔️ Tấn công <span style="color: #ff6b6b;">${PlayerState.attack}</span></div>
+                    <div class="market-status-item">🛡️ Phòng thủ <span style="color: #74b9ff;">${PlayerState.defense}</span></div>
+                    <div class="market-status-item">💜 Đọa lạc <span style="color: #ff6b9d;">${PlayerState.corruption}</span></div>
                 </div>
             </div>
             
             <div class="market-content-scroll">
-                <div class="market-section-title">💪 属性强化 (无限购买)</div>
+                <div class="market-section-title">💪 Cường hóa thuộc tính (Mua không giới hạn)</div>
                 ${statUpgradeHtml}
                 
-                <div class="market-section-title">🧬 身体改造 (一次性)</div>
+                <div class="market-section-title">🧬 Cải tạo cơ thể (Mua một lần)</div>
                 <div class="market-grid">
                     ${itemsHtml}
                 </div>
@@ -7874,62 +7799,62 @@ const BlackMarketSystem = {
             
             <div class="market-footer">
                 <button onclick="BlackMarketSystem.close()" class="market-btn-close">
-                    离开黑市
+                    Rời khỏi Chợ Đen
                 </button>
             </div>
         `;
     },
 
-    // 购买改造
+    // Mua cải tạo
     purchase: function (modId) {
         const mod = BodyModConfig[modId];
         if (!mod || this.purchasedMods.includes(modId)) return;
         if (PlayerState.gold < mod.price) {
-            alert('金币不足！');
+            alert('Không đủ vàng!');
             return;
         }
 
-        // 扣除金币
+        // Trừ vàng
         PlayerState.gold -= mod.price;
         this.purchasedMods.push(modId);
         this.savePurchased();
 
-        // 应用效果
+        // Áp dụng hiệu ứng
         this.applyModEffects(mod);
 
         PlayerState.save();
         PlayerState.updateDisplay();
 
-        // 显示确认界面
+        // Hiển thị giao diện xác nhận
         const modal = document.getElementById('blackMarketModal');
         modal.innerHTML = `
             <div style="margin: auto; background: linear-gradient(145deg, rgba(30, 20, 40, 0.98), rgba(20, 10, 20, 0.99)); 
                         border: 2px solid #9b59b6; border-radius: 12px; padding: 40px; width: 500px; text-align: center;
                         box-shadow: 0 0 30px rgba(155, 89, 182, 0.3);">
                 <div style="font-size: 64px; margin-bottom: 20px; filter: drop-shadow(0 0 10px rgba(155, 89, 182, 0.6)); animation: pulse 2s infinite;">${mod.icon}</div>
-                <div style="color: #9b59b6; font-size: 28px; font-weight: bold; margin-bottom: 15px; text-shadow: 0 0 10px rgba(155, 89, 182, 0.4);">改造完成!</div>
+                <div style="color: #9b59b6; font-size: 28px; font-weight: bold; margin-bottom: 15px; text-shadow: 0 0 10px rgba(155, 89, 182, 0.4);">Cải tạo hoàn tất!</div>
                 <div style="color: #fff; font-size: 20px; margin-bottom: 15px;">${mod.name}</div>
                 <div style="color: #ff6b9d; font-size: 14px; margin-bottom: 20px; background: rgba(255, 107, 157, 0.1); padding: 8px; border-radius: 4px;">${mod.effectText}</div>
                 <div style="color: #aaa; font-size: 13px; margin-bottom: 30px; line-height: 1.6;">${mod.description}</div>
                 <div style="display: flex; gap: 20px; justify-content: center;">
                     <button onclick="BlackMarketSystem.skipStory('${modId}')"
                             class="market-btn-buy" style="width: auto; padding: 10px 30px; background: linear-gradient(135deg, #667eea, #764ba2);">
-                        跳过剧情
+                        Bỏ qua cốt truyện
                     </button>
                     <button onclick="BlackMarketSystem.generateStory('${modId}')"
                             class="market-btn-buy" style="width: auto; padding: 10px 30px; background: linear-gradient(135deg, #ff6b9d, #c44569);">
-                        生成剧情
+                        Tạo cốt truyện
                     </button>
                 </div>
             </div>
         `;
     },
 
-    // 应用改造效果
+    // Áp dụng hiệu ứng cải tạo
     applyModEffects: function (mod) {
         const effects = mod.effects;
 
-        // 堕落值
+        // Điểm đọa lạc
         if (effects.corruption) {
             PlayerState.corruption += effects.corruption;
             if (typeof gameState !== 'undefined' && gameState.variables) {
@@ -7937,23 +7862,23 @@ const BlackMarketSystem = {
             }
         }
 
-        // 攻击力
+        // Tấn công
         if (effects.attack) {
             PlayerState.attack += effects.attack;
         }
 
-        // 防御力
+        // Phòng thủ
         if (effects.defense) {
             PlayerState.defense += effects.defense;
         }
 
-        // 最大HP
+        // HP tối đa
         if (effects.maxHp) {
             PlayerState.maxHp += effects.maxHp;
-            PlayerState.hp += effects.maxHp; // 同时回复
+            PlayerState.hp += effects.maxHp; // Đồng thời hồi phục
         }
 
-        // 🔧 所有改造都添加到特殊状态中显示
+        // Thêm vào danh sách trạng thái đặc biệt để hiển thị
         const statusId = 'mod_' + mod.id;
         SpecialStatusManager.statuses[statusId] = {
             id: statusId,
@@ -7961,8 +7886,8 @@ const BlackMarketSystem = {
             icon: mod.icon,
             description: mod.effectText,
             permanent: true,
-            effect: 'bodyMod',  // 标记为身体改造
-            // 战斗效果
+            effect: 'bodyMod',  // Đánh dấu là cải tạo cơ thể
+            // Hiệu ứng chiến đấu
             hDamageBonus: effects.hDamageBonus || 0,
             hpPerTurn: effects.hpPerTurn || 0,
             enemyAttackReduce: effects.enemyAttackReduce || 0,
@@ -7973,71 +7898,71 @@ const BlackMarketSystem = {
         SpecialStatusManager.save();
         SpecialStatusManager.updateDisplay();
 
-        console.log('[黑市] 应用改造效果:', mod.name, effects);
+        console.log('[Chợ Đen] Áp dụng hiệu ứng cải tạo:', mod.name, effects);
     },
 
-    // 跳过剧情
+    // Bỏ qua cốt truyện
     skipStory: function (modId) {
         const mod = BodyModConfig[modId];
-        ACJTGame.recordToHistory(`在黑市完成了"${mod.name}"身体改造，${mod.effectText}`);
+        ACJTGame.recordToHistory(`Đã hoàn thành cải tạo cơ thể "${mod.name}" tại chợ đen, ${mod.effectText}`);
         this.close();
     },
 
-    // 生成剧情
+    // Tạo cốt truyện
     generateStory: function (modId) {
         const mod = BodyModConfig[modId];
         this.close();
-        const prompt = `简单跳过当前场景，开始新剧情：【尖塔城镇黑市】我接受了“${mod.name}”身体改造。改造描述：${mod.description}。效果：${mod.effectText}。请生成一段详细的改造过程剧情，描写改造的细节、主角的感受和身体的变化。`;
+        const prompt = `Bỏ qua các cảnh trước đó một cách đơn giản, tạo cốt truyện mới: 【Chợ đen thị trấn tòa tháp】 Tôi đã chấp nhận cải tạo cơ thể "${mod.name}". Mô tả cải tạo: ${mod.description}. Hiệu quả: ${mod.effectText}. Hãy tạo một đoạn cốt truyện chi tiết về quá trình cải tạo, miêu tả chi tiết về quá trình, cảm nhận của nhân vật chính và sự thay đổi của cơ thể.`;
         ACJTGame.sendToAI(prompt);
     },
 
-    // 🔧 购买属性强化（无限次数）
+    // Mua cường hóa thuộc tính (vô hạn lần)
     purchaseStat: function (statType) {
         if (PlayerState.gold < 200) {
-            alert('金币不足！需要200金币');
+            alert('Không đủ vàng! Cần 200 vàng');
             return;
         }
 
-        // 扣除金币
+        // Trừ vàng
         PlayerState.gold -= 200;
 
-        // 增加属性
+        // Tăng thuộc tính
         if (statType === 'attack') {
             PlayerState.attack += 1;
-            console.log('[黑市] 购买攻击强化，当前攻击:', PlayerState.attack);
+            console.log('[Chợ Đen] Mua cường hóa tấn công, tấn công hiện tại:', PlayerState.attack);
         } else if (statType === 'defense') {
             PlayerState.defense += 1;
-            console.log('[黑市] 购买防御强化，当前防御:', PlayerState.defense);
+            console.log('[Chợ Đen] Mua cường hóa phòng thủ, phòng thủ hiện tại:', PlayerState.defense);
         }
 
-        // 保存并更新显示
+        // Lưu và cập nhật hiển thị
         PlayerState.save();
         PlayerState.updateDisplay();
 
-        // 刷新黑市界面
+        // Làm mới giao diện chợ đen
         const modal = document.getElementById('blackMarketModal');
         if (modal) {
             modal.innerHTML = this.generateShopHTML();
         }
     },
 
-    // 关闭黑市
+    // Đóng chợ đen
     close: function () {
         document.getElementById('blackMarketModal')?.remove();
     },
 
-    // 保存已购买的改造
+    // Lưu các cải tạo đã mua
     savePurchased: function () {
         localStorage.setItem('acjt_body_mods', JSON.stringify(this.purchasedMods));
     },
 
-    // 加载已购买的改造
+    // Tải các cải tạo đã mua
     loadPurchased: function () {
         const saved = localStorage.getItem('acjt_body_mods');
         if (saved) {
             try {
                 this.purchasedMods = JSON.parse(saved);
-                // 🔧 同步已购买的改造到特殊状态（确保显示）
+                // Đồng bộ cải tạo đã mua vào trạng thái đặc biệt
                 this.syncModsToStatus();
             } catch (e) {
                 this.purchasedMods = [];
@@ -8045,11 +7970,11 @@ const BlackMarketSystem = {
         }
     },
 
-    // 同步已购买的改造到特殊状态
+    // Đồng bộ cải tạo đã mua vào trạng thái đặc biệt
     syncModsToStatus: function () {
         this.purchasedMods.forEach(modId => {
             const mod = BodyModConfig[modId];
-            // 🔧 如果已经有 start_ 前缀的同款状态，就不要再添加 mod_ 版本
+            // Nếu đã có phiên bản start_ của cùng một trạng thái thì không thêm phiên bản mod_
             const hasStartVersion = Object.keys(SpecialStatusManager.statuses).some(key =>
                 key.startsWith('start_') && key.includes(modId)
             );
@@ -8062,7 +7987,7 @@ const BlackMarketSystem = {
                     description: mod.effectText,
                     permanent: true,
                     effect: 'bodyMod',
-                    source: 'blackmarket', // 🔧 标记来源
+                    source: 'blackmarket', // Đánh dấu nguồn gốc
                     hDamageBonus: effects.hDamageBonus || 0,
                     hpPerTurn: effects.hpPerTurn || 0,
                     enemyAttackReduce: effects.enemyAttackReduce || 0,
@@ -8078,7 +8003,7 @@ const BlackMarketSystem = {
         }
     },
 
-    // 获取战斗修正值
+    // Lấy giá trị điều chỉnh chiến đấu
     getBattleMods: function () {
         let mods = {
             hDamageBonus: 0,
@@ -8088,7 +8013,7 @@ const BlackMarketSystem = {
             damageTaken: 0
         };
 
-        // 从特殊状态中收集改造效果
+        // Thu thập hiệu ứng cải tạo từ các trạng thái đặc biệt
         Object.values(SpecialStatusManager.statuses).forEach(status => {
             if (status.id?.startsWith('mod_')) {
                 mods.hDamageBonus += status.hDamageBonus || 0;
@@ -8103,67 +8028,63 @@ const BlackMarketSystem = {
     }
 };
 
-// ==================== 修行系统（购买卡牌/摒弃卡牌） ====================
+// ==================== Hệ thống Tu hành (Mua/Loại bỏ thẻ bài) ====================
 const CultivationSystem = {
-    // 记录本次修行操作
-    learnedCards: [],    // 习得的卡牌名称
-    discardedCards: [],  // 摒弃的卡牌名称
+    // Ghi lại thao tác tu hành lần này
+    learnedCards: [],    // Tên các thẻ đã học được
+    discardedCards: [],  // Tên các thẻ đã loại bỏ
 
-    // 打开修行界面
+    // Mở giao diện tu hành
     open: function () {
-        // 重置记录
+        // Đặt lại ghi chép
         this.learnedCards = [];
         this.discardedCards = [];
 
         const modal = document.createElement('div');
         modal.id = 'cultivationModal';
-        // Remove valid inline styles and use CSS class for control
         modal.className = 'cultivation-modal';
-        // Only keep minimal styles if absolutely needed, or rely entirely on CSS
-        // Attempting to rely purely on CSS for dimensions and positioning
-        // modal.style.cssText = ... removed
 
         modal.innerHTML = this.generateHTML();
         document.body.appendChild(modal);
     },
 
-    // 生成修行界面HTML
+    // Tạo HTML giao diện tu hành
     generateHTML: function () {
         const playerCorruption = PlayerState.corruption || 0;
         const playerProfession = PlayerState.profession?.id;
 
-        // 获取所有可购买的卡牌（根据职业和堕落值过滤）
-        // 规则：通用卡和H技能卡所有职业都能买，职业卡只有对应职业能买
+        // Lấy tất cả thẻ bài có thể mua (lọc theo nghề nghiệp và đọa lạc)
+        // Quy tắc: Thẻ chung và thẻ kỹ năng H mọi nghề nghiệp đều mua được, thẻ nghề nghiệp chỉ đúng nghề mới mua được
         const availableCards = CardLibrary.filter(card => {
-            // 检查堕落值解锁条件（H技能卡）
+            // Kiểm tra điều kiện đọa lạc (thẻ kỹ năng H)
             if (card.corruptionRequired !== undefined && card.corruptionRequired > playerCorruption) {
                 return false;
             }
-            // H技能卡：所有职业都能买（只要堕落值够）
+            // Thẻ kỹ năng H: Mọi nghề nghiệp đều mua được (nếu đủ đọa lạc)
             if (card.type === CardType.H_ATTACK) {
                 return true;
             }
-            // 职业专属卡：只有对应职业能买
+            // Thẻ đặc thù nghề nghiệp: Chỉ đúng nghề mới mua được
             if (card.professionRequired) {
                 return card.professionRequired === playerProfession;
             }
-            // 通用卡：所有职业都能买
+            // Thẻ chung: Mọi nghề đều mua được
             return true;
         });
 
-        // 生成可购买卡牌列表
+        // Tạo danh sách thẻ bài có thể mua
         let buyCardsHtml = '';
         availableCards.forEach((card, index) => {
             const typeColor = CardTypeColors[card.type] || '#666';
-            // 计算价格：最低100，基于费用计算
+            // Tính giá: tối thiểu 100, dựa trên năng lượng tiêu tốn và chỉ số
             const price = Math.max(100, (card.cost || 1) * 50 + (card.value || 0) * 3);
             const canBuy = PlayerState.gold >= price;
 
             buyCardsHtml += `
                 <div style="background: linear-gradient(135deg, rgba(30,30,50,0.95) 0%, rgba(20,20,35,0.98) 100%);
-                           border: 2px solid ${canBuy ? typeColor : '#333'}; border-radius: 8px;
-                           padding: 12px; width: 140px; text-align: center; opacity: ${canBuy ? 1 : 0.5};
-                           flex-shrink: 0;">
+                            border: 2px solid ${canBuy ? typeColor : '#333'}; border-radius: 8px;
+                            padding: 12px; width: 140px; text-align: center; opacity: ${canBuy ? 1 : 0.5};
+                            flex-shrink: 0;">
                     <div style="color: #ffd700; font-size: 12px; text-align: right;">${card.cost}⚡</div>
                     <div style="color: #fff; font-size: 14px; font-weight: bold; margin-bottom: 5px;">${card.name}</div>
                     <div style="color: ${typeColor}; font-size: 16px; font-weight: bold; margin-bottom: 6px;">${card.value || '-'}</div>
@@ -8177,7 +8098,7 @@ const CultivationSystem = {
             `;
         });
 
-        // 生成当前卡组（可摒弃的卡牌）
+        // Tạo danh sách bộ bài hiện tại (các thẻ có thể loại bỏ)
         let deckCardsHtml = '';
         CardDeckManager.deck.forEach((card, index) => {
             const typeColor = CardTypeColors[card.type] || '#666';
@@ -8186,10 +8107,10 @@ const CultivationSystem = {
 
             deckCardsHtml += `
                 <div style="background: linear-gradient(135deg, rgba(30,30,50,0.95) 0%, rgba(20,20,35,0.98) 100%);
-                           border: 2px solid ${isCurse ? '#8b0000' : typeColor}; border-radius: 8px;
-                           padding: 12px; width: 140px; text-align: center; opacity: ${canDiscard ? 1 : 0.6};
-                           flex-shrink: 0; position: relative;">
-                    ${isCurse ? '<div style="position:absolute;top:5px;left:5px;font-size:11px;color:#ff4757;">诅咒</div>' : ''}
+                            border: 2px solid ${isCurse ? '#8b0000' : typeColor}; border-radius: 8px;
+                            padding: 12px; width: 140px; text-align: center; opacity: ${canDiscard ? 1 : 0.6};
+                            flex-shrink: 0; position: relative;">
+                    ${isCurse ? '<div style="position:absolute;top:5px;left:5px;font-size:11px;color:#ff4757;">Nguyền rủa</div>' : ''}
                     <div style="color: #ffd700; font-size: 12px; text-align: right;">${card.cost}⚡</div>
                     <div style="color: #fff; font-size: 14px; font-weight: bold; margin-bottom: 5px;">${card.name}</div>
                     <div style="color: ${typeColor}; font-size: 16px; font-weight: bold; margin-bottom: 6px;">${card.value || '-'}</div>
@@ -8197,44 +8118,40 @@ const CultivationSystem = {
                     <button onclick="CultivationSystem.discardCard(${index})" ${!canDiscard ? 'disabled' : ''}
                             style="padding: 5px 12px; background: ${canDiscard ? '#ff4757' : '#333'}; color: ${canDiscard ? '#fff' : '#666'};
                                    border: none; border-radius: 4px; cursor: ${canDiscard ? 'pointer' : 'not-allowed'}; font-size: 12px;">
-                        ${isCurse ? '无法摒弃' : '💰 300 摒弃'}
+                        ${isCurse ? 'Không thể loại bỏ' : '💰 300 Loại bỏ'}
                     </button>
                 </div>
             `;
         });
 
         return `
-            <!-- Compact Header -->
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 0 5px; width: 100%; border-bottom: 1px solid rgba(107, 82, 65, 0.3); padding-bottom: 5px;">
-                <div style="color: #9c88ff; font-size: 24px; font-weight: bold;">🧘 修行</div>
-                <div style="color: #ffd700; font-size: 16px; font-weight: bold;">💰 金币: ${PlayerState.gold}</div>
+                <div style="color: #9c88ff; font-size: 24px; font-weight: bold;">🧘 Tu hành</div>
+                <div style="color: #ffd700; font-size: 16px; font-weight: bold;">💰 Vàng: ${PlayerState.gold}</div>
             </div>
             
-            <!-- Tab Navigation (More compact) -->
             <div style="display: flex; gap: 0; margin-bottom: 10px; border-bottom: 1px solid #6b5241; width: 100%;">
                 <div id="tab-buy" onclick="CultivationSystem.switchTab('buy')" 
                      style="padding: 8px 30px; cursor: pointer; background: #8b0000; color: #fff; border: 1px solid #6b5241; border-bottom: none; border-radius: 6px 6px 0 0; font-weight: bold; flex: 1; text-align: center; transition: all 0.3s; font-size: 14px;">
-                    📚 购买卡牌
+                    📚 Mua thẻ bài
                 </div>
                 <div id="tab-delete" onclick="CultivationSystem.switchTab('delete')" 
                      style="padding: 8px 30px; cursor: pointer; background: rgba(0,0,0,0.3); color: #888; border: 1px solid #6b5241; border-bottom: none; border-radius: 6px 6px 0 0; border-left: none; flex: 1; text-align: center; transition: all 0.3s; font-size: 14px;">
-                    🗑️ 删除卡牌
+                    🗑️ Xóa thẻ bài
                 </div>
             </div>
 
-            <!-- Content Area: Buy Cards (Maximized width, reduced padding) -->
             <div id="content-buy" style="display: flex; width: 100%; flex: 1; overflow: hidden; flex-direction: column;">
-                <div style="color: #2ed573; font-size: 13px; margin-bottom: 5px; text-align: center;">👇 点击购买习得新技能 (最低售价100金币)</div>
+                <div style="color: #2ed573; font-size: 13px; margin-bottom: 5px; text-align: center;">👇 Nhấn để mua và học kỹ năng mới (Giá thấp nhất 100 vàng)</div>
                 <div class="cultivation-scroll-area" style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; width: 100%; overflow-y: auto; padding: 5px; background: rgba(0,0,0,0.2); border-radius: 0 0 5px 5px; border: 1px solid #6b5241; border-top: none;">
-                    ${buyCardsHtml || '<div style="color: #666; width: 100%; text-align: center; padding-top: 50px;">暂无可习得的功法</div>'}
+                    ${buyCardsHtml || '<div style="color: #666; width: 100%; text-align: center; padding-top: 50px;">Tạm thời không có công pháp nào có thể học</div>'}
                 </div>
             </div>
 
-            <!-- Content Area: Delete Cards -->
             <div id="content-delete" style="display: none; width: 100%; flex: 1; overflow: hidden; flex-direction: column;">
-                 <div style="color: #ff6b9d; font-size: 13px; margin-bottom: 5px; text-align: center;">👇 点击删除摒弃杂念 (花费300金币)</div>
+                 <div style="color: #ff6b9d; font-size: 13px; margin-bottom: 5px; text-align: center;">👇 Nhấn để xóa bỏ tạp niệm (Tiêu tốn 300 vàng)</div>
                 <div class="cultivation-scroll-area" style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; width: 100%; overflow-y: auto; padding: 5px; background: rgba(0,0,0,0.2); border-radius: 0 0 5px 5px; border: 1px solid #6b5241; border-top: none;">
-                    ${deckCardsHtml || '<div style="color: #666; width: 100%; text-align: center; padding-top: 50px;">卡组为空</div>'}
+                    ${deckCardsHtml || '<div style="color: #666; width: 100%; text-align: center; padding-top: 50px;">Bộ bài trống</div>'}
                 </div>
             </div>
             
@@ -8242,13 +8159,13 @@ const CultivationSystem = {
                 <button onclick="CultivationSystem.leave()"
                         style="padding: 10px 50px; background: linear-gradient(135deg, #667eea, #764ba2);
                                color: #fff; border: 2px solid #a29bfe; border-radius: 6px; cursor: pointer; font-size: 15px; font-weight: bold; box-shadow: 0 0 10px rgba(108, 92, 231, 0.4);">
-                    🚪 离开修行
+                    🚪 Rời khỏi tu hành
                 </button>
             </div>
         `;
     },
 
-    // 购买卡牌
+    // Mua thẻ bài
     buyCard: function (cardId, price) {
         if (PlayerState.gold < price) return;
 
@@ -8267,7 +8184,7 @@ const CultivationSystem = {
         this.refreshUI();
     },
 
-    // 摒弃卡牌
+    // Loại bỏ thẻ bài
     discardCard: function (index) {
         const card = CardDeckManager.deck[index];
         if (!card || card.type === CardType.CURSE) return;
@@ -8285,20 +8202,18 @@ const CultivationSystem = {
         this.refreshUI();
     },
 
-    // 刷新界面
+    // Làm mới giao diện
     refreshUI: function () {
-        // 保存当前tab状态
         const activeTab = document.querySelector('#content-buy')?.style.display !== 'none' ? 'buy' : 'delete';
 
         const modal = document.getElementById('cultivationModal');
         if (modal) {
             modal.innerHTML = this.generateHTML();
-            // 恢复tab状态
             this.switchTab(activeTab);
         }
     },
 
-    // Tab切换逻辑
+    // Logic chuyển đổi Tab
     switchTab: function (tabName) {
         const tabBuy = document.getElementById('tab-buy');
         const tabDelete = document.getElementById('tab-delete');
@@ -8308,7 +8223,6 @@ const CultivationSystem = {
         if (!tabBuy || !tabDelete || !contentBuy || !contentDelete) return;
 
         if (tabName === 'buy') {
-            // 激活购买Tab
             tabBuy.style.background = '#8b0000';
             tabBuy.style.color = '#fff';
             tabBuy.style.borderBottom = 'none';
@@ -8320,7 +8234,6 @@ const CultivationSystem = {
             contentBuy.style.display = 'flex';
             contentDelete.style.display = 'none';
         } else {
-            // 激活删除Tab
             tabDelete.style.background = '#8b0000';
             tabDelete.style.color = '#fff';
             tabDelete.style.borderBottom = 'none';
@@ -8334,36 +8247,34 @@ const CultivationSystem = {
         }
     },
 
-    // 离开修行
+    // Rời khỏi tu hành
     leave: function () {
-        // 如果没有任何操作，直接关闭
         if (this.learnedCards.length === 0 && this.discardedCards.length === 0) {
             this.close();
             return;
         }
 
-        // 显示跳过/生成剧情选项
         const modal = document.getElementById('cultivationModal');
         if (modal) {
-            const learnedText = this.learnedCards.length > 0 ? this.learnedCards.join('、') : '无';
-            const discardedText = this.discardedCards.length > 0 ? this.discardedCards.join('、') : '无';
+            const learnedText = this.learnedCards.length > 0 ? this.learnedCards.join('、') : 'Không';
+            const discardedText = this.discardedCards.length > 0 ? this.discardedCards.join('、') : 'Không';
 
             modal.innerHTML = `
                 <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
                     <div style="font-size: 72px; margin-bottom: 20px;">🧘</div>
-                    <div style="color: #9c88ff; font-size: 24px; font-weight: bold; margin-bottom: 15px;">修行完成!</div>
-                    <div style="color: #2ed573; font-size: 14px; margin-bottom: 10px;">习得：${learnedText}</div>
-                    <div style="color: #ff6b9d; font-size: 14px; margin-bottom: 20px;">摒弃：${discardedText}</div>
+                    <div style="color: #9c88ff; font-size: 24px; font-weight: bold; margin-bottom: 15px;">Tu hành hoàn tất!</div>
+                    <div style="color: #2ed573; font-size: 14px; margin-bottom: 10px;">Đã học: ${learnedText}</div>
+                    <div style="color: #ff6b9d; font-size: 14px; margin-bottom: 20px;">Đã loại bỏ: ${discardedText}</div>
                     <div style="display: flex; gap: 15px; justify-content: center;">
                         <button onclick="CultivationSystem.skipStory()"
                                 style="padding: 12px 30px; background: linear-gradient(135deg, #667eea, #764ba2);
                                        color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">
-                            跳过剧情
+                            Bỏ qua cốt truyện
                         </button>
                         <button onclick="CultivationSystem.generateStory()"
                                 style="padding: 12px 30px; background: linear-gradient(135deg, #ff6b9d, #c44569);
                                        color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">
-                            生成剧情
+                            Tạo cốt truyện
                         </button>
                     </div>
                 </div>
@@ -8371,62 +8282,55 @@ const CultivationSystem = {
         }
     },
 
-    // 跳过剧情
+    // Bỏ qua cốt truyện
     skipStory: function () {
         const learnedText = this.learnedCards.length > 0 ? this.learnedCards.join('、') : '';
         const discardedText = this.discardedCards.length > 0 ? this.discardedCards.join('、') : '';
 
-        let historyText = '修行：';
-        if (learnedText) historyText += `习得了${learnedText}`;
-        if (learnedText && discardedText) historyText += '；';
-        if (discardedText) historyText += `摒弃了${discardedText}`;
+        let historyText = 'Tu hành: ';
+        if (learnedText) historyText += `Đã học được ${learnedText}`;
+        if (learnedText && discardedText) historyText += '; ';
+        if (discardedText) historyText += `Đã loại bỏ ${discardedText}`;
 
         ACJTGame.recordToHistory(historyText);
         this.close();
 
         if (typeof showNotification === 'function') {
-            showNotification('🧘 修行完成', 'success');
+            showNotification('🧘 Tu hành hoàn tất', 'success');
         }
     },
 
-    // 生成剧情
+    // Tạo cốt truyện
     generateStory: function () {
         const learnedText = this.learnedCards.length > 0 ? this.learnedCards.join('、') : '';
         const discardedText = this.discardedCards.length > 0 ? this.discardedCards.join('、') : '';
         const floor = PlayerState.floor || 1;
 
-        let historyText = '修行：';
-        if (learnedText) historyText += `习得了${learnedText}`;
-        if (learnedText && discardedText) historyText += '；';
-        if (discardedText) historyText += `摒弃了${discardedText}`;
-
-        // 🔧 生成剧情时不记录到重要历史和矩阵
-
         let promptParts = [];
-        if (learnedText) promptParts.push(`我习得了${learnedText}`);
-        if (discardedText) promptParts.push(`我摒弃了${discardedText}`);
+        if (learnedText) promptParts.push(`tôi đã học được ${learnedText}`);
+        if (discardedText) promptParts.push(`tôi đã loại bỏ ${discardedText}`);
 
-        const prompt = `简单跳过之前的场景，生成新剧情：【尖塔第${floor}层修行】${promptParts.join('；')}。请生成一段修行过程的剧情，描写我在修行中领悟新招式、或摒弃旧技能时的心境变化和感悟。`;
+        const prompt = `Bỏ qua các cảnh trước đó một cách đơn giản, tạo cốt truyện mới: 【Tu hành tại tầng ${floor} của tòa tháp】 ${promptParts.join('; ')}. Hãy tạo một đoạn cốt truyện về quá trình tu hành, miêu tả việc tôi lĩnh ngộ chiêu thức mới hoặc cảm nhận tâm cảnh khi loại bỏ những kỹ năng cũ.`;
 
         this.close();
         ACJTGame.sendToAI(prompt);
     },
 
-    // 关闭修行界面
+    // Đóng giao diện tu hành
     close: function () {
         document.getElementById('cultivationModal')?.remove();
     }
 };
 
-// ==================== 游戏主流程 ====================
+// ==================== Tiến trình Game Chính ====================
 const ACJTGame = {
     isGameStarted: false,
-    creationPoints: 100,      // 角色创建点数
-    currentStep: 1,           // 当前创建步骤 (1-5)
+    creationPoints: 100,      // Điểm khởi tạo nhân vật
+    currentStep: 1,           // Bước khởi tạo hiện tại (1-5)
 
-    // 角色创建数据
+    // Dữ liệu khởi tạo nhân vật
     charData: {
-        name: '塞莱斯汀',
+        name: 'Celestine',
         age: 16,
         professionId: 'nun',
         raceId: 'human',
@@ -8443,7 +8347,7 @@ const ACJTGame = {
         customBackground: ''
     },
 
-    // 显示角色创建界面（多步骤流程）
+    // Hiển thị giao diện khởi tạo nhân vật (quy trình nhiều bước)
     showCharacterCreation: function () {
         const modal = document.createElement('div');
         modal.id = 'acjtCharCreationModal';
@@ -8457,11 +8361,11 @@ const ACJTGame = {
             box-shadow: inset 0 0 50px rgba(0,0,0,0.8), inset 0 0 100px rgba(139,0,0,0.1);
         `;
 
-        // 重置创建数据
+        // Đặt lại dữ liệu khởi tạo
         this.creationPoints = 100;
         this.currentStep = 1;
         this.charData = {
-            name: '塞莱斯汀', age: 16, professionId: 'nun', raceId: 'human', isVirgin: true,
+            name: 'Celestine', age: 16, professionId: 'nun', raceId: 'human', isVirgin: true,
             bodyAttributes: { height: 'average', weight: 'average', chest: 'C', hips: 'average', vagina: 'pink_bud' },
             startingStatuses: [], originId: 'adventurer', customBackground: ''
         };
@@ -8471,7 +8375,7 @@ const ACJTGame = {
         document.body.appendChild(modal);
     },
 
-    // 切换步骤
+    // Chuyển bước
     goToStep: function (step) {
         if (step < 1 || step > 5) return;
         this.currentStep = step;
@@ -8479,36 +8383,35 @@ const ACJTGame = {
         if (modal) modal.innerHTML = this.generateStepHTML();
     },
 
-    // 计算当前点数
+    // Tính toán số điểm hiện tại
     calculatePoints: function () {
         let points = 100;
-        // 特殊状态点数
+        // Điểm trạng thái đặc biệt
         this.charData.startingStatuses.forEach(sid => {
             const status = StartingStatusConfig[sid];
             if (status) points += status.points;
         });
-        // 开局经历点数
+        // Điểm xuất thân
         const origin = OriginConfig[this.charData.originId];
         if (origin) points += origin.points;
-        // Roll消耗
+        // Điểm tiêu tốn khi Roll
         points -= (this.charData._rollCount || 0) * 10;
         return points;
     },
 
-    // 生成步骤HTML
+    // Tạo HTML các bước
     generateStepHTML: function () {
         const points = this.calculatePoints();
-        const stepTitles = ['', '职业与基础信息', '身体属性设定', '特殊状态选择', '出身背景经历', '卡组抽取与确认'];
+        const stepTitles = ['', 'Nghề nghiệp và thông tin cơ bản', 'Thiết lập thuộc tính cơ thể', 'Lựa chọn trạng thái đặc biệt', 'Xuất thân và lai lịch', 'Rút và xác nhận thẻ bài'];
         const stepIcons = ['', '⚔️', '💃', '✨', '📜', '🃏'];
 
-        // 步骤指示器 - 克苏鲁风格
+        // Thanh chỉ thị các bước - Phong cách Cthulhu
         let stepsHtml = '<div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:20px;padding:0 10px;">';
         for (let i = 1; i <= 5; i++) {
             const active = i === this.currentStep;
             const done = i < this.currentStep;
             const canClick = done || active;
 
-            // 步骤圆圈
             if (i > 1) {
                 const lineColor = done ? '#6b5241' : 'rgba(107,82,65,0.3)';
                 stepsHtml += `<div style="width:30px;height:2px;background:${lineColor};border-radius:1px;"></div>`;
@@ -8525,18 +8428,18 @@ const ACJTGame = {
         }
         stepsHtml += '</div>';
 
-        // 点数显示 - 克苏鲁风格
+        // Hiển thị điểm số - Phong cách Cthulhu
         const pointsColor = points >= 0 ? '#c9b896' : '#8b0000';
         const pointsGlow = points >= 0 ? 'rgba(139,0,0,0.4)' : 'rgba(139,0,0,0.6)';
         const pointsHtml = `
             <div style="text-align:center;margin-bottom:15px;">
                 <div style="display:inline-flex;align-items:center;gap:10px;padding:10px 25px;background:linear-gradient(135deg,rgba(25,18,15,0.8),rgba(15,10,8,0.9));border-radius:4px;border:2px solid #3d2f24;box-shadow:inset 0 0 10px rgba(0,0,0,0.5);">
-                    <span style="color:#6b5d4d;font-size:13px;">҉ 剩余点数</span>
+                    <span style="color:#6b5d4d;font-size:13px;">҉ Số điểm còn lại</span>
                     <span style="color:${pointsColor};font-size:22px;font-weight:bold;text-shadow:0 0 10px ${pointsGlow};">${points}</span>
                 </div>
             </div>`;
 
-        // 根据步骤生成内容
+        // Tạo nội dung dựa trên bước hiện tại
         let contentHtml = '';
         switch (this.currentStep) {
             case 1: contentHtml = this.generateStep1HTML(); break;
@@ -8557,7 +8460,6 @@ const ACJTGame = {
             </style>
             <div style="max-width:800px;width:100%;max-height:calc(100vh - 30px);display:flex;flex-direction:column;background:linear-gradient(180deg, rgba(25,18,15,0.98) 0%, rgba(15,10,8,0.99) 50%, rgba(20,14,12,0.98) 100%);border-radius:4px;box-shadow:0 15px 50px rgba(0,0,0,0.8),inset 0 0 30px rgba(0,0,0,0.5),0 0 20px rgba(139,0,0,0.2);border:3px solid #3d2f24;overflow:hidden;position:relative;">
                 
-                <!-- 固定头部 -->
                 <div style="padding:20px 25px 15px;background:linear-gradient(180deg, rgba(139,0,0,0.1) 0%, transparent 100%);border-bottom:2px solid rgba(139,0,0,0.3);flex-shrink:0;">
                     <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:8px;">
                         <span style="font-size:28px;filter:drop-shadow(0 0 5px rgba(139,0,0,0.5));">${stepIcons[this.currentStep]}</span>
@@ -8568,7 +8470,6 @@ const ACJTGame = {
                     ${pointsHtml}
                 </div>
                 
-                <!-- 可滚动内容区 -->
                 <div id="charCreationContent" style="flex:1;overflow-y:auto;padding:20px 25px 25px;animation:fadeIn 0.4s ease-out;color:#c9b896;">
                     ${contentHtml}
                 </div>
@@ -8576,9 +8477,9 @@ const ACJTGame = {
         `;
     },
 
-    // 步骤1: 职业与基础信息
+// Bước 1: Nghề nghiệp và Thông tin cơ bản
     generateStep1HTML: function () {
-        // 职业选择
+        // Lựa chọn nghề nghiệp
         let profHtml = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:25px;">';
         Object.values(ProfessionConfig).forEach(prof => {
             const selected = this.charData.professionId === prof.id;
@@ -8598,7 +8499,7 @@ const ACJTGame = {
         });
         profHtml += '</div>';
 
-        // 种族选择
+        // Lựa chọn chủng tộc
         let raceHtml = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:10px;margin-bottom:25px;">';
         Object.values(RaceConfig).forEach(race => {
             const selected = this.charData.raceId === race.id;
@@ -8607,9 +8508,9 @@ const ACJTGame = {
             const mods = race.statMods;
             let modText = [];
             if (mods.hp) modText.push(`HP${mods.hp > 0 ? '+' : ''}${mods.hp}`);
-            if (mods.attack) modText.push(`攻${mods.attack > 0 ? '+' : ''}${mods.attack}`);
-            if (mods.defense) modText.push(`防${mods.defense > 0 ? '+' : ''}${mods.defense}`);
-            if (mods.corruption) modText.push(`堕${mods.corruption > 0 ? '+' : ''}${mods.corruption}`);
+            if (mods.attack) modText.push(`Công${mods.attack > 0 ? '+' : ''}${mods.attack}`);
+            if (mods.defense) modText.push(`Thủ${mods.defense > 0 ? '+' : ''}${mods.defense}`);
+            if (mods.corruption) modText.push(`Đọa${mods.corruption > 0 ? '+' : ''}${mods.corruption}`);
 
             raceHtml += `
                 <div onclick="ACJTGame.selectRace('${race.id}')" style="cursor:pointer;padding:10px;text-align:center;
@@ -8617,47 +8518,45 @@ const ACJTGame = {
                     transform:${selected ? 'scale(1.05)' : 'none'};">
                     ${race.icon && race.icon.startsWith('img/') ? `<img src="${race.icon}" style="width:50px;height:50px;margin-bottom:4px;object-fit:contain;">` : `<div style="font-size:26px;margin-bottom:4px;">${race.icon}</div>`}
                     <div style="color:#fff;font-size:13px;font-weight:bold;margin-bottom:2px;">${race.name}</div>
-                    <div style="color:#888;font-size:10px;transform:scale(0.9);">${modText.join(' ') || '无修正'}</div>
+                    <div style="color:#888;font-size:10px;transform:scale(0.9);">${modText.join(' ') || 'Không hiệu chỉnh'}</div>
                 </div>`;
         });
         raceHtml += '</div>';
 
         return `
             <!-- 职业选择 -->
-            <div style="margin-bottom:20px;">
+<div style="margin-bottom:20px;">
                 <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
                     <div style="width:4px;height:20px;background:linear-gradient(180deg,#ff6b9d,#c44569);border-radius:2px;"></div>
-                    <span style="color:#ff6b9d;font-size:15px;font-weight:bold;">选择职业</span>
+                    <span style="color:#ff6b9d;font-size:15px;font-weight:bold;">Chọn nghề nghiệp</span>
                 </div>
                 ${profHtml}
             </div>
             
-            <!-- 种族选择 -->
             <div style="margin-bottom:20px;">
                 <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
                     <div style="width:4px;height:20px;background:linear-gradient(180deg,#667eea,#764ba2);border-radius:2px;"></div>
-                    <span style="color:#667eea;font-size:15px;font-weight:bold;">选择种族</span>
+                    <span style="color:#667eea;font-size:15px;font-weight:bold;">Chọn chủng tộc</span>
                 </div>
                 ${raceHtml}
             </div>
             
-            <!-- 基础信息 -->
             <div style="margin-bottom:20px;">
                 <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
                     <div style="width:4px;height:20px;background:linear-gradient(180deg,#ffd700,#f39c12);border-radius:2px;"></div>
-                    <span style="color:#ffd700;font-size:15px;font-weight:bold;">基础信息</span>
+                    <span style="color:#ffd700;font-size:15px;font-weight:bold;">Thông tin cơ bản</span>
                 </div>
                 <div style="background:rgba(255,255,255,0.02);padding:18px;border-radius:12px;display:flex;gap:25px;flex-wrap:wrap;justify-content:center;border:1px solid rgba(255,255,255,0.05);">
                     <div style="text-align:center;">
-                        <div style="color:#888;font-size:11px;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px;">姓名</div>
-                        <input type="text" id="charNameInput" value="${this.charData.name}" placeholder="请输入姓名"
+                        <div style="color:#888;font-size:11px;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px;">Họ tên</div>
+                        <input type="text" id="charNameInput" value="${this.charData.name}" placeholder="Vui lòng nhập họ tên"
                             onchange="ACJTGame.charData.name=this.value"
                             style="padding:10px 14px;width:130px;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#fff;text-align:center;outline:none;transition:all 0.3s;font-size:14px;"
                             onfocus="this.style.borderColor='#ff6b9d';this.style.boxShadow='0 0 10px rgba(255,107,157,0.2)'"
                             onblur="this.style.borderColor='rgba(255,255,255,0.1)';this.style.boxShadow='none'">
                     </div>
                     <div style="text-align:center;">
-                        <div style="color:#888;font-size:11px;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px;">年龄</div>
+                        <div style="color:#888;font-size:11px;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px;">Tuổi</div>
                         <input type="number" id="charAgeInput" value="${this.charData.age}" min="14" max="35"
                             onchange="ACJTGame.charData.age=parseInt(this.value)||18"
                             style="padding:10px 14px;width:70px;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#fff;text-align:center;outline:none;transition:all 0.3s;font-size:14px;"
@@ -8665,28 +8564,27 @@ const ACJTGame = {
                             onblur="this.style.borderColor='rgba(255,255,255,0.1)';this.style.boxShadow='none'">
                     </div>
                     <div style="text-align:center;">
-                        <div style="color:#888;font-size:11px;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px;">贞操</div>
+                        <div style="color:#888;font-size:11px;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px;">Trinh tiết</div>
                         <div style="display:flex;gap:0;background:rgba(0,0,0,0.4);border-radius:8px;overflow:hidden;border:1px solid rgba(255,255,255,0.1);">
                             <div onclick="ACJTGame.charData.isVirgin=true;ACJTGame.refreshStep();" 
                                  style="padding:10px 18px;cursor:pointer;font-size:13px;transition:all 0.3s;
                                  background:${this.charData.isVirgin ? 'linear-gradient(135deg,#ff6b9d,#c44569)' : 'transparent'};
-                                 color:${this.charData.isVirgin ? '#fff' : '#666'};">处女</div>
+                                 color:${this.charData.isVirgin ? '#fff' : '#666'};">Xử nữ</div>
                             <div onclick="ACJTGame.charData.isVirgin=false;ACJTGame.refreshStep();" 
                                  style="padding:10px 18px;cursor:pointer;font-size:13px;transition:all 0.3s;
                                  background:${!this.charData.isVirgin ? 'linear-gradient(135deg,#ff4757,#c0392b)' : 'transparent'};
-                                 color:${!this.charData.isVirgin ? '#fff' : '#666'};">非处</div>
+                                 color:${!this.charData.isVirgin ? '#fff' : '#666'};">Không phải</div>
                         </div>
                     </div>
                 </div>
             </div>
             
-            <!-- 导航按钮 -->
             <div style="text-align:center;padding-top:10px;">
                 <button onclick="ACJTGame.goToStep(2)" 
                     style="padding:14px 60px;background:linear-gradient(135deg,#2ed573,#26de81);color:#fff;border:none;border-radius:25px;cursor:pointer;font-size:16px;font-weight:bold;box-shadow:0 5px 20px rgba(46,213,115,0.3);transition:all 0.3s;letter-spacing:1px;"
                     onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 25px rgba(46,213,115,0.4)'"
                     onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 5px 20px rgba(46,213,115,0.3)'">
-                    下一步 →
+                    Bước tiếp theo →
                 </button>
             </div>
         `;
@@ -8722,23 +8620,22 @@ const ACJTGame = {
         return `
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
                 <!-- 基础体型 -->
-                <div style="background:linear-gradient(135deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));padding:18px;border-radius:14px;border:1px solid rgba(255,255,255,0.05);">
+<div style="background:linear-gradient(135deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));padding:18px;border-radius:14px;border:1px solid rgba(255,255,255,0.05);">
                     <div style="display:flex;align-items:center;gap:8px;margin-bottom:15px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.06);">
                         <span style="font-size:18px;">📏</span>
-                        <span style="color:#fff;font-size:14px;font-weight:bold;">基础体型</span>
+                        <span style="color:#fff;font-size:14px;font-weight:bold;">Thể hình cơ bản</span>
                     </div>
-                    ${genSelect('height', '身高', '📐')}
-                    ${genSelect('weight', '体重', '⚖️')}
+                    ${genSelect('height', 'Chiều cao', '📐')}
+                    ${genSelect('weight', 'Cân nặng', '⚖️')}
                 </div>
-                <!-- 身材特征 -->
                 <div style="background:linear-gradient(135deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));padding:18px;border-radius:14px;border:1px solid rgba(255,255,255,0.05);">
                     <div style="display:flex;align-items:center;gap:8px;margin-bottom:15px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.06);">
                         <span style="font-size:18px;">💃</span>
-                        <span style="color:#fff;font-size:14px;font-weight:bold;">身材特征</span>
+                        <span style="color:#fff;font-size:14px;font-weight:bold;">Đặc điểm vóc dáng</span>
                     </div>
-                    ${genSelect('chest', '胸围', '🍒')}
-                    ${genSelect('hips', '臀部', '🍑')}
-                    ${genSelect('vagina', '私处', '🌸')}
+                    ${genSelect('chest', 'Vòng ngực', '🍒')}
+                    ${genSelect('hips', 'Vòng mông', '🍑')}
+                    ${genSelect('vagina', 'Âm đạo', '🌸')}
                 </div>
             </div>
             
@@ -8748,28 +8645,28 @@ const ACJTGame = {
                     style="padding:12px 35px;background:rgba(255,255,255,0.05);color:#888;border:1px solid rgba(255,255,255,0.1);border-radius:25px;cursor:pointer;font-size:14px;transition:all 0.3s;"
                     onmouseover="this.style.background='rgba(255,255,255,0.1)';this.style.color='#fff'"
                     onmouseout="this.style.background='rgba(255,255,255,0.05)';this.style.color='#888'">
-                    ← 上一步
+                    ← Bước trước
                 </button>
                 <button onclick="ACJTGame.goToStep(3)" 
                     style="padding:12px 50px;background:linear-gradient(135deg,#2ed573,#26de81);color:#fff;border:none;border-radius:25px;cursor:pointer;font-size:15px;font-weight:bold;box-shadow:0 5px 20px rgba(46,213,115,0.3);transition:all 0.3s;"
                     onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 25px rgba(46,213,115,0.4)'"
                     onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 5px 20px rgba(46,213,115,0.3)'">
-                    下一步 →
+                    Bước tiếp theo →
                 </button>
             </div>
         `;
     },
 
     // 步骤3: 特殊状态选择
-    generateStep3HTML: function () {
-        let html = '<div style="color:#888;font-size:12px;margin-bottom:18px;text-align:center;background:linear-gradient(135deg,rgba(0,0,0,0.3),rgba(0,0,0,0.2));padding:12px 15px;border-radius:10px;border:1px solid rgba(255,255,255,0.05);">💡 <span style="color:#2ed573">负面状态</span> 给予点数 | <span style="color:#ff6b9d">正面状态</span> 消耗点数（可多选）</div>';
+generateStep3HTML: function () {
+        let html = '<div style="color:#888;font-size:12px;margin-bottom:18px;text-align:center;background:linear-gradient(135deg,rgba(0,0,0,0.3),rgba(0,0,0,0.2));padding:12px 15px;border-radius:10px;border:1px solid rgba(255,255,255,0.05);">💡 <span style="color:#2ed573">Trạng thái tiêu cực</span> cho điểm | <span style="color:#ff6b9d">Trạng thái tích cực</span> tốn điểm (có thể chọn nhiều)</div>';
 
-        // 分类显示状态
+        // Hiển thị trạng thái theo phân loại
         const categories = {
-            negative: { title: '⛓️ 负面束缚', items: [], color: '#ff4757' },
-            demon: { title: '😈 魔族血统', items: [], color: '#a55eea' },
-            body: { title: '💗 身体改造', items: [], color: '#ff6b9d' },
-            special: { title: '✨ 特殊能力', items: [], color: '#f7b731' }
+            negative: { title: '⛓️ Trói buộc tiêu cực', items: [], color: '#ff4757' },
+            demon: { title: '😈 Huyết thống ma tộc', items: [], color: '#a55eea' },
+            body: { title: '💗 Cải tạo cơ thể', items: [], color: '#ff6b9d' },
+            special: { title: '✨ Năng lực đặc biệt', items: [], color: '#f7b731' }
         };
 
         Object.values(StartingStatusConfig).forEach(status => {
@@ -8784,7 +8681,7 @@ const ACJTGame = {
             }
         });
 
-        // 生成各分类HTML
+        // Tạo HTML cho từng phân loại
         Object.values(categories).forEach(cat => {
             if (cat.items.length === 0) return;
 
@@ -8806,7 +8703,7 @@ const ACJTGame = {
                         ${selected ? '<div style="position:absolute;top:2px;right:5px;color:' + (isNegative ? '#ff4757' : '#2ed573') + ';font-size:12px;">✓</div>' : ''}
                         <div style="font-size:24px;margin-bottom:5px;">${status.icon}</div>
                         <div style="color:#fff;font-size:13px;font-weight:bold;margin-bottom:3px;">${status.name}</div>
-                        <div style="color:${isNegative ? '#ff6b6b' : '#2ed573'};font-size:12px;font-weight:bold;margin-bottom:3px;">${pointText}点</div>
+                        <div style="color:${isNegative ? '#ff6b6b' : '#2ed573'};font-size:12px;font-weight:bold;margin-bottom:3px;">${pointText} điểm</div>
                         <div style="color:#888;font-size:10px;line-height:1.2;">${status.effect}</div>
                     </div>`;
             });
@@ -8819,13 +8716,13 @@ const ACJTGame = {
                     style="padding:12px 35px;background:rgba(255,255,255,0.05);color:#888;border:1px solid rgba(255,255,255,0.1);border-radius:25px;cursor:pointer;font-size:14px;transition:all 0.3s;"
                     onmouseover="this.style.background='rgba(255,255,255,0.1)';this.style.color='#fff'"
                     onmouseout="this.style.background='rgba(255,255,255,0.05)';this.style.color='#888'">
-                    ← 上一步
+                    ← Bước trước
                 </button>
                 <button onclick="ACJTGame.goToStep(4)" 
                     style="padding:12px 50px;background:linear-gradient(135deg,#2ed573,#26de81);color:#fff;border:none;border-radius:25px;cursor:pointer;font-size:15px;font-weight:bold;box-shadow:0 5px 20px rgba(46,213,115,0.3);transition:all 0.3s;"
                     onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 25px rgba(46,213,115,0.4)'"
                     onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 5px 20px rgba(46,213,115,0.3)'">
-                    下一步 →
+                    Bước tiếp theo →
                 </button>
             </div>`;
         return html;
@@ -8848,7 +8745,7 @@ const ACJTGame = {
                     box-shadow:${shadow}; transform:${selected ? 'translateY(-2px)' : 'none'};">
                     <div style="font-size:32px;margin-bottom:8px;">${origin.icon}</div>
                     <div style="color:#fff;font-size:14px;font-weight:bold;margin-bottom:4px;">${origin.name}</div>
-                    <div style="color:#ffd700;font-size:12px;margin-bottom:6px;font-weight:bold;">${pointText}点</div>
+                    <div style="color:#ffd700;font-size:12px;margin-bottom:6px;font-weight:bold;">${pointText} điểm</div>
                     <div style="color:#aaa;font-size:11px;line-height:1.3;">${origin.effect}</div>
                 </div>`;
         });
@@ -8856,11 +8753,11 @@ const ACJTGame = {
 
         // 自定义背景
         html += `
-            <div style="margin-bottom:20px;background:linear-gradient(135deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));padding:18px;border-radius:12px;border:1px solid rgba(255,255,255,0.05);">
+<div style="margin-bottom:20px;background:linear-gradient(135deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));padding:18px;border-radius:12px;border:1px solid rgba(255,255,255,0.05);">
                 <div style="color:#888;font-size:12px;margin-bottom:10px;display:flex;align-items:center;gap:6px;">
-                    <span>📝</span><span>自定义背景故事（可选）</span>
+                    <span>📝</span><span>Tùy chỉnh bối cảnh xuất thân (tùy chọn)</span>
                 </div>
-                <textarea id="customBgInput" placeholder="例如：曾是名门望族的千金，因为家族被陷害而流落街头..." 
+                <textarea id="customBgInput" placeholder="Ví dụ: Từng là tiểu thư danh gia vọng tộc, vì gia tộc bị hãm hại mà lưu lạc đầu đường xó chợ..." 
                     onchange="ACJTGame.charData.customBackground=this.value"
                     style="padding:12px;width:100%;height:70px;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#fff;font-size:13px;resize:none;box-sizing:border-box;font-family:'Microsoft YaHei';transition:all 0.3s;outline:none;"
                     onfocus="this.style.borderColor='#667eea';this.style.boxShadow='0 0 15px rgba(102,126,234,0.2)'"
@@ -8871,58 +8768,58 @@ const ACJTGame = {
                     style="padding:12px 35px;background:rgba(255,255,255,0.05);color:#888;border:1px solid rgba(255,255,255,0.1);border-radius:25px;cursor:pointer;font-size:14px;transition:all 0.3s;"
                     onmouseover="this.style.background='rgba(255,255,255,0.1)';this.style.color='#fff'"
                     onmouseout="this.style.background='rgba(255,255,255,0.05)';this.style.color='#888'">
-                    ← 上一步
+                    ← Bước trước
                 </button>
                 <button onclick="ACJTGame.goToStep(5)" 
                     style="padding:12px 50px;background:linear-gradient(135deg,#2ed573,#26de81);color:#fff;border:none;border-radius:25px;cursor:pointer;font-size:15px;font-weight:bold;box-shadow:0 5px 20px rgba(46,213,115,0.3);transition:all 0.3s;"
                     onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 25px rgba(46,213,115,0.4)'"
                     onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 5px 20px rgba(46,213,115,0.3)'">
-                    下一步 →
+                    Bước tiếp theo →
                 </button>
             </div>`;
         return html;
     },
 
-    // 步骤5: Roll卡组
+// Bước 5: Roll bộ bài
     generateStep5HTML: function () {
         const points = this.calculatePoints();
         const prof = ProfessionConfig[this.charData.professionId];
 
-        // 初始化已选职业卡数组
+        // Khởi tạo mảng thẻ bài nghề nghiệp đã chọn
         if (!this.charData.selectedProfCards) {
             this.charData.selectedProfCards = [];
         }
 
-        // 固定基础卡
+        // Thẻ bài cơ bản cố định
         let baseCards = [];
         if (this.charData.professionId === 'magicalGirl') {
-            // 🆕 魔法少女特殊卡组：2格挡 + 1变身
+            // 🆕 Bộ bài đặc biệt của Thiếu nữ Ma pháp: 2 Đỡ đòn + 1 Biến thân
             baseCards = [
-                { id: 'attack_001', name: '普通攻击', type: CardType.ATTACK },
-                { id: 'attack_001', name: '普通攻击', type: CardType.ATTACK },
-                { id: 'attack_001', name: '普通攻击', type: CardType.ATTACK },
-                { id: 'attack_001', name: '普通攻击', type: CardType.ATTACK },
-                { id: 'armor_001', name: '格挡', type: CardType.ARMOR },
-                { id: 'armor_001', name: '格挡', type: CardType.ARMOR },
-                { id: 'mg_transform', name: '好，开始营业！ (ﾉ◕ヮ◕)ﾉ', type: CardType.BUFF },
-                { id: 'h_attack_001', name: '媚眼', type: CardType.H_ATTACK }
+                { id: 'attack_001', name: 'Tấn công thường', type: CardType.ATTACK },
+                { id: 'attack_001', name: 'Tấn công thường', type: CardType.ATTACK },
+                { id: 'attack_001', name: 'Tấn công thường', type: CardType.ATTACK },
+                { id: 'attack_001', name: 'Tấn công thường', type: CardType.ATTACK },
+                { id: 'armor_001', name: 'Đỡ đòn', type: CardType.ARMOR },
+                { id: 'armor_001', name: 'Đỡ đòn', type: CardType.ARMOR },
+                { id: 'mg_transform', name: 'Được rồi, bắt đầu làm việc nào! (ﾉ◕ヮ◕)ﾉ', type: CardType.BUFF },
+                { id: 'h_attack_001', name: 'Nháy mắt quyến rũ', type: CardType.H_ATTACK }
             ];
         } else {
-            // 默认卡组：3格挡
+            // Bộ bài mặc định: 3 Đỡ đòn
             baseCards = [
-                { id: 'attack_001', name: '普通攻击', type: CardType.ATTACK },
-                { id: 'attack_001', name: '普通攻击', type: CardType.ATTACK },
-                { id: 'attack_001', name: '普通攻击', type: CardType.ATTACK },
-                { id: 'attack_001', name: '普通攻击', type: CardType.ATTACK },
-                { id: 'armor_001', name: '格挡', type: CardType.ARMOR },
-                { id: 'armor_001', name: '格挡', type: CardType.ARMOR },
-                { id: 'armor_001', name: '格挡', type: CardType.ARMOR },
-                { id: 'h_attack_001', name: '媚眼', type: CardType.H_ATTACK }
+                { id: 'attack_001', name: 'Tấn công thường', type: CardType.ATTACK },
+                { id: 'attack_001', name: 'Tấn công thường', type: CardType.ATTACK },
+                { id: 'attack_001', name: 'Tấn công thường', type: CardType.ATTACK },
+                { id: 'attack_001', name: 'Tấn công thường', type: CardType.ATTACK },
+                { id: 'armor_001', name: 'Đỡ đòn', type: CardType.ARMOR },
+                { id: 'armor_001', name: 'Đỡ đòn', type: CardType.ARMOR },
+                { id: 'armor_001', name: 'Đỡ đòn', type: CardType.ARMOR },
+                { id: 'h_attack_001', name: 'Nháy mắt quyến rũ', type: CardType.H_ATTACK }
             ];
         }
 
 
-        // 基础卡显示
+        // Hiển thị thẻ bài cơ bản
         let baseCardsHtml = '<div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:15px;">';
         baseCards.forEach(card => {
             const color = CardTypeColors[card.type] || '#666';
@@ -8931,10 +8828,10 @@ const ACJTGame = {
         });
         baseCardsHtml += '</div>';
 
-        // 已选职业卡显示（可点击删除）
+        // Hiển thị thẻ nghề nghiệp đã chọn (có thể nhấn để xóa)
         let selectedCardsHtml = '';
         if (this.charData.selectedProfCards.length > 0) {
-            selectedCardsHtml = '<div style="margin-top:10px;padding-top:10px;border-top:1px dashed rgba(255,255,255,0.1);"><div style="color:#ff6b9d;font-size:11px;margin-bottom:8px;text-align:center;">✨ 已选职业卡 (点击可删除)</div><div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;">';
+            selectedCardsHtml = '<div style="margin-top:10px;padding-top:10px;border-top:1px dashed rgba(255,255,255,0.1);"><div style="color:#ff6b9d;font-size:11px;margin-bottom:8px;text-align:center;">✨ Thẻ nghề nghiệp đã chọn (Nhấn để xóa)</div><div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;">';
             this.charData.selectedProfCards.forEach((card, index) => {
                 const color = CardTypeColors[card.type] || '#ff6b9d';
                 selectedCardsHtml += `<div onclick="ACJTGame.removeSelectedCard(${index})" style="padding:6px 10px;background:rgba(255,107,157,0.2);border:1px solid ${color};border-radius:6px;font-size:11px;color:#fff;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='rgba(255,0,0,0.3)';this.style.borderColor='#ff4757'" onmouseout="this.style.background='rgba(255,107,157,0.2)';this.style.borderColor='${color}'"><span style="color:#ffd700;">${card.cost}⚡</span> ${card.name} ✕</div>`;
@@ -8947,12 +8844,12 @@ const ACJTGame = {
         const canSelectMore = selectedCount < 2;
         const canStart = selectedCount >= 2 && this.charData.name.trim();
 
-        // Roll出的卡牌显示
+        // Hiển thị thẻ bài vừa Roll ra
         let rolledCardsHtml = '';
         if (this.charData.rolledCards && this.charData.rolledCards.length > 0) {
             rolledCardsHtml = `
                 <div style="margin-bottom:20px;padding:15px;background:linear-gradient(135deg,rgba(102,126,234,0.15),rgba(118,75,162,0.15));border-radius:12px;border:1px solid rgba(102,126,234,0.3);">
-                    <div style="color:#667eea;font-size:12px;margin-bottom:10px;text-align:center;">🎲 选择一张加入卡组 ${canSelectMore ? `(还可选${2 - selectedCount}张)` : '(已选满)'}</div>
+                    <div style="color:#667eea;font-size:12px;margin-bottom:10px;text-align:center;">🎲 Chọn một lá thêm vào bộ bài ${canSelectMore ? `(Còn có thể chọn ${2 - selectedCount} lá)` : '(Đã chọn đủ)'}</div>
                     <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
                         ${this.charData.rolledCards.map((card, index) => {
                 const color = CardTypeColors[card.type] || '#667eea';
@@ -8974,7 +8871,6 @@ const ACJTGame = {
         }
 
         return `
-            <!-- 职业预览 -->
             <div style="background:linear-gradient(135deg,rgba(255,107,157,0.08),rgba(102,126,234,0.08));padding:20px;border-radius:14px;margin-bottom:20px;text-align:center;border:1px solid rgba(255,255,255,0.05);position:relative;overflow:hidden;">
                 <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#ff6b9d,#667eea,#2ed573);"></div>
                 ${prof.icon && prof.icon.startsWith('img/') ? `<img src="${prof.icon}" style="width:80px;height:80px;margin-bottom:10px;object-fit:contain;filter:drop-shadow(0 5px 10px rgba(0,0,0,0.3));">` : `<div style="font-size:50px;margin-bottom:10px;filter:drop-shadow(0 5px 10px rgba(0,0,0,0.3));">${prof.icon}</div>`}
@@ -8982,13 +8878,12 @@ const ACJTGame = {
                 <div style="color:#888;font-size:12px;line-height:1.4;">${prof.description}</div>
             </div>
             
-            <!-- 卡组预览 -->
             <div style="margin-bottom:20px;padding:18px;background:linear-gradient(135deg,rgba(0,0,0,0.3),rgba(0,0,0,0.2));border-radius:14px;border:1px solid rgba(255,255,255,0.05);">
                 <div style="color:#888;font-size:12px;margin-bottom:12px;text-align:center;display:flex;align-items:center;justify-content:center;gap:8px;">
                     <span>🃏</span>
-                    <span>初始卡组</span>
+                    <span>Bộ bài ban đầu</span>
                     <span style="background:rgba(255,107,157,0.2);color:#ff6b9d;padding:2px 10px;border-radius:10px;font-size:11px;font-weight:bold;">${totalCards}/10</span>
-                    <span style="color:#666;font-size:10px;">(基础8张 + 职业卡${selectedCount}/2张)</span>
+                    <span style="color:#666;font-size:10px;">(Cơ bản 8 lá + Bài nghề nghiệp ${selectedCount}/2 lá)</span>
                 </div>
                 ${baseCardsHtml}
                 ${selectedCardsHtml}
@@ -8996,7 +8891,6 @@ const ACJTGame = {
             
             ${rolledCardsHtml}
             
-            <!-- Roll按钮 -->
             <div style="text-align:center;margin-bottom:25px;">
                 <button onclick="ACJTGame.rollDeck()"
                     style="padding:14px 45px;background:linear-gradient(135deg,#667eea,#764ba2);
@@ -9004,17 +8898,16 @@ const ACJTGame = {
                     box-shadow:0 5px 20px rgba(102,126,234,0.4);transition:all 0.3s;"
                     onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 25px rgba(102,126,234,0.5)'"
                     onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 5px 20px rgba(102,126,234,0.4)'">
-                    🎲 Roll职业卡 <span style="opacity:0.8;font-size:13px;">(出3选1)</span>
+                    🎲 Rút bài nghề nghiệp <span style="opacity:0.8;font-size:13px;">(ra 3 chọn 1)</span>
                 </button>
             </div>
             
-            <!-- 导航按钮 -->
             <div style="display:flex;gap:15px;justify-content:center;">
                 <button onclick="ACJTGame.goToStep(4)" 
                     style="padding:12px 35px;background:rgba(255,255,255,0.05);color:#888;border:1px solid rgba(255,255,255,0.1);border-radius:25px;cursor:pointer;font-size:14px;transition:all 0.3s;"
                     onmouseover="this.style.background='rgba(255,255,255,0.1)';this.style.color='#fff'"
                     onmouseout="this.style.background='rgba(255,255,255,0.05)';this.style.color='#888'">
-                    ← 上一步
+                    ← Bước trước
                 </button>
                 <button onclick="ACJTGame.confirmCreation()" ${!canStart ? 'disabled' : ''}
                     style="padding:14px 55px;background:${canStart ? 'linear-gradient(135deg,#2ed573,#26de81)' : 'rgba(255,255,255,0.05)'};
@@ -9022,13 +8915,13 @@ const ACJTGame = {
                     box-shadow:${canStart ? '0 5px 25px rgba(46,213,115,0.4)' : 'none'};opacity:${canStart ? '1' : '0.6'};transition:all 0.3s;"
                     ${canStart ? `onmouseover="this.style.transform='translateY(-2px) scale(1.02)';this.style.boxShadow='0 8px 30px rgba(46,213,115,0.5)'"
                     onmouseout="this.style.transform='translateY(0) scale(1)';this.style.boxShadow='0 5px 25px rgba(46,213,115,0.4)'"` : ''}>
-                    🎮 开始冒险
+                    🎮 Bắt đầu cuộc phiêu lưu
                 </button>
             </div>
         `;
     },
 
-    // 辅助函数
+    // Hàm bổ trợ
     refreshStep: function () {
         const modal = document.getElementById('acjtCharCreationModal');
         if (modal) modal.innerHTML = this.generateStepHTML();
@@ -9054,10 +8947,10 @@ const ACJTGame = {
         if (idx >= 0) {
             this.charData.startingStatuses.splice(idx, 1);
         } else {
-            // 检查点数是否足够（正面状态消耗点数）
+            // Kiểm tra đủ điểm không (trạng thái tích cực tiêu tốn điểm)
             const status = StartingStatusConfig[statusId];
             if (status.points < 0 && this.calculatePoints() + status.points < 10) {
-                alert('点数不足！至少需要保留10点用于Roll卡组');
+                alert('Không đủ điểm! Cần giữ lại ít nhất 10 điểm để Roll bộ bài');
                 return;
             }
             this.charData.startingStatuses.push(statusId);
@@ -9066,142 +8959,142 @@ const ACJTGame = {
     },
 
     selectOrigin: function (originId) {
-        // 检查点数
+        // Kiểm tra điểm
         const oldOrigin = OriginConfig[this.charData.originId];
         const newOrigin = OriginConfig[originId];
         const pointsDiff = (newOrigin?.points || 0) - (oldOrigin?.points || 0);
         if (this.calculatePoints() + pointsDiff < 10) {
-            alert('点数不足！');
+            alert('Không đủ điểm!');
             return;
         }
         this.charData.originId = originId;
         this.refreshStep();
     },
 
-    // Roll卡组 - 出3张职业卡供选择
+    // Roll bộ bài - Xuất hiện 3 lá nghề nghiệp để chọn
     rollDeck: function () {
-        // 检查点数是否足够（每次Roll消耗10点）
+        // Kiểm tra đủ điểm không (Mỗi lần Roll tốn 10 điểm)
         const currentPoints = this.calculatePoints();
         if (currentPoints < 10) {
-            alert('点数不足！每次Roll需要消耗10点，当前剩余' + currentPoints + '点');
+            alert('Không đủ điểm! Mỗi lần Roll tốn 10 điểm, hiện còn ' + currentPoints + ' điểm');
             return;
         }
 
         const prof = ProfessionConfig[this.charData.professionId];
 
-        // 获取职业专属卡池
+        // Lấy kho bài riêng của nghề nghiệp
         const profCards = prof.professionCardPool || [];
         if (profCards.length === 0) {
-            console.warn('该职业没有专属卡池');
+            console.warn('Nghề nghiệp này không có kho bài riêng');
             return;
         }
 
-        // 增加roll次数计数（每次roll消耗10点）
+        // Tăng đếm số lần roll (mỗi lần roll tốn 10 điểm)
         this.charData._rollCount = (this.charData._rollCount || 0) + 1;
 
-        // 随机抽3张不重复的职业卡
+        // Rút ngẫu nhiên 3 lá không trùng lặp
         const shuffled = [...profCards].sort(() => Math.random() - 0.5);
         const rolledIds = shuffled.slice(0, 3);
 
-        // 转换为卡牌对象
+        // Chuyển thành đối tượng thẻ bài
         this.charData.rolledCards = rolledIds.map(cardId => {
             const card = CardLibrary.find(c => c.id === cardId);
             return card ? { ...card } : null;
         }).filter(c => c);
 
-        // 刷新界面
+        // Làm mới giao diện
         this.refreshStep();
     },
 
-    // 选择Roll出的卡牌
+    // Chọn thẻ bài vừa Roll ra
     selectRolledCard: function (index) {
         if (!this.charData.selectedProfCards) {
             this.charData.selectedProfCards = [];
         }
 
-        // 最多选2张
+        // Chọn tối đa 2 lá
         if (this.charData.selectedProfCards.length >= 2) {
             return;
         }
 
-        // 获取选中的卡
+        // Lấy thẻ đã chọn
         const card = this.charData.rolledCards[index];
         if (!card) return;
 
-        // 添加到已选列表
+        // Thêm vào danh sách đã chọn
         this.charData.selectedProfCards.push(card);
 
-        // 清空当前roll的卡
+        // Xóa danh sách thẻ vừa roll
         this.charData.rolledCards = [];
 
-        // 刷新界面
+        // Làm mới giao diện
         this.refreshStep();
     },
 
-    // 删除已选的职业卡
+    // Xóa thẻ nghề nghiệp đã chọn
     removeSelectedCard: function (index) {
         if (!this.charData.selectedProfCards) return;
 
-        // 删除指定卡
+        // Xóa thẻ chỉ định
         this.charData.selectedProfCards.splice(index, 1);
 
-        // 刷新界面
+        // Làm mới giao diện
         this.refreshStep();
     },
 
-    // 确认创建
+    // Xác nhận khởi tạo
     confirmCreation: function () {
-        // 检查是否选满2张职业卡
+        // Kiểm tra đã chọn đủ 2 lá nghề nghiệp chưa
         const selectedCount = this.charData.selectedProfCards?.length || 0;
         if (selectedCount < 2) {
-            alert('请先Roll并选择2张职业卡！');
+            alert('Vui lòng Roll và chọn đủ 2 thẻ nghề nghiệp!');
             return;
         }
 
-        // 验证姓名
+        // Xác thực tên
         const playerName = this.charData.name.trim();
         if (!playerName) {
-            alert('请输入角色姓名！');
+            alert('Vui lòng nhập tên nhân vật!');
             this.goToStep(1);
             return;
         }
 
-        // 构建最终卡组：8张基础卡 + 2张已选职业卡
+        // Xây dựng bộ bài cuối cùng: 8 lá cơ bản + 2 lá nghề nghiệp đã chọn
         CardDeckManager.deck = [];
 
-        // 🆕 判断是否为魔法少女
+        // 🆕 Kiểm tra xem có phải Thiếu nữ Ma pháp không
         const isMagicalGirl = this.charData.professionId === 'magicalGirl';
 
-        // 添加4张普通攻击
+        // Thêm 4 lá Tấn công thường
         for (let i = 0; i < 4; i++) {
             const card = CardLibrary.find(c => c.id === 'attack_001');
             if (card) CardDeckManager.deck.push({ ...card });
         }
 
-        // 添加格挡（魔法少女少一张，换成变身卡）
+        // Thêm Đỡ đòn (Thiếu nữ Ma pháp ít hơn 1 lá, thay bằng thẻ biến thân)
         const armorCount = isMagicalGirl ? 2 : 3;
         for (let i = 0; i < armorCount; i++) {
             const card = CardLibrary.find(c => c.id === 'armor_001');
             if (card) CardDeckManager.deck.push({ ...card });
         }
 
-        // 🆕 魔法少女添加变身卡
+        // 🆕 Thiếu nữ Ma pháp thêm thẻ Biến thân
         if (isMagicalGirl) {
             const card = CardLibrary.find(c => c.id === 'mg_transform');
             if (card) CardDeckManager.deck.push({ ...card });
-            console.log('[创建] 魔法少女添加变身卡');
+            console.log('[Khởi tạo] Thiếu nữ Ma pháp thêm thẻ Biến thân');
         }
 
-        // 添加1张媚眼
+        // Thêm 1 lá Nháy mắt quyến rũ
         const meimei = CardLibrary.find(c => c.id === 'h_attack_001');
         if (meimei) CardDeckManager.deck.push({ ...meimei });
 
-        // 添加2张已选职业卡
+        // Thêm 2 lá nghề nghiệp đã chọn
         this.charData.selectedProfCards.forEach(card => {
             CardDeckManager.deck.push({ ...card });
         });
 
-        // 初始化玩家（使用完整创建数据）
+        // Khởi tạo người chơi (Sử dụng đầy đủ dữ liệu khởi tạo)
         PlayerState.init(this.charData.professionId, playerName, {
             age: this.charData.age,
             raceId: this.charData.raceId,
@@ -9211,22 +9104,22 @@ const ACJTGame = {
         });
         PlayerState.save();
 
-        // 保存卡组
+        // Lưu bộ bài
         saveCardDeck();
         CardDeckManager.renderDeck();
         PlayerState.updateDisplay();
 
-        // 关闭创建界面
+        // Đóng giao diện khởi tạo
         document.getElementById('acjtCharCreationModal')?.remove();
 
-        // 🎮 清空游戏历史区域（移除主菜单）
+        // 🎮 Xóa khu vực lịch sử game (Gỡ bỏ menu chính)
         const gameHistory = document.getElementById('gameHistory');
         if (gameHistory) {
             gameHistory.innerHTML = '';
-            console.log('[ACJT] 已清空主菜单');
+            console.log('[ACJT] Đã xóa menu chính');
         }
 
-        // 🎮 清空人物图谱（新游戏不应保留旧存档的人物）
+        // 🎮 Xóa sơ đồ nhân vật (Game mới không nên giữ lại nhân vật của bản lưu cũ)
         if (window.characterGraphManager) {
             window.characterGraphManager.characters.clear();
             window.characterGraphManager.vectors.clear();
@@ -9236,42 +9129,42 @@ const ACJTGame = {
                 matchCount: 0,
                 avgMatchScore: 0
             };
-            // 清空IndexedDB中的人物图谱数据
+            // Xóa dữ liệu sơ đồ nhân vật trong IndexedDB
             if (window.characterGraphManager.indexedDB) {
                 try {
                     const db = window.characterGraphManager.indexedDB;
                     const transaction = db.transaction(['characters'], 'readwrite');
                     const store = transaction.objectStore('characters');
                     store.clear();
-                    console.log('[ACJT] 已清空人物图谱');
+                    console.log('[ACJT] Đã xóa sơ đồ nhân vật');
                 } catch (e) {
-                    console.error('[ACJT] 清空人物图谱失败:', e);
+                    console.error('[ACJT] Xóa sơ đồ nhân vật thất bại:', e);
                 }
             }
         }
 
-        // 🎮 设置游戏已开始状态（让sendUserInput能正常工作）
+        // 🎮 Thiết lập trạng thái game đã bắt đầu (để sendUserInput hoạt động bình thường)
         if (typeof gameState !== 'undefined') {
             gameState.isGameStarted = true;
-            gameState.conversationHistory = []; // 清空对话历史
+            gameState.conversationHistory = []; // Xóa lịch sử đối thoại
 
-            // 🔧 完全重置变量表单（清除所有旧数据）
+            // 🔧 Đặt lại hoàn toàn biểu mẫu biến số (Xóa toàn bộ dữ liệu cũ)
             const race = RaceConfig[this.charData.raceId];
             const origin = OriginConfig[this.charData.originId];
             gameState.variables = {
                 name: this.charData.name,
                 age: this.charData.age,
-                gender: '女',
-                race: race?.name || '人类',
+                gender: 'Nữ',
+                race: race?.name || 'Người',
                 raceId: this.charData.raceId,
-                job: PlayerState.profession?.name || '冒险者',
+                job: PlayerState.profession?.name || 'Nhà mạo hiểm',
                 profession: PlayerState.profession?.id || null,
-                professionName: PlayerState.profession?.name || '冒险者',
-                origin: origin?.name || '新人冒险者',
+                professionName: PlayerState.profession?.name || 'Nhà mạo hiểm',
+                origin: origin?.name || 'Nhà mạo hiểm mới vào nghề',
                 originId: this.charData.originId,
-                identity: '艾超尖塔冒险者',
-                location: '艾超尖塔入口',
-                currentDateTime: '未知',
+                identity: 'Nhà mạo hiểm tòa tháp AC',
+                location: 'Lối vào tòa tháp AC',
+                currentDateTime: 'Chưa rõ',
                 corruption: PlayerState.corruption || 0,
                 isVirgin: this.charData.isVirgin,
                 bodyAttributes: this.charData.bodyAttributes,
@@ -9281,25 +9174,24 @@ const ACJTGame = {
                 protagonist: null,
                 specialStatus: {}
             };
-            console.log('[ACJT] 游戏状态已完全重置');
+            console.log('[ACJT] Trạng thái game đã được đặt lại hoàn toàn');
 
-            // 立即保存到IndexedDB（确保刷新后能恢复）
+            // Lưu ngay vào IndexedDB (đảm bảo khôi phục sau khi làm mới trang)
             if (typeof saveGameHistory === 'function') {
                 saveGameHistory().then(() => {
-                    console.log('[ACJT] 游戏状态已保存到IndexedDB');
-                }).catch(err => console.error('[ACJT] 保存失败:', err));
+                    console.log('[ACJT] Trạng thái game đã được lưu vào IndexedDB');
+                }).catch(err => console.error('[ACJT] Lưu thất bại:', err));
             }
         }
 
-        // 清空特殊状态并添加开局状态
+        // Xóa trạng thái đặc biệt và thêm các trạng thái ban đầu
         if (typeof SpecialStatusManager !== 'undefined') {
             SpecialStatusManager.statuses = {};
 
-            // 添加开局选择的特殊状态
+            // Thêm các trạng thái đặc biệt đã chọn lúc bắt đầu
             this.charData.startingStatuses.forEach(statusId => {
                 const status = StartingStatusConfig[statusId];
                 if (status) {
-                    // 避免双重start_前缀
                     const finalId = statusId.startsWith('start_') ? statusId : 'start_' + statusId;
                     SpecialStatusManager.statuses[finalId] = {
                         id: finalId,
@@ -9309,7 +9201,7 @@ const ACJTGame = {
                         fullDesc: status.description,
                         permanent: true,
                         effect: 'startingStatus',
-                        source: 'starting', // 🔧 标记为开局选择，不会被教堂清除
+                        source: 'starting', // 🔧 Đánh dấu chọn lúc bắt đầu, sẽ không bị giáo đường xóa
                         ...status.statusEffect
                     };
                 }
@@ -9317,20 +9209,19 @@ const ACJTGame = {
 
             SpecialStatusManager.save();
             SpecialStatusManager.updateDisplay();
-            SpecialStatusManager.applyEffects(); // 🔧 重新计算效果修正
+            SpecialStatusManager.applyEffects(); // 🔧 Tính toán lại các hiệu chỉnh hiệu ứng
         }
 
-        // 🔧 清除旧的状态效果修正
+        // 🔧 Xóa các hiệu chỉnh hiệu ứng trạng thái cũ
         if (typeof PlayerState !== 'undefined') {
             PlayerState.statusEffects = { energyMod: 0, attackMod: 0, defenseMod: 0, maxHpMod: 0, damageTakenMod: 0 };
             PlayerState.updateDisplay();
         }
 
-        // 🔧 清空黑市购买记录，但标记开局已选的同款
+        // 🔧 Xóa lịch sử mua sắm chợ đen, nhưng đánh dấu các món cùng loại đã chọn lúc bắt đầu
         if (typeof BlackMarketSystem !== 'undefined') {
             BlackMarketSystem.purchasedMods = [];
 
-            // 如果开局选择了与黑市同款的状态，标记为已购买
             this.charData.startingStatuses.forEach(statusId => {
                 const status = StartingStatusConfig[statusId];
                 if (status && status.linkedBodyMod) {
@@ -9339,49 +9230,49 @@ const ACJTGame = {
             });
 
             BlackMarketSystem.savePurchased();
-            console.log('[ACJT] 黑市已标记开局状态:', BlackMarketSystem.purchasedMods);
+            console.log('[ACJT] Chợ đen đã đánh dấu trạng thái bắt đầu:', BlackMarketSystem.purchasedMods);
         }
 
-        // 🎮 清空向量库（contextVectorManager 是主要使用的）
+        // 🎮 Xóa thư viện vector (contextVectorManager là cái chính được dùng)
         if (window.contextVectorManager) {
             window.contextVectorManager.clear();
-            // 确保IndexedDB也清空
+            // Đảm bảo IndexedDB cũng được xóa sạch
             window.contextVectorManager.saveToIndexedDB().then(() => {
-                console.log('[ACJT] ✅ 已清空 contextVectorManager（含IndexedDB）');
-            }).catch(err => console.error('[ACJT] 清空向量库失败:', err));
+                console.log('[ACJT] ✅ Đã xóa contextVectorManager (bao gồm IndexedDB)');
+            }).catch(err => console.error('[ACJT] Xóa thư viện vector thất bại:', err));
         }
-        // 兼容旧版 vectorLib
+        // Tương thích với vectorLib phiên bản cũ
         if (window.vectorLib) {
             window.vectorLib.conversations = new Map();
             window.vectorLib.historyLayers = [];
             if (window.vectorLib.saveToIndexedDB) {
                 window.vectorLib.saveToIndexedDB();
             }
-            console.log('[ACJT] 已清空历史矩阵(vectorLib)');
+            console.log('[ACJT] Đã xóa ma trận lịch sử (vectorLib)');
         }
-        // 清空矩阵管理器
+        // Xóa trình quản lý ma trận
         if (window.matrixManager) {
             if (window.matrixManager.clear) {
                 window.matrixManager.clear();
             } else {
                 window.matrixManager.layers = [];
             }
-            console.log('[ACJT] ✅ 已清空矩阵管理器');
+            console.log('[ACJT] ✅ Đã xóa trình quản lý ma trận');
         }
 
-        // 🎮 刷新状态栏显示
+        // 🎮 Làm mới hiển thị thanh trạng thái
         if (typeof renderStatusPanel === 'function') {
             renderStatusPanel(gameState.variables);
-            console.log('[ACJT] 状态栏已刷新');
+            console.log('[ACJT] Thanh trạng thái đã làm mới');
         }
 
         this.isGameStarted = true;
 
-        // 🎮 发送开局提示给AI
+        // 🎮 Gửi gợi ý bắt đầu cho AI
         this.sendOpeningPrompt();
     },
 
-    // 发送开局提示
+    // Gửi gợi ý bắt đầu
     sendOpeningPrompt: function () {
         const d = this.charData;
         const prof = ProfessionConfig[d.professionId];
@@ -9389,52 +9280,52 @@ const ACJTGame = {
         const origin = OriginConfig[d.originId];
         const body = d.bodyAttributes;
 
-        // 获取身体属性描述
+        // Lấy mô tả thuộc tính cơ thể
         const getBodyDesc = (type, id) => {
             const item = BodyConfig[type]?.find(i => i.id === id);
             return item ? item.desc : '';
         };
 
-        // 构建特殊状态描述
+        // Xây dựng mô tả trạng thái đặc biệt
         let statusDesc = '';
         if (d.startingStatuses.length > 0) {
-            statusDesc = '\n- 特殊状态：';
+            statusDesc = '\n- Trạng thái đặc biệt: ';
             d.startingStatuses.forEach(sid => {
                 const s = StartingStatusConfig[sid];
-                if (s) statusDesc += `【${s.name}】${s.description}；`;
+                if (s) statusDesc += `【${s.name}】${s.description}; `;
             });
         }
 
-        // 自定义背景
-        let customBg = d.customBackground ? `\n- 额外背景：${d.customBackground}` : '';
+        // Lai lịch tùy chỉnh
+        let customBg = d.customBackground ? `\n- Lai lịch bổ sung: ${d.customBackground}` : '';
 
-        const openingPrompt = `开始游戏。我的角色完整信息：
-- 姓名：${d.name}
-- 性别：女
-- 年龄：${d.age}岁
-- 种族：${race?.icon || ''} ${race?.name || '人类'}（${race?.description || ''}）
-- 职业：${prof?.name || '冒险者'}（${prof?.description || ''}）
-- 出身背景：${origin?.icon || ''} ${origin?.name || '新人冒险者'}（${origin?.description || ''}）
-- 是否处女：${d.isVirgin ? '是' : '否'}
-- 身高体型：${getBodyDesc('height', body.height)}，${getBodyDesc('weight', body.weight)}
-- 胸部：${BodyConfig.chest.find(i => i.id === body.chest)?.name || 'C罩杯'}
-- 臀部：${getBodyDesc('hips', body.hips)}
-- 小穴特征：${getBodyDesc('vagina', body.vagina)}${statusDesc}${customBg}
+        const openingPrompt = `Bắt đầu trò chơi. Thông tin đầy đủ về nhân vật của tôi:
+- Tên: ${d.name}
+- Giới tính: Nữ
+- Tuổi: ${d.age} tuổi
+- Chủng tộc: ${race?.icon || ''} ${race?.name || 'Người'} (${race?.description || ''})
+- Nghề nghiệp: ${prof?.name || 'Nhà mạo hiểm'} (${prof?.description || ''})
+- Xuất thân: ${origin?.icon || ''} ${origin?.name || 'Nhà mạo hiểm mới vào nghề'} (${origin?.description || ''})
+- Còn trinh: ${d.isVirgin ? 'Có' : 'Không'}
+- Chiều cao/Thể hình: ${getBodyDesc('height', body.height)}, ${getBodyDesc('weight', body.weight)}
+- Ngực: ${BodyConfig.chest.find(i => i.id === body.chest)?.name || 'Cúp C'}
+- Mông: ${getBodyDesc('hips', body.hips)}
+- Đặc điểm vùng kín: ${getBodyDesc('vagina', body.vagina)}${statusDesc}${customBg}
 
-【极其重要】这是游戏开局，必须完成以下任务：
-- （vagina要体现"${getBodyDesc('vagina', body.vagina)}"特征）
-- 根据出身背景"${origin?.name || '新人冒险者'}"生成合理的开局剧情
+【CỰC KỲ QUAN TRỌNG】 Đây là khởi đầu của trò chơi, phải hoàn thành các nhiệm vụ sau:
+- (Phần vagina phải thể hiện đặc điểm "${getBodyDesc('vagina', body.vagina)}")
+- Tạo cốt truyện khởi đầu hợp lý dựa trên xuất thân "${origin?.name || 'Nhà mạo hiểm mới vào nghề'}"
 
-请生成至少600字的精彩开局剧情，描写：
-- 主角的外貌特征（融入种族"${race?.name}"和身体属性）
-- 来到艾超尖塔的原因（与"${origin?.name}"背景呼应）
-- 踏入尖塔入口时的场景和心理描写。`;
+Vui lòng tạo một đoạn cốt truyện khởi đầu đặc sắc tối thiểu 600 chữ, miêu tả:
+- Đặc điểm ngoại hình của nhân vật chính (lồng ghép chủng tộc "${race?.name}" và các thuộc tính cơ thể)
+- Lý do đến với tòa tháp AC (tương ứng với xuất thân "${origin?.name}")
+- Cảnh tượng và tâm lý khi bước chân vào lối vào tòa tháp.`;
 
-        console.log('[ACJT] 发送开局提示:', openingPrompt);
+        console.log('[ACJT] Gửi gợi ý bắt đầu:', openingPrompt);
         this.sendToAI(openingPrompt);
     },
 
-    // 显示继续前进按钮
+    // Hiển thị nút Tiếp tục tiến bước
     showContinueButton: function () {
         const btn = document.getElementById('acjtContinueBtn');
         if (btn) {
@@ -9442,7 +9333,7 @@ const ACJTGame = {
         }
     },
 
-    // 隐藏继续前进按钮
+    // Ẩn nút Tiếp tục tiến bước
     hideContinueButton: function () {
         const btn = document.getElementById('acjtContinueBtn');
         if (btn) {
@@ -9450,95 +9341,95 @@ const ACJTGame = {
         }
     },
 
-    // 发送消息给AI（使用supply完整结构）
+    // Gửi tin nhắn cho AI
     sendToAI: function (message) {
-        console.log('[ACJT] 发送给AI:', message);
+        console.log('[ACJT] Gửi cho AI:', message);
 
-        // 确保游戏状态为已开始（避免"请先创建角色"提示）
+        // Đảm bảo trạng thái game là đã bắt đầu (tránh gợi ý "Vui lòng tạo nhân vật trước")
         if (typeof gameState !== 'undefined' && !gameState.isGameStarted) {
             gameState.isGameStarted = true;
-            console.log('[ACJT] 自动设置游戏状态为已开始');
+            console.log('[ACJT] Tự động thiết lập trạng thái game là đã bắt đầu');
         }
 
-        // 构建消息并发送
+        // Xây dựng tin nhắn và gửi
         const userInput = document.getElementById('userInput');
         if (userInput) {
             userInput.value = message;
-            // 触发发送
+            // Kích hoạt gửi
             if (typeof sendUserInput === 'function') {
                 sendUserInput();
             }
         }
 
-        // 标记需要添加"继续前进"选项
+        // Đánh dấu cần thêm tùy chọn "Tiếp tục tiến bước"
         this.needContinueOption = true;
     },
 
-    // 🔧 记录到重要历史（向量库+矩阵）
+    // 🔧 Ghi vào lịch sử quan trọng (Thư viện vector + Ma trận)
     recordToHistory: function (text) {
-        console.log('[ACJT] 记录到历史:', text);
+        console.log('[ACJT] Ghi vào lịch sử:', text);
 
-        // 1. 添加到 gameState.variables.history（存储为字符串格式）
+        // 1. Thêm vào gameState.variables.history (lưu dưới dạng chuỗi)
         if (typeof gameState !== 'undefined') {
             if (!gameState.variables.history) {
                 gameState.variables.history = [];
             }
-            // 格式：[第N层] 事件内容
-            const historyText = `[第${PlayerState.floor || 1}层] ${text}`;
+            // Định dạng: [Tầng N] Nội dung sự kiện
+            const historyText = `[Tầng ${PlayerState.floor || 1}] ${text}`;
             gameState.variables.history.push(historyText);
 
-            // 更新状态面板显示
+            // Cập nhật hiển thị thanh trạng thái
             if (typeof updateStatusPanel === 'function') {
                 updateStatusPanel();
             }
         }
 
-        // 2. 添加到向量库
+        // 2. Thêm vào thư viện vector
         if (typeof window.contextVectorManager !== 'undefined' && window.contextVectorManager.addToHistoryLibrary) {
             window.contextVectorManager.addToHistoryLibrary(text);
-            console.log('[ACJT] 已添加到向量库');
+            console.log('[ACJT] Đã thêm vào thư viện vector');
         }
 
-        // 3. 添加到矩阵（如果存在）
+        // 3. Thêm vào ma trận (nếu có)
         if (typeof window.matrixManager !== 'undefined' && window.matrixManager.addEntry) {
             window.matrixManager.addEntry({
                 type: 'history',
                 content: text,
                 timestamp: Date.now()
             });
-            console.log('[ACJT] 已添加到矩阵');
+            console.log('[ACJT] Đã thêm vào ma trận');
         }
 
-        // 4. 保存游戏状态
+        // 4. Lưu trạng thái trò chơi
         if (typeof saveGameHistory === 'function') {
-            saveGameHistory().catch(err => console.error('[ACJT] 保存失败:', err));
+            saveGameHistory().catch(err => console.error('[ACJT] Lưu thất bại:', err));
         }
     },
 
-    // 添加"继续前进"选项到AI回复后
+    // Thêm tùy chọn "Tiếp tục tiến bước" sau phản hồi của AI
     addContinueOption: function () {
         if (!this.needContinueOption) return;
 
-        // 🔧 等待AI完成生成后再添加按钮
+        // 🔧 Đợi AI hoàn thành việc tạo xong mới thêm nút
         const waitForComplete = (attempts = 0) => {
-            if (attempts > 30) { // 最多等待15秒
+            if (attempts > 30) { // Đợi tối đa 15 giây
                 this.needContinueOption = false;
                 return;
             }
 
-            // 检查是否有发送按钮被禁用（表示AI正在生成）
+            // Kiểm tra xem nút gửi có bị vô hiệu hóa không (biểu thị AI đang tạo nội dung)
             const sendBtn = document.getElementById('sendMessage');
             const isGenerating = sendBtn && sendBtn.disabled;
 
             if (isGenerating) {
-                // AI正在生成，继续等待
+                // AI đang tạo nội dung, tiếp tục đợi
                 setTimeout(() => waitForComplete(attempts + 1), 500);
                 return;
             }
 
-            // AI已完成，尝试添加按钮
+            // AI đã xong, thử thêm nút
             const optionsContainer = document.querySelector('.options-container');
-            // 避免重复添加
+            // Tránh thêm lặp lại
             if (document.querySelector('.acjt-continue-btn')) {
                 this.needContinueOption = false;
                 return;
@@ -9549,7 +9440,7 @@ const ACJTGame = {
 
                 const continueBtn = document.createElement('button');
                 continueBtn.className = 'option-btn acjt-continue-btn';
-                continueBtn.innerHTML = '继续前进（进入下一层）';
+                continueBtn.innerHTML = 'Tiếp tục tiến bước (Vào tầng tiếp theo)';
                 continueBtn.style.cssText = `
                     background: linear-gradient(135deg, #2ed573, #26de81) !important;
                     border: none !important; padding: 12px 20px !important; border-radius: 8px !important;
@@ -9562,73 +9453,73 @@ const ACJTGame = {
                     RouteSystem.showRouteSelection();
                 };
                 optionsContainer.appendChild(continueBtn);
-                console.log('[ACJT] 已添加继续前进按钮');
+                console.log('[ACJT] Đã thêm nút Tiếp tục tiến bước');
             } else {
-                // 重试
+                // Thử lại
                 setTimeout(() => waitForComplete(attempts + 1), 500);
             }
         };
 
-        // 延迟开始检测，避免过早检测
+        // Bắt đầu kiểm tra sau một khoảng trễ để tránh kiểm tra quá sớm
         setTimeout(() => waitForComplete(), 1500);
     }
 };
 
-// ==================== 初始化函数 ====================
+// ==================== Hàm khởi tạo ====================
 function initCardSystem() {
-    // 尝试从localStorage加载
+    // Thử tải từ localStorage
     const savedDeck = localStorage.getItem('acjt_card_deck');
     if (savedDeck) {
         try {
             CardDeckManager.init(JSON.parse(savedDeck));
         } catch (e) {
-            console.error('[卡牌系统] 加载卡组失败:', e);
+            console.error('[Hệ thống thẻ bài] Tải bộ bài thất bại:', e);
             CardDeckManager.deck = [];
         }
     }
 
-    // 加载玩家状态
+    // Tải trạng thái người chơi
     PlayerState.load();
 
-    // 加载特殊状态
+    // Tải trạng thái đặc biệt
     SpecialStatusManager.load();
 
-    // 加载身体改造（同步到特殊状态）
+    // Tải cải tạo cơ thể (đồng bộ vào trạng thái đặc biệt)
     BlackMarketSystem.loadPurchased();
 
-    // 渲染
+    // Kết xuất (Render)
     CardDeckManager.renderDeck();
     PlayerState.updateDisplay();
 
-    // 🎮 如果游戏已开始（有保存的玩家状态），显示继续前进按钮
+    // 🎮 Nếu game đã bắt đầu (có bản lưu trạng thái người chơi), hiển thị nút Tiếp tục tiến bước
     if (PlayerState.floor > 0 || CardDeckManager.deck.length > 0) {
         ACJTGame.showContinueButton();
         ACJTGame.isGameStarted = true;
-        // 同步游戏状态
+        // Đồng bộ trạng thái game
         if (typeof gameState !== 'undefined') {
             gameState.isGameStarted = true;
         }
-        console.log('[卡牌系统] 检测到已有存档，显示继续前进按钮');
+        console.log('[Hệ thống thẻ bài] Phát hiện có bản lưu hiện tại, hiển thị nút Tiếp tục tiến bước');
     }
 
-    console.log('[卡牌系统] 初始化完成');
+    console.log('[Hệ thống thẻ bài] Khởi tạo hoàn tất');
 }
 
-// 保存卡组
+// Lưu bộ bài
 function saveCardDeck() {
     const deckData = CardDeckManager.getDeckData();
     localStorage.setItem('acjt_card_deck', JSON.stringify(deckData));
-    console.log('[卡牌系统] 卡组已保存');
+    console.log('[Hệ thống thẻ bài] Bộ bài đã được lưu');
 }
 
-// 覆盖原有的startGame函数
+// Ghi đè hàm startGame gốc
 window.acjtStartGame = function () {
-    console.log('[ACJT] 开始游戏');
+    console.log('[ACJT] Bắt đầu trò chơi');
     ACJTGame.showCharacterCreation();
 };
 
-// 监听AI回复完成，添加继续前进选项
-// 使用 MutationObserver 监听选项容器的添加
+// Theo dõi AI phản hồi xong để thêm tùy chọn Tiếp tục tiến bước
+// Sử dụng MutationObserver để theo dõi việc thêm các container tùy chọn (options-container)
 const setupContinueOptionObserver = () => {
     const gameHistory = document.getElementById('gameHistory');
     if (!gameHistory) {
@@ -9638,7 +9529,7 @@ const setupContinueOptionObserver = () => {
 
     const observer = new MutationObserver((mutations) => {
         if (ACJTGame.needContinueOption) {
-            // 检查是否有新的 options-container 被添加
+            // Kiểm tra xem có options-container mới nào được thêm không
             for (const mutation of mutations) {
                 for (const node of mutation.addedNodes) {
                     if (node.nodeType === 1) {
@@ -9655,17 +9546,17 @@ const setupContinueOptionObserver = () => {
     });
 
     observer.observe(gameHistory, { childList: true, subtree: true });
-    console.log('[ACJT] 选项容器观察器已启动');
+    console.log('[ACJT] Trình quan sát container tùy chọn đã khởi động');
 };
 
-// 页面加载后启动观察器
+// Khởi động trình quan sát sau khi trang tải xong
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', setupContinueOptionObserver);
 } else {
     setTimeout(setupContinueOptionObserver, 500);
 }
 
-// ==================== 导出到全局 ====================
+// ==================== Xuất ra toàn cục ====================
 window.CardType = CardType;
 window.CardTypeNames = CardTypeNames;
 window.CardTypeColors = CardTypeColors;
@@ -9697,7 +9588,7 @@ window.ACJTGame = ACJTGame;
 window.initCardSystem = initCardSystem;
 window.saveCardDeck = saveCardDeck;
 
-// 页面加载完成后初始化
+// Khởi tạo sau khi tải trang hoàn tất
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
         setTimeout(initCardSystem, 500);
@@ -9706,9 +9597,9 @@ if (document.readyState === 'loading') {
     setTimeout(initCardSystem, 500);
 }
 
-console.log('[卡牌系统] acjt-cards.js 已加载');
+console.log('[Hệ thống thẻ bài] acjt-cards.js đã được tải');
 
-// ==================== ACJT专用变量编辑器 ====================
+// ==================== Trình chỉnh sửa biến số chuyên dụng cho ACJT ====================
 function openACJTVariableEditor() {
     const modal = document.createElement('div');
     modal.id = 'acjtVariableEditorModal';
@@ -9729,90 +9620,85 @@ function openACJTVariableEditor() {
 
     content.innerHTML = `
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h2 style="margin: 0; color: #667eea; font-size: 18px;">🎮 ACJT 变量编辑器</h2>
+            <h2 style="margin: 0; color: #667eea; font-size: 18px;">🎮 Trình chỉnh sửa biến số ACJT</h2>
             <div style="display: flex; gap: 10px;">
-                <button onclick="saveACJTVariables()" style="padding: 8px 20px; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">保存</button>
-                <button onclick="document.getElementById('acjtVariableEditorModal')?.remove()" style="padding: 8px 20px; background: #6c757d; color: white; border: none; border-radius: 6px; cursor: pointer;">关闭</button>
+                <button onclick="saveACJTVariables()" style="padding: 8px 20px; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">Lưu</button>
+                <button onclick="document.getElementById('acjtVariableEditorModal')?.remove()" style="padding: 8px 20px; background: #6c757d; color: white; border: none; border-radius: 6px; cursor: pointer;">Đóng</button>
             </div>
         </div>
         
-        <!-- 基本信息 -->
         <div style="margin-bottom: 20px;">
-            <h3 style="color: #ffd700; margin-bottom: 12px; font-size: 14px; border-bottom: 1px solid #333; padding-bottom: 8px;">👤 基本信息</h3>
+            <h3 style="color: #ffd700; margin-bottom: 12px; font-size: 14px; border-bottom: 1px solid #333; padding-bottom: 8px;">👤 Thông tin cơ bản</h3>
             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px;">
                 <div>
-                    <label style="display: block; font-size: 11px; color: #888; margin-bottom: 4px;">姓名</label>
+                    <label style="display: block; font-size: 11px; color: #888; margin-bottom: 4px;">Tên</label>
                     <input type="text" id="acjt-ve-name" value="${PlayerState.name || ''}" style="width: 100%; padding: 8px; background: #2a2a4a; border: 1px solid #444; border-radius: 4px; color: #fff; box-sizing: border-box;">
                 </div>
                 <div>
-                    <label style="display: block; font-size: 11px; color: #888; margin-bottom: 4px;">职业</label>
-                    <input type="text" id="acjt-ve-profession" value="${PlayerState.profession?.name || '无'}" disabled style="width: 100%; padding: 8px; background: #1a1a3a; border: 1px solid #333; border-radius: 4px; color: #666; box-sizing: border-box;">
+                    <label style="display: block; font-size: 11px; color: #888; margin-bottom: 4px;">Nghề nghiệp</label>
+                    <input type="text" id="acjt-ve-profession" value="${PlayerState.profession?.name || 'Không'}" disabled style="width: 100%; padding: 8px; background: #1a1a3a; border: 1px solid #333; border-radius: 4px; color: #666; box-sizing: border-box;">
                 </div>
                 <div>
-                    <label style="display: block; font-size: 11px; color: #888; margin-bottom: 4px;">当前层数</label>
+                    <label style="display: block; font-size: 11px; color: #888; margin-bottom: 4px;">Tầng hiện tại</label>
                     <input type="number" id="acjt-ve-floor" value="${PlayerState.floor || 0}" style="width: 100%; padding: 8px; background: #2a2a4a; border: 1px solid #444; border-radius: 4px; color: #fff; box-sizing: border-box;">
                 </div>
                 <div>
-                    <label style="display: block; font-size: 11px; color: #888; margin-bottom: 4px;">金币 💰</label>
+                    <label style="display: block; font-size: 11px; color: #888; margin-bottom: 4px;">Vàng 💰</label>
                     <input type="number" id="acjt-ve-gold" value="${PlayerState.gold || 0}" style="width: 100%; padding: 8px; background: #2a2a4a; border: 1px solid #444; border-radius: 4px; color: #ffd700; box-sizing: border-box;">
                 </div>
             </div>
         </div>
         
-        <!-- 战斗属性 -->
         <div style="margin-bottom: 20px;">
-            <h3 style="color: #ff6b81; margin-bottom: 12px; font-size: 14px; border-bottom: 1px solid #333; padding-bottom: 8px;">⚔️ 战斗属性</h3>
+            <h3 style="color: #ff6b81; margin-bottom: 12px; font-size: 14px; border-bottom: 1px solid #333; padding-bottom: 8px;">⚔️ Thuộc tính chiến đấu</h3>
             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px;">
                 <div>
-                    <label style="display: block; font-size: 11px; color: #888; margin-bottom: 4px;">生命值 ❤️</label>
+                    <label style="display: block; font-size: 11px; color: #888; margin-bottom: 4px;">Sinh mệnh ❤️</label>
                     <input type="number" id="acjt-ve-hp" value="${PlayerState.hp || 0}" style="width: 100%; padding: 8px; background: #2a2a4a; border: 1px solid #444; border-radius: 4px; color: #ff6b81; box-sizing: border-box;">
                 </div>
                 <div>
-                    <label style="display: block; font-size: 11px; color: #888; margin-bottom: 4px;">生命上限</label>
+                    <label style="display: block; font-size: 11px; color: #888; margin-bottom: 4px;">Sinh mệnh tối đa</label>
                     <input type="number" id="acjt-ve-maxHp" value="${PlayerState.maxHp || 0}" style="width: 100%; padding: 8px; background: #2a2a4a; border: 1px solid #444; border-radius: 4px; color: #ff6b81; box-sizing: border-box;">
                 </div>
                 <div>
-                    <label style="display: block; font-size: 11px; color: #888; margin-bottom: 4px;">费用 ⚡</label>
+                    <label style="display: block; font-size: 11px; color: #888; margin-bottom: 4px;">Năng lượng ⚡</label>
                     <input type="number" id="acjt-ve-energy" value="${PlayerState.energy || 3}" style="width: 100%; padding: 8px; background: #2a2a4a; border: 1px solid #444; border-radius: 4px; color: #ffd700; box-sizing: border-box;">
                 </div>
                 <div>
-                    <label style="display: block; font-size: 11px; color: #888; margin-bottom: 4px;">攻击力</label>
+                    <label style="display: block; font-size: 11px; color: #888; margin-bottom: 4px;">Tấn công</label>
                     <input type="number" id="acjt-ve-attack" value="${PlayerState.attack || 0}" style="width: 100%; padding: 8px; background: #2a2a4a; border: 1px solid #444; border-radius: 4px; color: #ff4757; box-sizing: border-box;">
                 </div>
                 <div>
-                    <label style="display: block; font-size: 11px; color: #888; margin-bottom: 4px;">防御力</label>
+                    <label style="display: block; font-size: 11px; color: #888; margin-bottom: 4px;">Phòng thủ</label>
                     <input type="number" id="acjt-ve-defense" value="${PlayerState.defense || 0}" style="width: 100%; padding: 8px; background: #2a2a4a; border: 1px solid #444; border-radius: 4px; color: #70a1ff; box-sizing: border-box;">
                 </div>
                 <div>
-                    <label style="display: block; font-size: 11px; color: #888; margin-bottom: 4px;">基础护甲 🛡️</label>
+                    <label style="display: block; font-size: 11px; color: #888; margin-bottom: 4px;">Giáp cơ bản 🛡️</label>
                     <input type="number" id="acjt-ve-baseArmor" value="${PlayerState.baseArmor || 0}" style="width: 100%; padding: 8px; background: #2a2a4a; border: 1px solid #444; border-radius: 4px; color: #70a1ff; box-sizing: border-box;">
                 </div>
             </div>
         </div>
         
-        <!-- 特殊属性 -->
         <div style="margin-bottom: 20px;">
-            <h3 style="color: #9c88ff; margin-bottom: 12px; font-size: 14px; border-bottom: 1px solid #333; padding-bottom: 8px;">💜 特殊属性</h3>
+            <h3 style="color: #9c88ff; margin-bottom: 12px; font-size: 14px; border-bottom: 1px solid #333; padding-bottom: 8px;">💜 Thuộc tính đặc biệt</h3>
             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px;">
                 <div>
-                    <label style="display: block; font-size: 11px; color: #888; margin-bottom: 4px;">堕落值 💜</label>
+                    <label style="display: block; font-size: 11px; color: #888; margin-bottom: 4px;">Đọa lạc 💜</label>
                     <input type="number" id="acjt-ve-corruption" value="${PlayerState.corruption || 0}" style="width: 100%; padding: 8px; background: #2a2a4a; border: 1px solid #444; border-radius: 4px; color: #9c88ff; box-sizing: border-box;">
                 </div>
             </div>
         </div>
         
-        <!-- 楼层回滚 -->
         <div style="margin-bottom: 20px;">
-            <h3 style="color: #ffa502; margin-bottom: 12px; font-size: 14px; border-bottom: 1px solid #333; padding-bottom: 8px;">⏪ 楼层回滚</h3>
-            <div style="font-size: 11px; color: #888; margin-bottom: 10px;">回滚到之前的楼层会恢复当时的堕落值、金币、卡组等状态</div>
+            <h3 style="color: #ffa502; margin-bottom: 12px; font-size: 14px; border-bottom: 1px solid #333; padding-bottom: 8px;">⏪ Quay lại tầng trước (Rollback)</h3>
+            <div style="font-size: 11px; color: #888; margin-bottom: 10px;">Quay lại tầng trước sẽ khôi phục các trạng thái đọa lạc, vàng, bộ bài... tại thời điểm đó</div>
             <div id="acjt-ve-snapshots" style="display: flex; flex-wrap: wrap; gap: 8px;">
                 ${generateFloorSnapshotButtons()}
             </div>
         </div>
         
-        <!-- 圣遗物 -->
         <div>
-            <h3 style="color: #2ed573; margin-bottom: 12px; font-size: 14px; border-bottom: 1px solid #333; padding-bottom: 8px;">🏆 圣遗物 (${PlayerState.relics?.length || 0}个)</h3>
+            <h3 style="color: #2ed573; margin-bottom: 12px; font-size: 14px; border-bottom: 1px solid #333; padding-bottom: 8px;">🏆 Cổ vật (${PlayerState.relics?.length || 0} cái)</h3>
             <div id="acjt-ve-relics" style="display: flex; flex-wrap: wrap; gap: 8px;">
                 ${(PlayerState.relics || []).map((r, i) => `
                     <div style="background: #2a2a4a; border: 1px solid #444; border-radius: 6px; padding: 8px 12px; display: flex; align-items: center; gap: 8px;">
@@ -9820,7 +9706,7 @@ function openACJTVariableEditor() {
                         <span style="font-size: 12px;">${RelicConfig[r]?.name || r}</span>
                         <button onclick="removeACJTRelic(${i})" style="background: #ff4757; border: none; border-radius: 4px; color: #fff; padding: 2px 6px; cursor: pointer; font-size: 10px;">×</button>
                     </div>
-                `).join('') || '<span style="color: #666; font-size: 12px;">暂无圣遗物</span>'}
+                `).join('') || '<span style="color: #666; font-size: 12px;">Chưa có cổ vật</span>'}
             </div>
         </div>
     `;
@@ -9830,9 +9716,9 @@ function openACJTVariableEditor() {
     document.body.appendChild(modal);
 }
 
-// 保存ACJT变量
+// Lưu các biến số ACJT
 function saveACJTVariables() {
-    PlayerState.name = document.getElementById('acjt-ve-name')?.value || '旅行者';
+    PlayerState.name = document.getElementById('acjt-ve-name')?.value || 'Lữ hành giả';
     PlayerState.floor = parseInt(document.getElementById('acjt-ve-floor')?.value) || 0;
     PlayerState.gold = parseInt(document.getElementById('acjt-ve-gold')?.value) || 0;
     PlayerState.hp = parseInt(document.getElementById('acjt-ve-hp')?.value) || 70;
@@ -9843,43 +9729,43 @@ function saveACJTVariables() {
     PlayerState.baseArmor = parseInt(document.getElementById('acjt-ve-baseArmor')?.value) || 0;
     PlayerState.corruption = parseInt(document.getElementById('acjt-ve-corruption')?.value) || 0;
 
-    // 保存到localStorage
+    // Lưu vào localStorage
     PlayerState.save();
 
-    // 更新显示
+    // Cập nhật hiển thị
     PlayerState.updateDisplay();
     if (typeof updateStatusPanel === 'function') {
         updateStatusPanel();
     }
 
-    // 关闭弹窗
+    // Đóng cửa sổ pop-up
     document.getElementById('acjtVariableEditorModal')?.remove();
 
     if (typeof showNotification === 'function') {
-        showNotification('变量已保存', 'success');
+        showNotification('Biến số đã được lưu', 'success');
     } else {
-        alert('变量已保存');
+        alert('Biến số đã được lưu');
     }
 }
 
-// 移除圣遗物
+// Gỡ bỏ Cổ vật
 function removeACJTRelic(index) {
     if (PlayerState.relics && PlayerState.relics[index] !== undefined) {
         PlayerState.relics.splice(index, 1);
         PlayerState.save();
-        // 刷新编辑器
+        // Làm mới trình chỉnh sửa
         document.getElementById('acjtVariableEditorModal')?.remove();
         openACJTVariableEditor();
     }
 }
 
-// 🔧 生成楼层快照按钮HTML
+// 🔧 Tạo HTML nút Snapshot các tầng
 function generateFloorSnapshotButtons() {
     const snapshots = PlayerState.floorSnapshots || {};
     const floors = Object.keys(snapshots);
 
     if (floors.length === 0) {
-        return '<span style="color: #666; font-size: 12px;">暂无快照（进入新楼层时自动创建）</span>';
+        return '<span style="color: #666; font-size: 12px;">Chưa có bản ghi nhanh (Tự động tạo khi vào tầng mới)</span>';
     }
 
     return floors.sort((a, b) => parseInt(b) - parseInt(a)).map(floor => {
@@ -9888,58 +9774,58 @@ function generateFloorSnapshotButtons() {
             'style="background: linear-gradient(135deg, #ffa502 0%, #ff7f50 100%); ' +
             'border: none; border-radius: 6px; padding: 8px 12px; ' +
             'color: #fff; cursor: pointer; font-size: 12px;">' +
-            '第' + floor + '层 (堕落:' + snapshot.corruption + ')' +
+            'Tầng ' + floor + ' (Đọa lạc: ' + snapshot.corruption + ')' +
             '</button>';
     }).join('');
 }
 
-// 🔧 确认楼层回滚
+// 🔧 Xác nhận quay lại tầng trước (Rollback)
 function rollbackToFloorConfirm(targetFloor) {
     const snapshot = PlayerState.floorSnapshots[targetFloor];
     if (!snapshot) {
-        alert('找不到该楼层的快照');
+        alert('Không tìm thấy bản ghi nhanh cho tầng này');
         return;
     }
 
-    const confirmMsg = '确定要回滚到第' + targetFloor + '层吗？\n\n' +
-        '回滚后状态：\n' +
-        '- 堕落值: ' + snapshot.corruption + '\n' +
-        '- 金币: ' + snapshot.gold + '\n' +
+    const confirmMsg = 'Bạn có chắc chắn muốn quay lại Tầng ' + targetFloor + ' không?\n\n' +
+        'Trạng thái sau khi quay lại:\n' +
+        '- Điểm đọa lạc: ' + snapshot.corruption + '\n' +
+        '- Vàng: ' + snapshot.gold + '\n' +
         '- HP: ' + snapshot.hp + '/' + snapshot.maxHp + '\n\n' +
-        '注意：该楼层之后的所有进度将丢失！';
+        'Lưu ý: Toàn bộ tiến trình sau tầng này sẽ bị mất!';
 
     if (confirm(confirmMsg)) {
         PlayerState.rollbackToFloor(targetFloor);
 
-        // 同步到变量表单
+        // Đồng bộ vào biểu mẫu biến số
         if (typeof gameState !== 'undefined' && gameState.variables) {
             gameState.variables.corruption = PlayerState.corruption;
         }
 
-        // 刷新编辑器
+        // Làm mới trình chỉnh sửa
         document.getElementById('acjtVariableEditorModal')?.remove();
         openACJTVariableEditor();
 
         if (typeof showNotification === 'function') {
-            showNotification('已回滚到第' + targetFloor + '层', 'success');
+            showNotification('Đã quay lại Tầng ' + targetFloor, 'success');
         } else {
-            alert('已回滚到第' + targetFloor + '层');
+            alert('Đã quay lại Tầng ' + targetFloor);
         }
     }
 }
 
-// 覆盖原有的openVariableEditor函数（ACJT模式下使用专用编辑器）
+// Ghi đè hàm openVariableEditor gốc (Sử dụng trình chỉnh sửa chuyên dụng trong chế độ ACJT)
 window.openVariableEditor = function () {
     if (typeof PlayerState !== 'undefined' && PlayerState.profession) {
-        // ACJT模式：使用专用编辑器
+        // Chế độ ACJT: Sử dụng trình chỉnh sửa riêng
         openACJTVariableEditor();
     } else if (typeof window._originalOpenVariableEditor === 'function') {
-        // 非ACJT模式：使用原编辑器
+        // Không phải chế độ ACJT: Sử dụng trình chỉnh sửa gốc
         window._originalOpenVariableEditor();
     }
 };
 
-// 保存原函数引用
+// Lưu tham chiếu đến hàm gốc
 if (typeof openVariableEditor === 'function' && !window._originalOpenVariableEditor) {
     window._originalOpenVariableEditor = openVariableEditor;
 }
@@ -9950,25 +9836,25 @@ window.removeACJTRelic = removeACJTRelic;
 window.generateFloorSnapshotButtons = generateFloorSnapshotButtons;
 window.rollbackToFloorConfirm = rollbackToFloorConfirm;
 
-// ==================== 催眠状态选项覆盖 - DOM监控 ====================
-// 使用MutationObserver监控选项按钮的变化，在新选项出现时自动应用催眠覆盖
+// ==================== Ghi đè tùy chọn trạng thái Thôi miên - Giám sát DOM ====================
+// Sử dụng MutationObserver để giám sát sự thay đổi của các nút tùy chọn, tự động áp dụng ghi đè thôi miên khi tùy chọn mới xuất hiện
 (function initHypnosisOptionOverrideObserver() {
-    // 等待DOM就绪
+    // Đợi DOM sẵn sàng
     function setupObserver() {
         const gameHistory = document.getElementById('gameHistory');
         if (!gameHistory) {
-            console.log('[催眠覆盖] 等待gameHistory元素...');
+            console.log('[Ghi đè thôi miên] Đang đợi phần tử gameHistory...');
             setTimeout(setupObserver, 500);
             return;
         }
 
         const observer = new MutationObserver(function (mutations) {
-            // 检查是否有新的选项按钮
+            // Kiểm tra xem có nút tùy chọn mới không
             let hasNewOptions = false;
             mutations.forEach(mutation => {
                 mutation.addedNodes.forEach(node => {
                     if (node.nodeType === Node.ELEMENT_NODE) {
-                        // 检查新增节点是否包含选项按钮
+                        // Kiểm tra xem nút mới thêm có chứa nút tùy chọn không
                         if (node.classList?.contains('option-btn') ||
                             node.querySelector?.('.option-btn') ||
                             node.querySelector?.('.options-container')) {
@@ -9979,7 +9865,7 @@ window.rollbackToFloorConfirm = rollbackToFloorConfirm;
             });
 
             if (hasNewOptions && window.HypnosisOptionOverride) {
-                // 延迟一点执行，确保选项按钮已完全渲染
+                // Thực thi trễ một chút để đảm bảo các nút tùy chọn đã render hoàn toàn
                 setTimeout(() => {
                     if (window.HypnosisOptionOverride.shouldOverride()) {
                         window.HypnosisOptionOverride.applyOverride();
@@ -9994,9 +9880,9 @@ window.rollbackToFloorConfirm = rollbackToFloorConfirm;
             subtree: true
         });
 
-        console.log('[催眠覆盖] DOM监控已启动');
+        console.log('[Ghi đè thôi miên] Đã khởi động giám sát DOM');
 
-        // 首次检查（页面加载时可能已有选项）
+        // Kiểm tra lần đầu (có thể đã có tùy chọn khi trang tải xong)
         if (window.HypnosisOptionOverride && window.HypnosisOptionOverride.shouldOverride()) {
             setTimeout(() => {
                 window.HypnosisOptionOverride.applyOverride();
@@ -10005,7 +9891,7 @@ window.rollbackToFloorConfirm = rollbackToFloorConfirm;
         }
     }
 
-    // 页面加载完成后启动监控
+    // Khởi động giám sát sau khi tải trang hoàn tất
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', setupObserver);
     } else {

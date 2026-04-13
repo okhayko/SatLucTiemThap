@@ -1,79 +1,78 @@
 /**
- * 移动端UI模块
- * 统一处理移动端Tab切换等UI交互
- * 
- * @author 重构自game.html和game-bhz.html的重复代码
+ * Module UI cho thiết bị di động
+ * Xử lý thống nhất các tương tác UI như chuyển đổi Tab trên thiết bị di động
+ * * @author Tái cấu trúc từ mã lặp lại của game.html và game-bhz.html
  * @version 1.0.0
  */
 
 /**
- * 移动端Tab切换
- * @param {string} tabName - Tab名称: 'game' 或 'status'
+ * Chuyển đổi Tab trên thiết bị di động
+ * @param {string} tabName - Tên Tab: 'game' hoặc 'status'
  */
 window.switchMobileTab = function(tabName) {
-    console.log('[移动端Tab] 切换到:', tabName);
+    console.log('[Tab di động] Chuyển đến:', tabName);
     
     try {
-        // 移除所有Tab按钮的active类
+        // Loại bỏ class 'active' khỏi tất cả các nút Tab
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.classList.remove('active');
         });
         
-        // 获取面板元素
+        // Lấy các phần tử bảng điều khiển (panel)
         const gamePanel = document.querySelector('.game-panel');
         const statusPanel = document.querySelector('.status-panel');
         
         if (!gamePanel || !statusPanel) {
-            console.warn('[移动端Tab] 面板元素未找到');
+            console.warn('[Tab di động] Không tìm thấy phần tử bảng điều khiển');
             return;
         }
         
-        // 移除所有面板的active类
+        // Loại bỏ class 'active' khỏi tất cả các panel
         gamePanel.classList.remove('active');
         statusPanel.classList.remove('active');
 
-        // 激活目标Tab按钮
+        // Kích hoạt nút Tab mục tiêu
         const targetTab = document.querySelector(`[data-tab="${tabName}"]`);
         if (targetTab) {
             targetTab.classList.add('active');
         } else {
-            console.warn(`[移动端Tab] 未找到Tab按钮: ${tabName}`);
+            console.warn(`[Tab di động] Không tìm thấy nút Tab: ${tabName}`);
         }
         
-        // 激活目标面板
+        // Kích hoạt panel mục tiêu
         if (tabName === 'game') {
             gamePanel.classList.add('active');
-            console.log('[移动端Tab] ✅ 游戏面板已激活');
+            console.log('[Tab di động] ✅ Bảng trò chơi đã được kích hoạt');
             
-            // 切换回游戏面板时，自动滚动到消息底部
-            // 多次尝试滚动，确保面板动画完成后滚动生效
+            // Khi chuyển về bảng trò chơi, tự động cuộn xuống đáy tin nhắn
+            // Thử cuộn nhiều lần để đảm bảo cuộn có hiệu lực sau khi hoạt ảnh panel hoàn tất
             const scrollToBottom = () => {
                 const historyDiv = document.getElementById('gameHistory');
                 if (historyDiv) {
                     historyDiv.scrollTop = historyDiv.scrollHeight;
-                    console.log('[移动端Tab] 滚动到底部, scrollTop:', historyDiv.scrollTop, 'scrollHeight:', historyDiv.scrollHeight);
+                    console.log('[Tab di động] Cuộn xuống đáy, scrollTop:', historyDiv.scrollTop, 'scrollHeight:', historyDiv.scrollHeight);
                 }
             };
-            // 立即尝试
+            // Thử ngay lập tức
             requestAnimationFrame(scrollToBottom);
-            // 100ms后再试
+            // Thử lại sau 100ms
             setTimeout(scrollToBottom, 100);
-            // 300ms后最终确保
+            // Đảm bảo cuối cùng sau 300ms
             setTimeout(scrollToBottom, 300);
         } else if (tabName === 'status') {
             statusPanel.classList.add('active');
-            console.log('[移动端Tab] ✅ 状态面板已激活');
+            console.log('[Tab di động] ✅ Bảng trạng thái đã được kích hoạt');
         } else {
-            console.warn(`[移动端Tab] 未知Tab名称: ${tabName}`);
+            console.warn(`[Tab di động] Tên Tab không xác định: ${tabName}`);
         }
     } catch (error) {
-        console.error('[移动端Tab] 切换失败:', error);
-        console.error('错误堆栈:', error.stack);
+        console.error('[Tab di động] Chuyển đổi thất bại:', error);
+        console.error('Stack lỗi:', error.stack);
     }
 };
 
 /**
- * 检测是否为移动设备
+ * Kiểm tra xem có phải thiết bị di động không
  * @returns {boolean}
  */
 window.isMobileDevice = function() {
@@ -81,34 +80,34 @@ window.isMobileDevice = function() {
 };
 
 /**
- * 自动调整移动端布局
- * @param {boolean} isInitial - 是否为首次初始化调用
+ * Tự động điều chỉnh bố cục di động
+ * @param {boolean} isInitial - Có phải là lần gọi khởi tạo đầu tiên không
  */
 window.autoAdjustMobileLayout = function(isInitial = false) {
     if (isMobileDevice()) {
-        console.log('[移动端UI] 检测到移动设备，应用移动端样式');
+        console.log('[UI di động] Phát hiện thiết bị di động, áp dụng kiểu di động');
         document.body.classList.add('mobile-device');
         
-        // 只在首次初始化时才默认切换到游戏面板，resize时不强制切换
+        // Chỉ mặc định chuyển sang bảng trò chơi khi khởi tạo lần đầu, không bắt buộc khi thay đổi kích thước (resize)
         if (isInitial) {
             switchMobileTab('game');
         }
     } else {
-        console.log('[移动端UI] 检测到桌面设备');
+        console.log('[UI di động] Phát hiện thiết bị máy tính');
         document.body.classList.add('desktop-device');
     }
 };
 
 /**
- * 初始化移动端UI
+ * Khởi tạo UI di động
  */
 window.initMobileUI = function() {
-    console.log('[移动端UI] 初始化');
+    console.log('[UI di động] Khởi tạo');
     
-    // 首次初始化时自动调整布局并设置默认面板
+    // Tự động điều chỉnh bố cục và thiết lập bảng mặc định khi khởi tạo lần đầu
     autoAdjustMobileLayout(true);
     
-    // 绑定Tab按钮点击事件
+    // Gán sự kiện click cho các nút Tab
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             const tabName = this.getAttribute('data-tab');
@@ -118,7 +117,7 @@ window.initMobileUI = function() {
         });
     });
     
-    // 监听窗口大小变化
+    // Theo dõi sự thay đổi kích thước cửa sổ
     let resizeTimer;
     window.addEventListener('resize', function() {
         clearTimeout(resizeTimer);
@@ -127,14 +126,14 @@ window.initMobileUI = function() {
         }, 250);
     });
     
-    console.log('[移动端UI] ✅ 初始化完成');
+    console.log('[UI di động] ✅ Khởi tạo hoàn tất');
 };
 
-// DOMContentLoaded时自动初始化
+// Tự động khởi tạo khi DOMContentLoaded
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initMobileUI);
 } else {
     initMobileUI();
 }
 
-console.log('📦 [模块加载] mobile-ui.js 已加载');
+console.log('📦 [Module Load] mobile-ui.js đã được tải');

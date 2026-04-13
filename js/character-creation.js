@@ -1,26 +1,26 @@
 /**
- * 角色创建系统模块
- * 包含：出身选择、天赋系统、属性分配、角色确认等
- * 从 game.html 中提取
+ * Module hệ thống tạo nhân vật
+ * Bao gồm: Chọn xuất thân, hệ thống thiên phú, phân bổ thuộc tính, xác nhận nhân vật, v.v.
+ * Trích xuất từ game.html
  */
 
-// ==================== 角色创建系统 ====================
+// ==================== Hệ thống tạo nhân vật ====================
 
 /**
- * 初始化出身列表
+ * Khởi tạo danh sách xuất thân (Origins)
  */
 function initializeOrigins() {
-    // 检查origins数据是否存在
+    // Kiểm tra dữ liệu origins có tồn tại không
     if (!window.origins || !Array.isArray(window.origins)) {
-        console.error('[角色创建] ❌ origins 数据不存在或不是数组:', window.origins);
+        console.error('[Tạo nhân vật] ❌ Dữ liệu origins không tồn tại hoặc không phải mảng:', window.origins);
         return;
     }
 
-    console.log('[角色创建] 📋 开始初始化出身列表，数量:', window.origins.length);
+    console.log('[Tạo nhân vật] 📋 Bắt đầu khởi tạo danh sách xuất thân, số lượng:', window.origins.length);
 
     const originGrid = document.getElementById('originGrid');
     if (!originGrid) {
-        console.error('[角色创建] ❌ originGrid 元素不存在');
+        console.error('[Tạo nhân vật] ❌ Phần tử originGrid không tồn tại');
         return;
     }
 
@@ -35,7 +35,7 @@ function initializeOrigins() {
         }
         card.onclick = () => selectOrigin(origin.id);
 
-        // 构建属性效果HTML
+        // Xây dựng HTML hiệu ứng thuộc tính
         let effectsHTML = '';
         if (Object.keys(origin.attributeEffects).length > 0) {
             effectsHTML = Object.entries(origin.attributeEffects).map(([attr, value]) => {
@@ -44,10 +44,10 @@ function initializeOrigins() {
             }).join('');
         }
 
-        // 构建点数修正文本
+        // Xây dựng văn bản hiệu chỉnh điểm số
         const pointsText = origin.pointsModifier !== 0
-            ? `${origin.pointsModifier > 0 ? '+' : ''}${origin.pointsModifier} 点数`
-            : '0 点数';
+            ? `${origin.pointsModifier > 0 ? '+' : ''}${origin.pointsModifier} Điểm`
+            : '0 Điểm';
 
         card.innerHTML = `
             <div class="origin-card-header">
@@ -65,14 +65,14 @@ function initializeOrigins() {
 }
 
 /**
- * 选择出身
+ * Chọn xuất thân
  */
 function selectOrigin(originId) {
     const oldOrigin = window.origins.find(o => o.id === characterCreation.selectedOrigin);
     const newOrigin = window.origins.find(o => o.id === originId);
     if (!newOrigin) return;
 
-    // 移除旧出身的效果
+    // Loại bỏ hiệu ứng của xuất thân cũ
     if (oldOrigin) {
         characterCreation.remainingPoints -= oldOrigin.pointsModifier;
         Object.entries(oldOrigin.attributeEffects).forEach(([attr, value]) => {
@@ -80,14 +80,14 @@ function selectOrigin(originId) {
         });
     }
 
-    // 应用新出身的效果
+    // Áp dụng hiệu ứng của xuất thân mới
     characterCreation.selectedOrigin = originId;
     characterCreation.remainingPoints += newOrigin.pointsModifier;
     Object.entries(newOrigin.attributeEffects).forEach(([attr, value]) => {
         characterCreation.baseAttributes[attr] += value;
     });
 
-    // 更新UI
+    // Cập nhật UI
     document.querySelectorAll('.origin-card').forEach(card => {
         card.classList.remove('selected');
     });
@@ -98,97 +98,97 @@ function selectOrigin(originId) {
 }
 
 /**
- * 初始化天赋列表
+ * Khởi tạo danh sách thiên phú (Talents)
  */
 function initializeTalents() {
-    // 调试信息：检查 window.talents 状态
-    console.log('[角色创建] 🔍 调试信息:');
-    console.log('  - window.talents 是否存在:', typeof window.talents !== 'undefined');
-    console.log('  - window.talents 类型:', typeof window.talents);
-    console.log('  - window.talents 值:', window.talents);
+    // Thông tin debug: kiểm tra trạng thái window.talents
+    console.log('[Tạo nhân vật] 🔍 Thông tin Debug:');
+    console.log('  - window.talents có tồn tại không:', typeof window.talents !== 'undefined');
+    console.log('  - Kiểu của window.talents:', typeof window.talents);
+    console.log('  - Giá trị window.talents:', window.talents);
 
-    // 检查talents数据是否存在
+    // Kiểm tra dữ liệu talents có tồn tại không
     if (!window.talents || !Array.isArray(window.talents)) {
-        console.error('[角色创建] ❌ talents 数据不存在或不是数组:', window.talents);
+        console.error('[Tạo nhân vật] ❌ Dữ liệu talents không tồn tại hoặc không phải mảng:', window.talents);
 
-        // 使用内联备用天赋数据
-        console.log('[角色创建] 🔄 使用内联备用天赋数据...');
+        // Sử dụng dữ liệu thiên phú dự phòng nội bộ
+        console.log('[Tạo nhân vật] 🔄 Đang sử dụng dữ liệu thiên phú dự phòng...');
         window.talents = [
-            // 正面天赋（消耗点数）
+            // Thiên phú tích cực (Tốn điểm)
             {
                 id: 'genius',
-                name: '天赋异禀',
+                name: 'Thiên Phú Dị Bẩm',
                 type: 'positive',
                 cost: -15,
-                description: '天生灵根超凡，修炼速度极快',
+                description: 'Linh căn siêu phàm bẩm sinh, tốc độ tu luyện cực nhanh',
                 effects: { comprehension: 8, potential: 5 }
             },
             {
                 id: 'strong_body',
-                name: '先天道体',
+                name: 'Tiên Thiên Đạo Thể',
                 type: 'positive',
                 cost: -10,
-                description: '天生道体，根骨绝佳',
+                description: 'Đạo thể bẩm sinh, căn cốt tuyệt giai',
                 effects: { physique: 10, spirit: 5 }
             },
             {
                 id: 'lucky_star',
-                name: '气运之子',
+                name: 'Khí Vận Chi Tử',
                 type: 'positive',
                 cost: -10,
-                description: '天生好运，容易获得机缘',
+                description: 'May mắn bẩm sinh, dễ dàng đắc được cơ duyên',
                 effects: { fortune: 15, charisma: 3 }
             },
             {
                 id: 'swift_comprehension',
-                name: '过目不忘',
+                name: 'Quá Mục Bất Vong',
                 type: 'positive',
                 cost: -8,
-                description: '悟性惊人，领悟力超群',
+                description: 'Ngộ tính kinh người, khả năng lĩnh hội siêu quần',
                 effects: { comprehension: 12 }
             },
             {
                 id: 'charm_master',
-                name: '倾国倾城',
+                name: 'Khuynh Quốc Khuynh Thành',
                 type: 'positive',
                 cost: -10,
-                description: '容貌出众，魅力超群',
+                description: 'Dung mạo xuất chúng, mị lực siêu quần',
                 effects: { charisma: 10, fortune: 3 }
             },
-            // 负面天赋（增加点数）
+            // Thiên phú tiêu cực (Thêm điểm)
             {
                 id: 'weak_body',
-                name: '体弱多病',
+                name: 'Thể Nhược Đa Bệnh',
                 type: 'negative',
                 cost: 15,
-                description: '身体虚弱，根骨欠佳',
+                description: 'Thân thể hư nhược, căn cốt kém cỏi',
                 effects: { physique: -8, spirit: -4 }
             },
             {
                 id: 'bad_luck',
-                name: '霉运缠身',
+                name: 'Vận Xấu Quấn Thân',
                 type: 'negative',
                 cost: 15,
-                description: '运气不佳，容易遇到麻烦',
+                description: 'Vận khí không tốt, dễ gặp rắc rối',
                 effects: { fortune: -10 }
             },
             {
                 id: 'slow_mind',
-                name: '愚钝迟缓',
+                name: 'Ngu Độn Trì Hoãn',
                 type: 'negative',
                 cost: 10,
-                description: '资质平庸，悟性较差',
+                description: 'Tư chất bình thường, ngộ tính kém',
                 effects: { comprehension: -8 }
             }
         ];
-        console.log('[角色创建] ✅ 备用天赋数据已加载，数量:', window.talents.length);
+        console.log('[Tạo nhân vật] ✅ Dữ liệu thiên phú dự phòng đã tải, số lượng:', window.talents.length);
     }
 
-    console.log('[角色创建] ✨ 开始初始化天赋列表，数量:', window.talents.length);
+    console.log('[Tạo nhân vật] ✨ Bắt đầu khởi tạo danh sách thiên phú, số lượng:', window.talents.length);
 
     const talentGrid = document.getElementById('talentGrid');
     if (!talentGrid) {
-        console.error('[角色创建] ❌ talentGrid 元素不存在');
+        console.error('[Tạo nhân vật] ❌ Phần tử talentGrid không tồn tại');
         return;
     }
 
@@ -205,7 +205,7 @@ function initializeTalents() {
             return `<span class="talent-card-feature">${attrName}${value > 0 ? '+' : ''}${value}</span>`;
         }).join('');
 
-        const costText = `${talent.cost > 0 ? '+' : ''}${talent.cost} 点数`;
+        const costText = `${talent.cost > 0 ? '+' : ''}${talent.cost} Điểm`;
 
         card.innerHTML = `
             <div class="talent-card-header">
@@ -221,7 +221,7 @@ function initializeTalents() {
 }
 
 /**
- * 切换天赋选择
+ * Chuyển đổi lựa chọn thiên phú
  */
 function toggleTalent(talentId) {
     const talent = window.talents.find(t => t.id === talentId);
@@ -231,40 +231,40 @@ function toggleTalent(talentId) {
     const card = document.querySelector(`[data-talent-id="${talentId}"]`);
 
     if (index >= 0) {
-        // 取消选择
+        // Hủy chọn
         characterCreation.selectedTalents.splice(index, 1);
         characterCreation.remainingPoints -= talent.cost;
         card.classList.remove('selected');
     } else {
-        // 检查点数是否足够
+        // Kiểm tra điểm số có đủ không
         if (characterCreation.remainingPoints + talent.cost < 0) {
-            alert('点数不足！');
+            alert('Không đủ điểm!');
             return;
         }
 
-        // 选择天赋
+        // Chọn thiên phú
         characterCreation.selectedTalents.push(talentId);
         characterCreation.remainingPoints += talent.cost;
         card.classList.add('selected');
     }
 
     updatePointsDisplay();
-    updateAttributesDisplay(); // 实时更新属性显示
+    updateAttributesDisplay(); // Cập nhật hiển thị thuộc tính thời gian thực
 }
 
 /**
- * 选择难度
+ * Chọn độ khó
  */
 function selectDifficulty(difficulty) {
-    // 移除所有选中状态
+    // Loại bỏ trạng thái đang chọn của tất cả
     document.querySelectorAll('.difficulty-card').forEach(card => {
         card.classList.remove('selected');
     });
 
-    // 选中当前难度
+    // Chọn độ khó hiện tại
     document.querySelector(`[data-difficulty="${difficulty}"]`).classList.add('selected');
 
-    // 设置点数
+    // Thiết lập điểm số tương ứng
     const pointsMap = {
         'easy': 200,
         'normal': 100,
@@ -285,7 +285,7 @@ function selectDifficulty(difficulty) {
 }
 
 /**
- * 选择性别
+ * Chọn giới tính
  */
 function selectGender(gender) {
     document.querySelectorAll('.gender-card').forEach(card => {
@@ -297,38 +297,38 @@ function selectGender(gender) {
 }
 
 /**
- * 调整属性
+ * Điều chỉnh thuộc tính
  */
 function adjustAttribute(attr, delta) {
     const current = characterCreation.baseAttributes[attr];
     const newValue = current + delta;
 
-    // 减点时：属性不能低于5（只在减点时检查）
+    // Khi giảm điểm: thuộc tính không được thấp hơn 5
     if (delta < 0 && newValue < 5) {
-        alert('属性不能低于5点！');
+        alert('Thuộc tính không được thấp hơn 5 điểm!');
         return;
     }
 
-    // 加点时：检查剩余点数是否足够
+    // Khi tăng điểm: kiểm tra điểm dư có đủ không
     if (delta > 0 && characterCreation.remainingPoints < 1) {
-        alert('点数不足！请取消部分天赋或选择增加点数的出身/天赋');
+        alert('Không đủ điểm! Vui lòng hủy bớt thiên phú hoặc chọn xuất thân/thiên phú tăng thêm điểm.');
         return;
     }
 
-    // 更新属性
+    // Cập nhật thuộc tính
     characterCreation.baseAttributes[attr] = newValue;
     characterCreation.remainingPoints -= delta;
 
-    // 更新显示
+    // Cập nhật hiển thị
     updateAttributesDisplay();
     updatePointsDisplay();
 }
 
 /**
- * 更新属性显示（基础属性 + 天赋加成）
+ * Cập nhật hiển thị thuộc tính (Thuộc tính cơ bản + Cộng thêm từ thiên phú)
  */
 function updateAttributesDisplay() {
-    // 计算天赋加成
+    // Tính toán điểm cộng từ thiên phú
     const talentBonus = {
         physique: 0,
         fortune: 0,
@@ -351,7 +351,7 @@ function updateAttributesDisplay() {
         }
     });
 
-    // 更新每个属性的显示
+    // Cập nhật hiển thị cho từng thuộc tính
     Object.keys(characterCreation.baseAttributes).forEach(attr => {
         const baseValue = characterCreation.baseAttributes[attr];
         const bonus = talentBonus[attr] || 0;
@@ -360,7 +360,7 @@ function updateAttributesDisplay() {
         const valueElement = document.getElementById(`${attr}-value`);
         if (valueElement) {
             if (bonus !== 0) {
-                // 显示：基础值 + 加成 = 最终值
+                // Hiển thị: Giá trị cơ bản + Cộng thêm = Giá trị cuối
                 valueElement.innerHTML = `${baseValue} <span style="color: ${bonus > 0 ? '#28a745' : '#dc3545'}; font-size: 12px;">${bonus > 0 ? '+' : ''}${bonus}</span> = <span style="color: #667eea;">${finalValue}</span>`;
             } else {
                 valueElement.textContent = baseValue;
@@ -370,12 +370,12 @@ function updateAttributesDisplay() {
 }
 
 /**
- * 更新点数显示
+ * Cập nhật hiển thị điểm dư
  */
 function updatePointsDisplay() {
     document.getElementById('remainingPoints').textContent = characterCreation.remainingPoints;
 
-    // 更新所有加减按钮的状态
+    // Cập nhật trạng thái của tất cả các nút tăng giảm
     const canAdd = characterCreation.remainingPoints > 0;
     document.querySelectorAll('.attr-btn').forEach(btn => {
         if (btn.textContent === '+') {
@@ -385,26 +385,26 @@ function updatePointsDisplay() {
 }
 
 /**
- * 确认创建角色
+ * Xác nhận tạo nhân vật
  */
 function confirmCharacterCreation() {
-    // 获取输入
+    // Lấy thông tin nhập vào
     const name = document.getElementById('charNameInput').value.trim();
     const age = parseInt(document.getElementById('charAgeInput').value) || 18;
     const personality = document.getElementById('charPersonality').value.trim();
     const customSettings = document.getElementById('customSettings').value.trim();
 
     if (!name) {
-        alert('请输入角色姓名！');
+        alert('Vui lòng nhập tên nhân vật!');
         return;
     }
 
     if (age < 1 || age > 999) {
-        alert('请输入合理的年龄（1-999）！');
+        alert('Vui lòng nhập tuổi hợp lệ (1-999)!');
         return;
     }
 
-    // 计算最终属性（基础属性 + 天赋效果）
+    // Tính toán thuộc tính cuối cùng (Cơ bản + Hiệu ứng thiên phú)
     const finalAttributes = { ...characterCreation.baseAttributes };
     let karmaFortune = 0;
     let karmaPunishment = 0;
@@ -426,38 +426,38 @@ function confirmCharacterCreation() {
         }
     });
 
-    // 获取选中的出身
+    // Lấy xuất thân đã chọn
     const selectedOrigin = origins.find(o => o.id === characterCreation.selectedOrigin);
-    const originName = selectedOrigin ? selectedOrigin.name : '凡人';
+    const originName = selectedOrigin ? selectedOrigin.name : 'Phàm Nhân';
 
-    // 更新游戏状态
+    // Cập nhật trạng thái game
     gameState.variables.name = name;
     gameState.variables.age = age;
-    gameState.variables.gender = characterCreation.selectedGender === 'male' ? '男' : '女';
+    gameState.variables.gender = characterCreation.selectedGender === 'male' ? 'Nam' : 'Nữ';
     gameState.variables.realm = '';
     gameState.variables.location = '';
-    gameState.variables.spiritStones = 0;  // 初始灵石
+    gameState.variables.spiritStones = 0;  // Linh thạch khởi đầu
     gameState.variables.talents = selectedTalentNames;
     gameState.variables.attributes = finalAttributes;
     gameState.variables.karmaFortune = karmaFortune;
     gameState.variables.karmaPunishment = karmaPunishment;
 
-    // 初始化功法法术数组
+    // Khởi tạo mảng công pháp và pháp thuật
     gameState.variables.techniques = [];
     gameState.variables.spells = [];
 
-    // 添加历史记录
-    const talentDesc = selectedTalentNames.length > 0 ? `拥有天赋：${selectedTalentNames.join('、')}。` : '';
+    // Thêm lịch sử bản thân
+    const talentDesc = selectedTalentNames.length > 0 ? `Sở hữu thiên phú: ${selectedTalentNames.join(', ')}.` : '';
     gameState.variables.history = [
-        `${name}，${age}岁，${gameState.variables.gender}性，${personality}。出身：${originName}。${talentDesc}`
+        `${name}, ${age} tuổi, giới tính ${gameState.variables.gender}, tính cách ${personality}. Xuất thân: ${originName}. ${talentDesc}`
     ];
 
-    // 更新UI
+    // Cập nhật UI
     if (typeof updateStatusPanel === 'function') {
         updateStatusPanel();
     }
 
-    // 构建角色创建信息，传递给AI
+    // Xây dựng thông tin nhân vật để truyền cho AI
     const characterInfo = {
         name: name,
         age: age,
@@ -470,10 +470,10 @@ function confirmCharacterCreation() {
         attributes: finalAttributes
     };
 
-    // 保存角色信息供游戏开始时使用
+    // Lưu thông tin nhân vật dùng cho khởi đầu game
     gameState.characterInfo = characterInfo;
 
-    // 清空游戏历史区域并显示加载提示
+    // Xóa vùng lịch sử game và hiển thị thông báo đang tải
     const historyDiv = document.getElementById('gameHistory');
     historyDiv.innerHTML = `
         <div class="message ai-message loading-message">
@@ -481,7 +481,7 @@ function confirmCharacterCreation() {
                 <div class="cyber-loader-content">
                     <div class="cyber-scanner"></div>
                     <div class="cyber-text glitch-text" data-text="SYSTEM INITIALIZING...">SYSTEM INITIALIZING...</div>
-                    <div class="cyber-subtext">正在构建世界观...</div>
+                    <div class="cyber-subtext">Đang xây dựng thế giới quan...</div>
                     <div class="cyber-progress">
                         <div class="cyber-progress-bar"></div>
                     </div>
@@ -490,34 +490,34 @@ function confirmCharacterCreation() {
         </div>
     `;
 
-    // 自动开始游戏
+    // Tự động bắt đầu trò chơi
     if (typeof startGame === 'function') {
         startGame();
     }
 }
 
 /**
- * 在游戏历史区域显示角色创建界面
+ * Hiển thị giao diện tạo nhân vật trong vùng lịch sử game
  */
 function displayCharacterCreationInHistory() {
     const historyDiv = document.getElementById('gameHistory');
 
-    // 使用配置文件中的角色创建界面生成函数
+    // Sử dụng hàm tạo giao diện tạo nhân vật từ file cấu hình
     if (window.XiuxianGameConfig && window.XiuxianGameConfig.generateCharacterCreation) {
         historyDiv.innerHTML = window.XiuxianGameConfig.generateCharacterCreation();
     } else {
-        // 备用：如果配置文件未加载，显示简单提示
+        // Dự phòng: Nếu file cấu hình chưa tải, hiển thị thông báo đơn giản
         historyDiv.innerHTML = `
             <div style="text-align: center; padding: 50px; color: #999;">
-                <h2>⚠️ 配置文件未加载</h2>
-                <p>请确保游戏配置文件（如 xiuxian-config.js）已正确加载</p>
+                <h2>⚠️ File cấu hình chưa được tải</h2>
+                <p>Vui lòng đảm bảo file cấu hình game (như xiuxian-config.js) đã được tải chính xác</p>
             </div>
         `;
-        console.error('[角色创建] 配置文件未加载或缺少 generateCharacterCreation 函数');
+        console.error('[Tạo nhân vật] File cấu hình chưa tải hoặc thiếu hàm generateCharacterCreation');
         return;
     }
 
-    // 重置角色创建状态
+    // Đặt lại trạng thái tạo nhân vật
     characterCreation.difficulty = 'normal';
     characterCreation.maxPoints = 100;
     characterCreation.remainingPoints = 100;
@@ -526,42 +526,42 @@ function displayCharacterCreationInHistory() {
     characterCreation.selectedGender = 'male';
     characterCreation.selectedOrigin = 'commoner';
 
-    // 立即初始化列表（DOM已插入）
+    // Khởi tạo danh sách ngay lập tức (DOM đã được chèn)
     setTimeout(() => {
         try {
             initializeOrigins();
             initializeTalents();
             updateAttributesDisplay();
             updatePointsDisplay();
-            console.log('[角色创建] ✅ 所有组件初始化完成');
+            console.log('[Tạo nhân vật] ✅ Khởi tạo tất cả thành phần hoàn tất');
         } catch (error) {
-            console.error('[角色创建] ❌ 组件初始化失败:', error);
+            console.error('[Tạo nhân vật] ❌ Khởi tạo thành phần thất bại:', error);
         }
-    }, 50); // 短暂延迟确保DOM完全渲染
+    }, 50); // Trì hoãn ngắn để đảm bảo DOM được render hoàn toàn
 }
 
 /**
- * 辅助函数：获取属性中文名
+ * Hàm phụ trợ: Lấy tên tiếng Việt của thuộc tính
  */
 function getAttributeName(attr) {
     const nameMap = {
-        physique: '根骨',
-        fortune: '气运',
-        comprehension: '悟性',
-        spirit: '神识',
-        potential: '潜力',
-        charisma: '魅力',
-        karmaFortune: '机缘',
-        karmaPunishment: '天谴'
+        physique: 'Căn Cốt',
+        fortune: 'Khí Vận',
+        comprehension: 'Ngộ Tính',
+        spirit: 'Thần Thức',
+        potential: 'Tiềm Lực',
+        charisma: 'Mị Lực',
+        karmaFortune: 'Cơ Duyên',
+        karmaPunishment: 'Thiên Khiển'
     };
     return nameMap[attr] || attr;
 }
 
-// ==================== 依赖说明 ====================
-// 本模块依赖以下全局变量：
-// - gameState (游戏状态)
-// - characterCreation (角色创建状态)
-// - origins (出身列表，从 bhz-config.js)
-// - talents (天赋列表，从 bhz-config.js)
-// - updateStatusPanel() (更新状态面板函数，在 game.html)
-// - startGame() (开始游戏函数，在 game.html)
+// ==================== Thuyết minh phụ thuộc ====================
+// Module này phụ thuộc vào các biến toàn cục sau:
+// - gameState (Trạng thái game)
+// - characterCreation (Trạng thái tạo nhân vật)
+// - origins (Danh sách xuất thân, từ bhz-config.js)
+// - talents (Danh sách thiên phú, từ bhz-config.js)
+// - updateStatusPanel() (Hàm cập nhật bảng trạng thái, trong game.html)
+// - startGame() (Hàm bắt đầu game, trong game.html)

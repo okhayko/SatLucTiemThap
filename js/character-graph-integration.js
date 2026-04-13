@@ -1,71 +1,70 @@
 /**
- * 人物图谱集成模块
- * 
- * 功能：
- * 1. 拦截AI响应，自动提取relationships到人物图谱
- * 2. 修改上下文构建，使用向量匹配而不是直接包含全部relationships
- * 3. 根据当前对话内容智能检索相关人物
+ * Module Tích hợp Sơ đồ Nhân vật
+ * * Chức năng:
+ * 1. Chặn phản hồi từ AI, tự động trích xuất 'relationships' (quan hệ) vào sơ đồ nhân vật.
+ * 2. Thay đổi cách xây dựng ngữ cảnh, sử dụng so khớp vector thay vì bao gồm toàn bộ danh sách quan hệ.
+ * 3. Truy xuất thông minh các nhân vật liên quan dựa trên nội dung đối thoại hiện tại.
  */
 
 class CharacterGraphIntegration {
     constructor() {
         this.isEnabled = false;
         this.config = {
-            autoExtract: true, // 自动从AI响应提取人物到图谱
-            autoMatch: true, // 自动匹配相关人物到上下文
-            contextMaxCharacters: 3, // 上下文中最多包含多少个人物
-            matchThreshold: 0.4, // 匹配阈值（384维向量：40%）
-            enableDebug: true // 启用调试日志
+            autoExtract: true, // Tự động trích xuất nhân vật từ phản hồi AI vào sơ đồ
+            autoMatch: true, // Tự động khớp nhân vật liên quan vào ngữ cảnh
+            contextMaxCharacters: 3, // Số lượng nhân vật tối đa hiển thị trong ngữ cảnh
+            matchThreshold: 0.4, // Ngưỡng khớp (Vector 384 chiều: 40%)
+            enableDebug: true // Bật nhật ký gỡ lỗi (debug log)
         };
     }
 
     /**
-     * 初始化集成
+     * Khởi tạo tích hợp
      */
     async init() {
-        // 🔧 等待人物图谱管理器可用（最多等待5秒）
+        // 🔧 Đợi trình quản lý sơ đồ nhân vật sẵn sàng (đợi tối đa 5 giây)
         let retryCount = 0;
-        const maxRetries = 50; // 5秒，每100ms检查一次
+        const maxRetries = 50; // 5 giây, kiểm tra mỗi 100ms
         
         while (!window.characterGraphManager && retryCount < maxRetries) {
-            console.log(`[人物图谱集成] ⏳ 等待CharacterGraphManager加载... (${retryCount + 1}/${maxRetries})`);
+            console.log(`[Tích hợp sơ đồ] ⏳ Đang đợi CharacterGraphManager tải... (${retryCount + 1}/${maxRetries})`);
             await new Promise(resolve => setTimeout(resolve, 100));
             retryCount++;
         }
 
         if (!window.characterGraphManager) {
-            console.error('[人物图谱集成] ❌ CharacterGraphManager 未找到，等待超时');
+            console.error('[Tích hợp sơ đồ] ❌ Không tìm thấy CharacterGraphManager, quá thời gian chờ');
             return false;
         }
 
-        // 确保管理器已初始化
+        // Đảm bảo trình quản lý đã được khởi tạo
         if (!window.characterGraphManager.isInitialized) {
-            console.log('[人物图谱集成] 🔄 初始化CharacterGraphManager...');
+            console.log('[Tích hợp sơ đồ] 🔄 Đang khởi tạo CharacterGraphManager...');
             await window.characterGraphManager.init();
         }
         
-        // 从localStorage加载配置
+        // Tải cấu hình từ localStorage
         const saved = localStorage.getItem('characterGraphIntegrationConfig');
         if (saved) {
             this.config = { ...this.config, ...JSON.parse(saved) };
         }
 
         this.isEnabled = true;
-        console.log('[人物图谱集成] ✅ 初始化完成');
+        console.log('[Tích hợp sơ đồ] ✅ Khởi tạo hoàn tất');
         return true;
     }
 
     /**
-     * 保存配置
+     * Lưu cấu hình
      */
     saveConfig() {
         localStorage.setItem('characterGraphIntegrationConfig', JSON.stringify(this.config));
-        console.log('[人物图谱集成] 配置已保存');
+        console.log('[Tích hợp sơ đồ] Cấu hình đã được lưu');
     }
 
     /**
-     * 从AI响应中提取人物到图谱
-     * @param {Array} relationships - AI返回的relationships数组
+     * Trích xuất nhân vật từ phản hồi AI vào sơ đồ
+     * @param {Array} relationships - Mảng các mối quan hệ do AI trả về
      */
     async extractCharactersFromResponse(relationships) {
         if (!this.isEnabled || !this.config.autoExtract) {
@@ -76,7 +75,7 @@ class CharacterGraphIntegration {
             return;
         }
 
-        console.log(`[人物图谱集成] 📥 提取 ${relationships.length} 个人物到图谱...`);
+        console.log(`[Tích hợp sơ đồ] 📥 Đang trích xuất ${relationships.length} nhân vật vào sơ đồ...`);
 
         const results = [];
         for (const rel of relationships) {
@@ -86,29 +85,29 @@ class CharacterGraphIntegration {
                     results.push(result);
                 }
             } catch (error) {
-                console.error(`[人物图谱集成] 提取失败: ${rel.name}`, error);
+                console.error(`[Tích hợp sơ đồ] Trích xuất thất bại: ${rel.name}`, error);
             }
         }
 
-        console.log(`[人物图谱集成] ✅ 成功提取 ${results.length} 个人物`);
+        console.log(`[Tích hợp sơ đồ] ✅ Đã trích xuất thành công ${results.length} nhân vật`);
         return results;
     }
 
     /**
-     * 根据用户消息和当前上下文，匹配相关人物
-     * 🆕 直接用向量匹配，不需要正则提取人名
-     * @param {string} userMessage - 用户输入的消息
-     * @param {Object} currentVariables - 当前变量状态
-     * @returns {Array} 匹配的人物列表（包含完整的relationship数据）
+     * Khớp các nhân vật liên quan dựa trên tin nhắn người dùng và ngữ cảnh hiện tại
+     * 🆕 Sử dụng trực tiếp so khớp vector, không cần dùng Regex để trích xuất tên
+     * @param {string} userMessage - Tin nhắn nhập vào của người dùng
+     * @param {Object} currentVariables - Trạng thái biến hiện tại
+     * @returns {Array} Danh sách nhân vật khớp (bao gồm dữ liệu quan hệ đầy đủ)
      */
     async matchRelevantCharacters(userMessage, currentVariables) {
         if (!this.isEnabled || !this.config.autoMatch) {
             return [];
         }
 
-        console.log('[人物图谱集成] 🔍 开始匹配相关人物...');
+        console.log('[Tích hợp sơ đồ] 🔍 Bắt đầu khớp nhân vật liên quan...');
 
-        // 🆕 如果supply配置了包含AI回复，则增强查询
+        // 🆕 Nếu 'supply' được cấu hình bao gồm phản hồi AI, tăng cường truy vấn
         let enhancedMessage = userMessage;
         if (window.contextVectorManager && window.contextVectorManager.includeRecentAIRepliesInQuery > 0) {
             const conversationHistory = window.gameState?.conversationHistory || [];
@@ -120,46 +119,45 @@ class CharacterGraphIntegration {
                 
                 if (recentAIReplies.length > 0) {
                     enhancedMessage = userMessage + '\n' + recentAIReplies.join('\n') + '\n' + userMessage + '\n' + userMessage;
-                    console.log(`[人物图谱集成] ✅ 已包含最近${recentAIReplies.length}轮AI回复用于匹配`);
+                    console.log(`[Tích hợp sơ đồ] ✅ Đã bao gồm ${recentAIReplies.length} phản hồi AI gần nhất để so khớp`);
                 }
             }
         }
 
-        // 🆕 直接用向量匹配，不需要提取人名
-        // supply.js的向量系统会自动处理中文分词和关键词提取
+        // 🆕 Sử dụng trực tiếp so khớp vector
+        // Hệ thống vector của supply.js sẽ tự động xử lý tách từ tiếng Trung và trích xuất từ khóa
         try {
-            // 传递原始用户输入，用于区分精确名字匹配的来源（用户输入/AI回复）
             const matches = await window.characterGraphManager.searchByText(enhancedMessage, userMessage);
 
             if (this.config.enableDebug) {
-                console.log(`[人物图谱集成] ✅ 匹配到 ${matches.length} 个相关人物:`);
+                console.log(`[Tích hợp sơ đồ] ✅ Đã khớp được ${matches.length} nhân vật liên quan:`);
                 matches.forEach((char, i) => {
-                    const sourceInfo = char.matchSource ? ` [${char.matchSource}]` : '';
-                    console.log(`  ${i + 1}. ${char.name} (分数: ${(char.matchScore * 100).toFixed(1)}%)${sourceInfo}`);
+                    const sourceInfo = char.matchSource ? ` [Nguồn: ${char.matchSource}]` : '';
+                    console.log(`  ${i + 1}. ${char.name} (Điểm: ${(char.matchScore * 100).toFixed(1)}%)${sourceInfo}`);
                     if (char.history && char.history.length > 0) {
-                        console.log(`     历史: ${char.history.length} 条记录`);
+                        console.log(`     Lịch sử: ${char.history.length} bản ghi`);
                     }
                 });
             }
 
             return matches;
         } catch (error) {
-            console.error('[人物图谱集成] 匹配失败:', error);
+            console.error('[Tích hợp sơ đồ] So khớp thất bại:', error);
             return [];
         }
     }
 
     /**
-     * 从消息中提取人名
+     * Trích xuất tên người từ tin nhắn (Hàm phụ trợ)
      */
     extractNamesFromMessage(message) {
         const names = [];
         
-        // 🔍 简单的中文人名模式匹配
-        // 匹配常见的称呼：XXX、X师姐、X长老等
+        // 🔍 So khớp mẫu tên người Trung Quốc đơn giản
+        // Khớp các cách gọi phổ biến: XXX, X sư tỷ, X trưởng lão...
         const patterns = [
             /([一-龥]{2,4})(师姐|师兄|师妹|师弟|长老|掌门|宗主|道友)/g,
-            /([一-龥]{2,4})/g  // 2-4个汉字的名字
+            /([一-龥]{2,4})/g  // Tên từ 2-4 chữ Hán
         ];
 
         for (const pattern of patterns) {
@@ -172,30 +170,28 @@ class CharacterGraphIntegration {
             }
         }
 
-        // 去重
+        // Loại bỏ trùng lặp
         return [...new Set(names)];
     }
 
     /**
-     * 从上下文中提取线索
+     * Trích xuất manh mối từ ngữ cảnh
      */
     extractContextClues(message, variables) {
         const clues = [];
 
-        // 从当前位置推断
+        // Suy luận từ vị trí hiện tại
         const location = variables?.location || '';
         if (location) {
-            // 如果在某个特定位置，可能需要该位置相关的NPC
-            // 这里可以根据位置名称做映射
-            // 例如："炼丹房" -> 可能需要"炼丹师"相关的人物
+            // Ví dụ: "Luyện Đan Phòng" -> Có thể cần NPC liên quan đến "Luyện Đan Sư"
         }
 
-        // 从消息关键词推断
+        // Suy luận từ từ khóa trong tin nhắn
         const keywords = {
-            '炼丹': ['炼丹', '丹药'],
-            '炼器': ['炼器', '法宝'],
-            '比武': ['比武', '切磋', '战斗'],
-            '双修': ['双修', '阴阳', '房事']
+            'Luyện Đan': ['Luyện đan', 'Đan dược'],
+            'Luyện Khí': ['Luyện khí', 'Pháp bảo'],
+            'Tỉ Võ': ['Tỉ võ', 'So tài', 'Chiến đấu'],
+            'Song Tu': ['Song tu', 'Âm dương', 'Phòng sự']
         };
 
         for (const [category, words] of Object.entries(keywords)) {
@@ -211,16 +207,16 @@ class CharacterGraphIntegration {
     }
 
     /**
-     * 构建人物上下文（用于AI提示词）
-     * @param {Array} characters - 匹配的人物列表
-     * @returns {string} 格式化的人物信息
+     * Xây dựng ngữ cảnh nhân vật (Dùng cho AI Prompt)
+     * @param {Array} characters - Danh sách nhân vật khớp
+     * @returns {string} Thông tin nhân vật đã định dạng
      */
     buildCharacterContext(characters) {
         if (!characters || characters.length === 0) {
             return '';
         }
 
-        let context = '\n\n【相关人物信息】（已通过向量图谱匹配）\n';
+        let context = '\n\n【Thông tin nhân vật liên quan】(Đã khớp qua sơ đồ vector)\n';
         
         characters.forEach((char, index) => {
             context += `\n${index + 1}. ${char.name}`;
@@ -230,39 +226,39 @@ class CharacterGraphIntegration {
             }
             
             if (char.favor !== undefined) {
-                context += ` [好感: ${char.favor}]`;
+                context += ` [Hảo cảm: ${char.favor}]`;
             }
 
             if (char.realm) {
-                context += `\n   境界：${char.realm}`;
+                context += `\n   Cảnh giới: ${char.realm}`;
             }
 
             if (char.age) {
-                context += ` | 年龄：${char.age}`;
+                context += ` | Tuổi: ${char.age}`;
             }
 
             if (char.personality) {
-                context += `\n   性格：${char.personality}`;
+                context += `\n   Tính cách: ${char.personality}`;
             }
 
             if (char.appearance) {
-                context += `\n   外貌：${char.appearance}`;
+                context += `\n   Ngoại hình: ${char.appearance}`;
             }
 
             if (char.opinion) {
-                context += `\n   看法：${char.opinion}`;
+                context += `\n   Nhận xét: ${char.opinion}`;
             }
 
-            // 历史互动（只显示最近3条）
+            // Tương tác lịch sử (chỉ hiển thị 3 bản ghi gần nhất)
             if (char.history && Array.isArray(char.history) && char.history.length > 0) {
                 const recentHistory = char.history.slice(-3);
-                context += `\n   互动记录：`;
+                context += `\n   Ghi chép tương tác:`;
                 recentHistory.forEach(h => {
                     context += `\n     • ${h}`;
                 });
             }
 
-            context += `\n   匹配度：${(char.matchScore * 100).toFixed(1)}%`;
+            context += `\n   Độ khớp: ${(char.matchScore * 100).toFixed(1)}%`;
             context += '\n';
         });
 
@@ -270,8 +266,8 @@ class CharacterGraphIntegration {
     }
 
     /**
-     * 钩子：拦截AI响应处理
-     * 在AI响应被处理后自动提取人物到图谱
+     * Hook: Chặn và xử lý phản hồi AI
+     * Tự động trích xuất nhân vật vào sơ đồ sau khi AI phản hồi
      */
     async hookAIResponse(aiResponse, gameState) {
         if (!this.isEnabled) {
@@ -279,34 +275,26 @@ class CharacterGraphIntegration {
         }
 
         try {
-            // 提取relationships到图谱
+            // Trích xuất quan hệ vào sơ đồ
             if (aiResponse.variables && aiResponse.variables.relationships) {
                 await this.extractCharactersFromResponse(aiResponse.variables.relationships);
                 
-                // 🔧 可选：从变量表单中移除relationships，改为由图谱管理
-                // 如果需要完全移除，取消下面的注释
+                // 🔧 Tùy chọn: Loại bỏ 'relationships' khỏi biểu mẫu biến, chuyển sang sơ đồ quản lý
                 // delete aiResponse.variables.relationships;
-                // console.log('[人物图谱集成] ✂️ 已从变量表单移除relationships');
             }
 
-            // 如果使用了v3.1格式，也需要处理
+            // Xử lý nếu sử dụng định dạng v3.1
             if (aiResponse.variableUpdate) {
-                // 解析v3.1格式中的relationships更新
-                // 这里需要根据实际格式调整
-                console.log('[人物图谱集成] 检测到v3.1格式，暂不处理');
+                console.log('[Tích hợp sơ đồ] Phát hiện định dạng v3.1, hiện chưa xử lý');
             }
 
         } catch (error) {
-            console.error('[人物图谱集成] 钩子处理失败:', error);
+            console.error('[Tích hợp sơ đồ] Lỗi xử lý Hook:', error);
         }
     }
 
     /**
-     * 构建增强的上下文消息（替代原有的relationships）
-     * @param {string} userMessage - 用户消息
-     * @param {Object} variables - 当前变量
-     * @param {Array} conversationHistory - 对话历史
-     * @returns {string} 增强后的上下文
+     * Xây dựng ngữ cảnh tăng cường (thay thế cho danh sách quan hệ cũ)
      */
     async buildEnhancedContext(userMessage, variables, conversationHistory) {
         if (!this.isEnabled) {
@@ -314,74 +302,62 @@ class CharacterGraphIntegration {
         }
 
         try {
-            // 匹配相关人物
             const relevantCharacters = await this.matchRelevantCharacters(userMessage, variables);
-            
-            // 构建人物上下文
             const characterContext = this.buildCharacterContext(relevantCharacters);
-            
             return characterContext;
-
         } catch (error) {
-            console.error('[人物图谱集成] 构建上下文失败:', error);
+            console.error('[Tích hợp sơ đồ] Lỗi xây dựng ngữ cảnh:', error);
             return '';
         }
     }
 
     /**
-     * 迁移现有的relationships到图谱
-     * @param {Object} gameState - 游戏状态
+     * Di chuyển dữ liệu 'relationships' hiện có vào sơ đồ
+     * @param {Object} gameState - Trạng thái trò chơi
      */
     async migrateExistingRelationships(gameState) {
         if (!gameState || !gameState.variables || !gameState.variables.relationships) {
-            console.log('[人物图谱集成] 没有需要迁移的relationships');
+            console.log('[Tích hợp sơ đồ] Không có quan hệ nào cần di chuyển');
             return;
         }
 
-        // 检查人物图谱管理器是否已初始化
         if (!window.characterGraphManager) {
-            console.error('[人物图谱集成] 人物图谱管理器未初始化');
-            throw new Error('人物图谱管理器未初始化，请刷新页面重试');
+            console.error('[Tích hợp sơ đồ] Trình quản lý sơ đồ chưa được khởi tạo');
+            throw new Error('Trình quản lý sơ đồ chưa khởi tạo, vui lòng tải lại trang');
         }
 
-        // 检查batchAddCharacters方法是否存在
         if (typeof window.characterGraphManager.batchAddCharacters !== 'function') {
-            console.error('[人物图谱集成] batchAddCharacters方法不存在');
-            throw new Error('人物图谱管理器方法缺失，请刷新页面重试');
+            console.error('[Tích hợp sơ đồ] Thiếu phương thức batchAddCharacters');
+            throw new Error('Phương thức quản lý sơ đồ bị thiếu, vui lòng tải lại trang');
         }
 
         const relationships = gameState.variables.relationships;
-        console.log(`[人物图谱集成] 开始迁移 ${relationships.length} 个现有人物...`);
+        console.log(`[Tích hợp sơ đồ] Bắt đầu di chuyển ${relationships.length} nhân vật hiện có...`);
 
         try {
             await window.characterGraphManager.batchAddCharacters(relationships);
-            
-            // 可选：迁移后清空变量表单中的relationships
-            // gameState.variables.relationships = [];
-            // console.log('[人物图谱集成] 已清空变量表单中的relationships');
-
-            console.log('[人物图谱集成] 迁移完成');
+            console.log('[Tích hợp sơ đồ] Di chuyển hoàn tất');
         } catch (error) {
-            console.error('[人物图谱集成] 迁移过程中出错:', error);
+            console.error('[Tích hợp sơ đồ] Lỗi trong quá trình di chuyển:', error);
             throw error;
         }
     }
 
     /**
-     * 获取配置
+     * Lấy cấu hình
      */
     getConfig() {
         return { ...this.config };
     }
 
     /**
-     * 更新配置
+     * Cập nhật cấu hình
      */
     updateConfig(newConfig) {
         this.config = { ...this.config, ...newConfig };
         this.saveConfig();
         
-        // 同步到人物图谱管理器
+        // Đồng bộ tới trình quản lý sơ đồ nhân vật
         if (window.characterGraphManager) {
             window.characterGraphManager.updateConfig({
                 matchThreshold: this.config.matchThreshold,
@@ -389,20 +365,20 @@ class CharacterGraphIntegration {
             });
         }
         
-        console.log('[人物图谱集成] 配置已更新:', this.config);
+        console.log('[Tích hợp sơ đồ] Cấu hình đã cập nhật:', this.config);
     }
 
     /**
-     * 启用/禁用集成
+     * Bật/Tắt tích hợp
      */
     setEnabled(enabled) {
         this.isEnabled = enabled;
-        console.log(`[人物图谱集成] ${enabled ? '✅ 已启用' : '❌ 已禁用'}`);
+        console.log(`[Tích hợp sơ đồ] ${enabled ? '✅ Đã bật' : '❌ Đã tắt'}`);
     }
 }
 
-// 创建全局实例
+// Tạo instance toàn cục
 if (typeof window !== 'undefined') {
     window.characterGraphIntegration = new CharacterGraphIntegration();
-    console.log('[人物图谱集成] 全局实例已创建: window.characterGraphIntegration');
+    console.log('[Tích hợp sơ đồ] Instance toàn cục đã được tạo: window.characterGraphIntegration');
 }

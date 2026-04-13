@@ -1,6 +1,6 @@
 /**
- * 变量指令解析器 v3.1 - 极简版
- * 超级简单，AI 一看就懂！
+ * Trình phân tích cú pháp lệnh biến v3.1 - Phiên bản tối giản
+ * Cực kỳ đơn giản, AI nhìn là hiểu ngay!
  */
 class VariableInstructionParserV31 {
     constructor(gameState, options = {}) {
@@ -15,33 +15,33 @@ class VariableInstructionParserV31 {
     }
 
     /**
-     * 执行指令
+     * Thực thi lệnh
      */
     execute(response) {
         this.executionLog = [];
 
         if (this.options.enableRollback) {
             this.rollbackBackup = JSON.parse(JSON.stringify(this.gameState.variables));
-            this.log('已创建回滚备份');
+            this.log('Đã tạo bản sao lưu để rollback');
         }
 
         try {
             const content = this.extractContent(response);
             if (!content) {
-                this.log('未检测到变量更新标签');
+                this.log('Không tìm thấy thẻ cập nhật biến');
                 return { success: true, executed: 0, errors: [] };
             }
 
             const count = this.parseAndExecute(content);
-            this.log(`✅ 执行完成: ${count} 个操作`);
+            this.log(`✅ Thực thi hoàn tất: ${count} thao tác`);
             return { success: true, executed: count, errors: [] };
 
         } catch (error) {
-            this.log(`❌ 执行失败: ${error.message}`);
+            this.log(`❌ Thực thi thất bại: ${error.message}`);
 
             if (this.options.enableRollback && this.rollbackBackup) {
                 this.gameState.variables = this.rollbackBackup;
-                this.log('已回滚到之前状态');
+                this.log('Đã rollback về trạng thái trước đó');
             }
 
             return { success: false, executed: 0, errors: [error.message] };
@@ -49,36 +49,36 @@ class VariableInstructionParserV31 {
     }
 
     /**
-     * 提取变量更新内容
-     * 支持多种标签变体：variable_update, variableUpdate, VARIABLE_UPDATE 等
+     * Trích xuất nội dung cập nhật biến
+     * Hỗ trợ nhiều biến thể thẻ: variable_update, variableUpdate, VARIABLE_UPDATE v.v.
      */
     extractContent(response) {
-        // 🔧 使用不区分大小写的正则，支持多种标签格式
+        // 🔧 Sử dụng regex không phân biệt chữ hoa chữ thường, hỗ trợ nhiều định dạng thẻ
         const patterns = [
-            // 标准格式（不区分大小写）
+            // Định dạng tiêu chuẩn (Không phân biệt chữ hoa chữ thường)
             /<variable_update>([\s\S]*?)<\/variable_update>/i,
-            // 驼峰格式（不区分大小写）
+            // Định dạng CamelCase (Không phân biệt chữ hoa chữ thường)
             /<variableUpdate>([\s\S]*?)<\/variableUpdate>/i,
-            // 混合格式：开始和结束标签可能不一致
+            // Định dạng hỗn hợp: Thẻ mở và thẻ đóng có thể không đồng nhất
             /<variable_update>([\s\S]*?)<\/variableUpdate>/i,
             /<variableUpdate>([\s\S]*?)<\/variable_update>/i,
-            // 中文格式
+            // Định dạng tiếng Trung
             /<变量更新>([\s\S]*?)<\/变量更新>/
         ];
 
         for (const pattern of patterns) {
             const match = response.match(pattern);
             if (match && match[1]) {
-                console.log(`[v3.1] ✅ 成功匹配变量更新标签，使用模式: ${pattern.source.substring(0, 30)}...`);
+                console.log(`[v3.1] ✅ Khớp thẻ cập nhật biến thành công, sử dụng pattern: ${pattern.source.substring(0, 30)}...`);
                 return match[1].trim();
             }
         }
 
-        // 🔧 终极容错：尝试匹配任何以 variable 开头的标签
+        // 🔧 Phương án dự phòng cuối cùng: Cố gắng khớp bất kỳ thẻ nào bắt đầu bằng variable
         const fallbackPattern = /<variable[_]?update>([\s\S]*?)<\/variable[_]?update>/i;
         const fallbackMatch = response.match(fallbackPattern);
         if (fallbackMatch && fallbackMatch[1]) {
-            console.log(`[v3.1] ✅ 使用容错模式匹配成功`);
+            console.log(`[v3.1] ✅ Khớp thành công bằng phương án dự phòng`);
             return fallbackMatch[1].trim();
         }
 
@@ -86,15 +86,15 @@ class VariableInstructionParserV31 {
     }
 
     /**
-     * 解析并执行内容
+     * Phân tích cú pháp và thực thi nội dung
      */
     parseAndExecute(content) {
-        // 🔧 修复：将字面量转义换行符（反斜杠+n 两个字符）转为真正的换行符
-        // 当 AI 响应来自 JSON 格式时，内容中的换行是字面量 \n 字符串
-        const literalBackslashN = String.fromCharCode(92) + 'n'; // 构造字面量 \n
+        // 🔧 Sửa lỗi: Chuyển đổi ký tự xuống dòng dạng chuỗi thô (2 ký tự backslash + n) thành ký tự xuống dòng thực sự
+        // Khi phản hồi của AI có định dạng JSON, dấu xuống dòng trong nội dung là chuỗi \n
+        const literalBackslashN = String.fromCharCode(92) + 'n'; // Tạo chuỗi thô \n
         if (content.includes(literalBackslashN)) {
-            console.log('[v3.1] 🔧 检测到字面量反斜杠+n，转换为真正的换行符');
-            // 替换所有字面量 \n 为真正的换行符，同时处理 \r \t 等
+            console.log('[v3.1] 🔧 Phát hiện ký tự backslash+n thô, chuyển đổi thành dấu xuống dòng thực sự');
+            // Thay thế tất cả chuỗi thô \n thành dấu xuống dòng thực sự, đồng thời xử lý \r \t v.v.
             content = content.split(literalBackslashN).join('\n');
             const literalBackslashR = String.fromCharCode(92) + 'r';
             content = content.split(literalBackslashR).join('\r');
@@ -106,21 +106,21 @@ class VariableInstructionParserV31 {
         let currentSection = null;
         let currentSectionKey = null;
 
-        // 需要忽略的章节（这些不应该作为追加操作）
+        // Các chương/mục cần bỏ qua (Những phần này không nên được thêm vào dạng nối thêm)
         const ignoredSections = ['items', 'relationships', 'equipment', 'bodyParts', 'attributes'];
 
         for (const line of lines) {
             const trimmed = line.trim();
 
-            // 跳过空行和注释
+            // Bỏ qua dòng trống và chú thích
             if (!trimmed || trimmed.startsWith('#')) {
                 continue;
             }
 
-            // 检测章节（如 history:, thoughts:, diary:）
+            // Phát hiện chương/mục (ví dụ: history:, thoughts:, diary:)
             if (trimmed.endsWith(':') && !trimmed.startsWith('- ')) {
                 currentSectionKey = trimmed.slice(0, -1).trim();
-                // 如果是需要忽略的章节，跳过不处理
+                // Nếu là chương/mục cần bỏ qua thì không xử lý
                 if (ignoredSections.includes(currentSectionKey)) {
                     currentSection = null;
                     currentSectionKey = null;
@@ -130,7 +130,7 @@ class VariableInstructionParserV31 {
                 continue;
             }
 
-            // 章节内的列表项
+            // Các mục danh sách trong chương/mục
             if (currentSection && trimmed.startsWith('- ')) {
                 const text = trimmed.substring(2).trim();
                 this.appendToArray(currentSectionKey, text);
@@ -138,16 +138,16 @@ class VariableInstructionParserV31 {
                 continue;
             }
 
-            // 非列表项结束章节
+            // Kết thúc chương/mục nếu không phải là mục danh sách
             if (currentSection && !trimmed.startsWith('- ')) {
                 currentSection = false;
                 currentSectionKey = null;
             }
 
-            // 🆕 角色重命名操作：>>rename: 旧名称 -> 新名称
+            // 🆕 Thao tác đổi tên nhân vật: >>rename: Tên cũ -> Tên mới
             if (trimmed.startsWith('>>rename:') || trimmed.startsWith('>> rename:')) {
                 const renameContent = trimmed.replace(/^>>\s*rename:\s*/, '').trim();
-                console.log(`[v3.1] 检测到角色重命名操作: ${renameContent}`);
+                console.log(`[v3.1] Phát hiện thao tác đổi tên nhân vật: ${renameContent}`);
                 if (renameContent.includes('->')) {
                     const [oldName, newName] = renameContent.split('->').map(s => s.trim());
                     if (oldName && newName) {
@@ -156,32 +156,32 @@ class VariableInstructionParserV31 {
                         continue;
                     }
                 }
-                console.log(`[v3.1] 重命名格式错误，应为: >>rename: 旧名称 -> 新名称`);
+                console.log(`[v3.1] Định dạng đổi tên không hợp lệ, phải là: >>rename: Tên cũ -> Tên mới`);
             }
 
-            // 追加操作：>>history: 文本
+            // Thao tác nối thêm: >>history: Văn bản
             if (trimmed.startsWith('>>')) {
                 const content = trimmed.substring(2).trim();
-                console.log(`[v3.1] 检测到追加操作: ${content}`);
+                console.log(`[v3.1] Phát hiện thao tác nối thêm: ${content}`);
                 if (content.includes(':')) {
                     const [key, value] = this.splitKeyValue(content);
-                    console.log(`[v3.1] 解析追加: key="${key}", value="${value}"`);
+                    console.log(`[v3.1] Phân tích cú pháp nối thêm: key="${key}", value="${value}"`);
                     this.appendToArray(key, value);
                     count++;
                     continue;
                 } else {
-                    console.log(`[v3.1] 追加操作格式错误，缺少冒号: ${content}`);
+                    console.log(`[v3.1] Thao tác nối thêm không đúng định dạng, thiếu dấu hai chấm: ${content}`);
                 }
             }
 
-            // 物品操作：+疗伤丹 x3 或 -疗伤丹 x1
+            // Thao tác với vật phẩm: +Liệu thương đan x3 hoặc -Liệu thương đan x1
             if (trimmed.startsWith('+') || trimmed.startsWith('-')) {
                 this.processItem(trimmed);
                 count++;
                 continue;
             }
 
-            // 键值对：hp: -15 或 李师姐.favor: +10
+            // Cặp key-value: hp: -15 hoặc Lý Sư Tỷ.favor: +10
             if (trimmed.includes(':')) {
                 this.processKeyValue(trimmed);
                 count++;
@@ -193,26 +193,26 @@ class VariableInstructionParserV31 {
     }
 
     /**
-     * 处理物品操作
-     * 格式：+疗伤丹 x3 或 -疗伤丹 x1
+     * Xử lý thao tác vật phẩm
+     * Định dạng: +Liệu thương đan x3 hoặc -Liệu thương đan x1
      */
     processItem(line) {
         const isAdd = line.startsWith('+');
         const content = line.substring(1).trim();
 
-        // 解析：疗伤丹 x3 [type:丹药]
+        // Phân tích cú pháp: Liệu thương đan x3 [type:Đan dược]
         let name = content;
         let count = 1;
         let attrs = {};
 
-        // 提取数量 x3
+        // Trích xuất số lượng x3
         const countMatch = content.match(/\s+x(\d+)/);
         if (countMatch) {
             count = parseInt(countMatch[1]);
             name = content.substring(0, countMatch.index).trim();
         }
 
-        // 提取属性 [type:丹药, atk:50]
+        // Trích xuất thuộc tính [type:Đan dược, atk:50]
         const attrMatch = content.match(/\[([^\]]+)\]/);
         if (attrMatch) {
             const attrStr = attrMatch[1];
@@ -231,34 +231,34 @@ class VariableInstructionParserV31 {
     }
 
     /**
-     * 处理键值对
-     * 支持：hp: -15, 李师姐.favor: +10, relationships.李师姐.favor: +10
+     * Xử lý cặp key-value
+     * Hỗ trợ: hp: -15, Lý Sư Tỷ.favor: +10, relationships.Lý Sư Tỷ.favor: +10
      */
     processKeyValue(line) {
         const colonIndex = line.indexOf(':');
         let key = line.substring(0, colonIndex).trim();
         const value = line.substring(colonIndex + 1).trim();
 
-        // 🔧 修复：如果 key 以 "relationships." 开头，去掉这个前缀
-        // AI 有时会返回 "relationships.沈萌萌.favor" 而不是 "沈萌萌.favor"
+        // 🔧 Sửa lỗi: Nếu key bắt đầu bằng "relationships.", loại bỏ tiền tố này
+        // Đôi khi AI trả về "relationships.Thẩm Manh Manh.favor" thay vì "Thẩm Manh Manh.favor"
         if (key.startsWith('relationships.')) {
             const originalKey = key;
             key = key.substring('relationships.'.length);
-            console.log(`[v3.1] 🔧 修正关系变量前缀: "${originalKey}" -> "${key}"`);
+            console.log(`[v3.1] 🔧 Sửa tiền tố biến quan hệ: "${originalKey}" -> "${key}"`);
         }
 
-        // 检查是否是关系操作（包含点号）
-        // 排除系统变量：attributes, items, history, bodyParts, faction 等
+        // Kiểm tra xem có phải là thao tác quan hệ không (có chứa dấu chấm)
+        // Loại trừ các biến hệ thống: attributes, items, history, bodyParts, faction v.v.
         const systemPrefixes = ['items.', 'history.', 'attributes.', 'bodyParts.', 'faction.', 'equipment.', 'specialStatus.'];
         const isSystemVariable = systemPrefixes.some(prefix => key.startsWith(prefix));
 
-        // 特殊处理 protagonist（主角详细信息，存储在 gameState.variables.protagonist）
+        // Xử lý đặc biệt protagonist (Thông tin chi tiết của nhân vật chính, lưu trong gameState.variables.protagonist)
         if (key.startsWith('protagonist.')) {
             this.processProtagonist(key, value);
             return;
         }
 
-        // 特殊处理 specialStatus（特殊状态，存储在 gameState.variables.specialStatus）
+        // Xử lý đặc biệt specialStatus (Trạng thái đặc biệt, lưu trong gameState.variables.specialStatus)
         if (key.startsWith('specialStatus.')) {
             this.processSpecialStatus(key, value);
             return;
@@ -269,52 +269,52 @@ class VariableInstructionParserV31 {
             return;
         }
 
-        // 数值操作
+        // Thao tác với số liệu
         if (/^[+\-=]/.test(value)) {
             this.processNumber(key, value);
             return;
         }
 
-        // 特殊处理炼丹炼器等级（新格式：字符串）
+        // Xử lý đặc biệt cho cấp độ luyện đan/luyện khí (Định dạng mới: chuỗi)
         if (key === 'alchemyLevel' || key === 'craftingLevel') {
             this.setValue(key, value);
-            this.log(`[等级] ${key}: ${value}`);
+            this.log(`[Cấp độ] ${key}: ${value}`);
             return;
         }
 
-        // 尝试解析 JSON 对象或数组
+        // Cố gắng phân tích đối tượng hoặc mảng JSON
         let parsedValue = value;
         if ((value.startsWith('{') && value.endsWith('}')) ||
             (value.startsWith('[') && value.endsWith(']'))) {
-            // 🔧 清理AI返回的转义引号：将 \" 替换为 "
+            // 🔧 Dọn dẹp dấu ngoặc kép được escape do AI trả về: Thay \" thành "
             let cleanedValue = value;
             if (cleanedValue.includes('\\"')) {
                 cleanedValue = cleanedValue.replace(/\\"/g, '"');
-                console.log(`[v3.1] 🔧 清理转义引号后:`, cleanedValue);
+                console.log(`[v3.1] 🔧 Sau khi dọn dẹp dấu ngoặc kép escape:`, cleanedValue);
             }
             try {
                 parsedValue = JSON.parse(cleanedValue);
-                this.log(`[解析] ${key}: JSON解析成功`);
+                this.log(`[Phân tích] ${key}: Phân tích JSON thành công`);
             } catch (e) {
-                this.log(`[解析] ${key}: JSON解析失败，保持字符串 - ${e.message}`);
+                this.log(`[Phân tích] ${key}: Phân tích JSON thất bại, giữ nguyên dạng chuỗi - ${e.message}`);
             }
         } else {
-            // 使用统一的值解析方法
+            // Sử dụng phương thức phân tích giá trị thống nhất
             parsedValue = this.parseValue(value);
         }
 
-        // 直接设置
+        // Cài đặt trực tiếp
         this.setValue(key, parsedValue);
     }
 
     /**
-     * 处理关系操作
-     * 格式：李师姐.favor: +10 或 李师姐.bodyParts.vagina.useCount: +1
+     * Xử lý thao tác quan hệ
+     * Định dạng: Lý Sư Tỷ.favor: +10 hoặc Lý Sư Tỷ.bodyParts.vagina.useCount: +1
      */
     processRelationship(key, value) {
         const parts = key.split('.');
         const name = parts[0];
-        const attrPath = parts.slice(1); // 获取剩余的属性路径
+        const attrPath = parts.slice(1); // Lấy đường dẫn thuộc tính còn lại
 
         const relationships = this.getValue('relationships') || [];
         let relationship = relationships.find(r => r.name === name);
@@ -325,36 +325,36 @@ class VariableInstructionParserV31 {
             this.setValue('relationships', relationships);
         }
 
-        // 处理嵌套属性（如 bodyParts.vagina.useCount）
+        // Xử lý thuộc tính lồng nhau (ví dụ: bodyParts.vagina.useCount)
         if (attrPath.length > 1) {
             this.setNestedValue(relationship, attrPath, value);
-            this.log(`[关系] ${name}.${attrPath.join('.')} = ${value}`);
+            this.log(`[Quan hệ] ${name}.${attrPath.join('.')} = ${value}`);
             return;
         }
 
         const attr = attrPath[0] || 'favor';
 
-        // 处理数值操作
+        // Xử lý thao tác với số
         if (/^[+\-=]/.test(value)) {
             let operator = value[0];
             let restValue = value.substring(1);
 
-            // 🔧 [v3.1 Fix] 智能修正 "= +1" 为 increment 操作
+            // 🔧 [Sửa lỗi v3.1] Tự động sửa "= +1" thành thao tác tăng dần (increment)
             if (operator === '=' && restValue.trim().startsWith('+')) {
                 operator = '+';
-                console.log(`[v3.1] 智能修正: 将 "${value}" 视为相对增加操作`);
+                console.log(`[v3.1] Tự động sửa lỗi: Xem "${value}" như thao tác tăng tương đối`);
             }
 
             const num = parseFloat(restValue);
             const current = relationship[attr] || 0;
 
-            // 检查是否是布尔值赋值（如 =true 或 =false）
+            // Kiểm tra xem có phải gán giá trị boolean không (ví dụ =true hoặc =false)
             if (operator === '=' && isNaN(num)) {
-                // 不是数字，使用parseValue解析（处理true/false等）
+                // Không phải số, dùng parseValue để phân tích (xử lý true/false v.v.)
                 const parsedValue = this.parseValue(restValue);
                 relationship[attr] = parsedValue;
                 console.log(`[v3.1 DEBUG] ${name}.${attr} = ${parsedValue} (type: ${typeof parsedValue})`, { restValue, parsedValue });
-                this.log(`[关系] ${name}.${attr} = ${parsedValue} (布尔/字符串)`);
+                this.log(`[Quan hệ] ${name}.${attr} = ${parsedValue} (Boolean/Chuỗi)`);
             } else {
                 switch (operator) {
                     case '+':
@@ -367,23 +367,23 @@ class VariableInstructionParserV31 {
                         relationship[attr] = num;
                         break;
                 }
-                this.log(`[关系] ${name}.${attr}: ${current} → ${relationship[attr]}`);
+                this.log(`[Quan hệ] ${name}.${attr}: ${current} → ${relationship[attr]}`);
             }
         } else {
-            // 解析值（移除引号、解析布尔值等）
+            // Phân tích giá trị (loại bỏ ngoặc kép, phân tích giá trị boolean v.v.)
             let parsedValue = this.parseValue(value);
             relationship[attr] = parsedValue;
-            this.log(`[关系] ${name}.${attr} = ${parsedValue}`);
+            this.log(`[Quan hệ] ${name}.${attr} = ${parsedValue}`);
         }
     }
 
     /**
-     * 设置嵌套属性值
+     * Thiết lập giá trị cho thuộc tính lồng nhau
      */
     setNestedValue(obj, path, value) {
         let current = obj;
 
-        // 遍历路径，创建嵌套对象
+        // Duyệt qua đường dẫn, tạo object lồng nhau
         for (let i = 0; i < path.length - 1; i++) {
             const part = path[i];
             if (!current[part]) {
@@ -392,26 +392,26 @@ class VariableInstructionParserV31 {
             current = current[part];
         }
 
-        // 设置最终值
+        // Thiết lập giá trị cuối cùng
         const finalKey = path[path.length - 1];
 
-        // 处理数值操作
+        // Xử lý thao tác số
         if (/^[+\-=]/.test(value)) {
             let operator = value[0];
             let restValue = value.substring(1);
 
-            // 🔧 [v3.1 Fix] 智能修正 "= +1" 为 increment 操作
+            // 🔧 [Sửa lỗi v3.1] Tự động sửa "= +1" thành thao tác tăng dần (increment)
             if (operator === '=' && restValue.trim().startsWith('+')) {
                 operator = '+';
-                console.log(`[v3.1] 智能修正: 将 "${value}" 视为相对增加操作`);
+                console.log(`[v3.1] Tự động sửa lỗi: Xem "${value}" như thao tác tăng tương đối`);
             }
 
             const num = parseFloat(restValue);
             const currentValue = current[finalKey] || 0;
 
-            // 检查是否是布尔值赋值（如 =true 或 =false）
+            // Kiểm tra xem có phải gán giá trị boolean không (ví dụ =true hoặc =false)
             if (operator === '=' && isNaN(num)) {
-                // 不是数字，使用parseValue解析（处理true/false等）
+                // Không phải số, dùng parseValue để phân tích (xử lý true/false v.v.)
                 current[finalKey] = this.parseValue(restValue);
             } else {
                 switch (operator) {
@@ -427,54 +427,54 @@ class VariableInstructionParserV31 {
                 }
             }
         } else {
-            // 解析值（移除引号、解析布尔值等）
+            // Phân tích giá trị (loại bỏ ngoặc kép, phân tích giá trị boolean v.v.)
             current[finalKey] = this.parseValue(value);
         }
     }
 
     /**
-     * 处理主角详细信息
-     * 格式：protagonist.appearance: 描述 或 protagonist.bodyParts.penis.useCount: +1
+     * Xử lý thông tin chi tiết của nhân vật chính
+     * Định dạng: protagonist.appearance: Miêu tả hoặc protagonist.bodyParts.penis.useCount: +1
      */
     processProtagonist(key, value) {
-        // 去掉 protagonist. 前缀，获取属性路径
+        // Bỏ tiền tố protagonist., lấy đường dẫn thuộc tính
         const attrPath = key.substring('protagonist.'.length).split('.');
 
-        // 确保 protagonist 对象存在
+        // Đảm bảo đối tượng protagonist tồn tại
         if (!this.gameState.variables.protagonist) {
             this.gameState.variables.protagonist = {};
         }
 
         const protagonist = this.gameState.variables.protagonist;
 
-        // 处理嵌套属性（如 bodyParts.penis.useCount）
+        // Xử lý thuộc tính lồng nhau (ví dụ bodyParts.penis.useCount)
         if (attrPath.length > 1) {
             this.setNestedValue(protagonist, attrPath, value);
-            this.log(`[主角] protagonist.${attrPath.join('.')} = ${value}`);
+            this.log(`[Nhân vật chính] protagonist.${attrPath.join('.')} = ${value}`);
             return;
         }
 
-        // 单层属性（如 appearance, isVirgin）
+        // Thuộc tính cấp 1 (ví dụ appearance, isVirgin)
         const attr = attrPath[0];
 
-        // 处理数值操作
+        // Xử lý thao tác số
         if (/^[+\-=]/.test(value)) {
             let operator = value[0];
             let restValue = value.substring(1);
 
-            // 🔧 [v3.1 Fix] 智能修正 "= +1" 为 increment 操作
+            // 🔧 [Sửa lỗi v3.1] Tự động sửa "= +1" thành thao tác tăng dần (increment)
             if (operator === '=' && restValue.trim().startsWith('+')) {
                 operator = '+';
-                console.log(`[v3.1] 智能修正: 将 "${value}" 视为相对增加操作`);
+                console.log(`[v3.1] Tự động sửa lỗi: Xem "${value}" như thao tác tăng tương đối`);
             }
 
             const num = parseFloat(restValue);
             const current = protagonist[attr] || 0;
 
-            // 检查是否是布尔值赋值（如 =true 或 =false）
+            // Kiểm tra xem có phải gán giá trị boolean không (ví dụ =true hoặc =false)
             if (operator === '=' && isNaN(num)) {
                 protagonist[attr] = this.parseValue(restValue);
-                this.log(`[主角] protagonist.${attr} = ${protagonist[attr]} (布尔/字符串)`);
+                this.log(`[Nhân vật chính] protagonist.${attr} = ${protagonist[attr]} (Boolean/Chuỗi)`);
             } else {
                 switch (operator) {
                     case '+':
@@ -487,56 +487,56 @@ class VariableInstructionParserV31 {
                         protagonist[attr] = num;
                         break;
                 }
-                this.log(`[主角] protagonist.${attr}: ${current} → ${protagonist[attr]}`);
+                this.log(`[Nhân vật chính] protagonist.${attr}: ${current} → ${protagonist[attr]}`);
             }
         } else {
-            // 直接设置字符串值
+            // Đặt giá trị chuỗi trực tiếp
             protagonist[attr] = this.parseValue(value);
-            this.log(`[主角] protagonist.${attr} = ${protagonist[attr]}`);
+            this.log(`[Nhân vật chính] protagonist.${attr} = ${protagonist[attr]}`);
         }
     }
 
     /**
-     * 处理特殊状态
-     * 格式：specialStatus.催情药.active: =true 或 specialStatus.催情药.effect: 攻击力-3
+     * Xử lý trạng thái đặc biệt
+     * Định dạng: specialStatus.Xuân Dược.active: =true hoặc specialStatus.Xuân Dược.effect: Tấn công-3
      */
     processSpecialStatus(key, value) {
-        // 去掉 specialStatus. 前缀，获取属性路径
+        // Bỏ tiền tố specialStatus., lấy đường dẫn thuộc tính
         const attrPath = key.substring('specialStatus.'.length).split('.');
 
-        // 确保 specialStatus 对象存在
+        // Đảm bảo đối tượng specialStatus tồn tại
         if (!this.gameState.variables.specialStatus) {
             this.gameState.variables.specialStatus = {};
         }
 
         const specialStatus = this.gameState.variables.specialStatus;
 
-        // attrPath[0] 是状态名（如 "催情药"），attrPath[1] 是属性（如 "active", "effect"）
+        // attrPath[0] là tên trạng thái (ví dụ "Xuân Dược"), attrPath[1] là thuộc tính (ví dụ "active", "effect")
         const statusName = attrPath[0];
         const attr = attrPath[1] || 'active';
 
-        // 确保该状态对象存在
+        // Đảm bảo đối tượng trạng thái đó tồn tại
         if (!specialStatus[statusName]) {
             specialStatus[statusName] = {};
         }
 
-        // 处理值
+        // Xử lý giá trị
         if (/^[+\-=]/.test(value)) {
             let operator = value[0];
             let restValue = value.substring(1);
 
-            // 🔧 [v3.1 Fix] 智能修正 "= +1" 为 increment 操作
+            // 🔧 [Sửa lỗi v3.1] Tự động sửa "= +1" thành thao tác tăng dần (increment)
             if (operator === '=' && restValue.trim().startsWith('+')) {
                 operator = '+';
-                console.log(`[v3.1] 智能修正: 将 "${value}" 视为相对增加操作`);
+                console.log(`[v3.1] Tự động sửa lỗi: Xem "${value}" như thao tác tăng tương đối`);
             }
 
             const num = parseFloat(restValue);
 
-            // 检查是否是布尔值或字符串赋值（如 =true 或 =false）
+            // Kiểm tra xem có phải gán giá trị boolean hoặc chuỗi không (ví dụ =true hoặc =false)
             if (operator === '=' && isNaN(num)) {
                 specialStatus[statusName][attr] = this.parseValue(restValue);
-                this.log(`[特殊状态] ${statusName}.${attr} = ${specialStatus[statusName][attr]}`);
+                this.log(`[Trạng thái đặc biệt] ${statusName}.${attr} = ${specialStatus[statusName][attr]}`);
             } else {
                 const current = specialStatus[statusName][attr] || 0;
                 switch (operator) {
@@ -550,26 +550,26 @@ class VariableInstructionParserV31 {
                         specialStatus[statusName][attr] = num;
                         break;
                 }
-                this.log(`[特殊状态] ${statusName}.${attr}: ${current} → ${specialStatus[statusName][attr]}`);
+                this.log(`[Trạng thái đặc biệt] ${statusName}.${attr}: ${current} → ${specialStatus[statusName][attr]}`);
             }
         } else {
-            // 直接设置字符串值
+            // Đặt giá trị chuỗi trực tiếp
             specialStatus[statusName][attr] = this.parseValue(value);
-            this.log(`[特殊状态] ${statusName}.${attr} = ${specialStatus[statusName][attr]}`);
+            this.log(`[Trạng thái đặc biệt] ${statusName}.${attr} = ${specialStatus[statusName][attr]}`);
         }
     }
 
     /**
-     * 处理数值操作
+     * Xử lý thao tác với số
      */
     processNumber(key, value) {
         let operator = value[0];
         let restString = value.substring(1);
 
-        // 🔧 [v3.1 Fix] 智能修正 "= +1" 为 increment 操作
+        // 🔧 [Sửa lỗi v3.1] Tự động sửa "= +1" thành thao tác tăng dần (increment)
         if (operator === '=' && restString.trim().startsWith('+')) {
             operator = '+';
-            console.log(`[v3.1] 智能修正: 将 "${value}" 视为相对增加操作`);
+            console.log(`[v3.1] Tự động sửa lỗi: Xem "${value}" như thao tác tăng tương đối`);
         }
 
         const num = parseFloat(restString);
@@ -589,33 +589,33 @@ class VariableInstructionParserV31 {
         }
 
         this.setValue(key, newValue);
-        this.log(`[数值] ${key}: ${current} → ${newValue}`);
+        this.log(`[Số liệu] ${key}: ${current} → ${newValue}`);
     }
 
     /**
-     * 添加物品（自动合并）
+     * Thêm vật phẩm (Tự động gộp)
      */
     addItem(name, count, attrs = {}) {
         const items = this.getValue('items') || [];
 
-        // 查找相同物品
+        // Tìm vật phẩm giống nhau
         const existingItem = items.find(item => item.name === name);
 
         if (existingItem) {
-            // 合并数量
+            // Gộp số lượng
             existingItem.count = (existingItem.count || 1) + count;
-            this.log(`[物品] ${name}: 数量增加 ${count} → 总计 ${existingItem.count}`);
+            this.log(`[Vật phẩm] ${name}: Số lượng tăng ${count} → Tổng cộng ${existingItem.count}`);
         } else {
-            // 添加新物品
+            // Thêm vật phẩm mới
             items.push({ name, count, ...attrs });
-            this.log(`[物品] 新增 ${name} x${count}`);
+            this.log(`[Vật phẩm] Mới thêm ${name} x${count}`);
         }
 
         this.setValue('items', items);
     }
 
     /**
-     * 移除物品
+     * Xóa vật phẩm
      */
     removeItem(name, count) {
         const items = this.getValue('items') || [];
@@ -625,90 +625,90 @@ class VariableInstructionParserV31 {
             item.count = (item.count || 1) - count;
 
             if (item.count <= 0) {
-                // 删除物品
+                // Xóa vật phẩm
                 const index = items.indexOf(item);
                 items.splice(index, 1);
-                this.log(`[物品] ${name} 已用完，删除`);
+                this.log(`[Vật phẩm] ${name} đã dùng hết, xóa`);
             } else {
-                this.log(`[物品] ${name}: 数量减少 ${count} → 剩余 ${item.count}`);
+                this.log(`[Vật phẩm] ${name}: Số lượng giảm ${count} → Còn lại ${item.count}`);
             }
 
             this.setValue('items', items);
         } else {
-            this.log(`[警告] 物品 ${name} 不存在`);
+            this.log(`[Cảnh báo] Vật phẩm ${name} không tồn tại`);
         }
     }
 
     /**
-     * 通用追加到数组
-     * @param {string} key - 变量名
-     * @param {*} value - 值
+     * Hàm dùng chung để nối thêm vào mảng
+     * @param {string} key - Tên biến
+     * @param {*} value - Giá trị
      */
     appendToArray(key, value) {
-        console.log(`[v3.1] appendToArray 被调用: key="${key}", value="${value}"`);
+        console.log(`[v3.1] appendToArray được gọi: key="${key}", value="${value}"`);
 
-        // 检查是否是关系的历史字段（如：柳如烟.history）
+        // Kiểm tra xem có phải là trường lịch sử của quan hệ (ví dụ: Liễu Như Yên.history)
         if (key.includes('.') && key.endsWith('.history')) {
-            console.log(`[v3.1] 检测到关系历史字段，调用 processRelationshipHistory`);
+            console.log(`[v3.1] Phát hiện trường lịch sử quan hệ, gọi processRelationshipHistory`);
             this.processRelationshipHistory(key, value);
             return;
         }
 
         const arr = this.getValue(key) || [];
 
-        // 确保是数组
+        // Đảm bảo là mảng
         if (!Array.isArray(arr)) {
-            this.log(`[警告] ${key} 不是数组，无法追加`);
+            this.log(`[Cảnh báo] ${key} không phải là mảng, không thể nối thêm`);
             return;
         }
 
-        // 尝试解析JSON对象（用于techniques/spells等）
+        // Cố gắng phân tích đối tượng JSON (Dùng cho techniques/spells v.v.)
         let parsedValue = value;
         if (typeof value === 'string' && value.trim().startsWith('{')) {
-            // 🔧 清理AI返回的转义引号：将 \" 替换为 "
+            // 🔧 Dọn dẹp ngoặc kép escape do AI trả về: Thay \" thành "
             let cleanedValue = value.trim();
             if (cleanedValue.includes('\\"')) {
                 cleanedValue = cleanedValue.replace(/\\"/g, '"');
-                console.log(`[v3.1] 🔧 清理转义引号后:`, cleanedValue);
+                console.log(`[v3.1] 🔧 Sau khi dọn dẹp ngoặc kép escape:`, cleanedValue);
             }
             try {
                 parsedValue = JSON.parse(cleanedValue);
-                console.log(`[v3.1] ✅ JSON解析成功，对象:`, parsedValue);
-                console.log(`[v3.1] 对象属性:`, Object.keys(parsedValue));
+                console.log(`[v3.1] ✅ Phân tích JSON thành công, object:`, parsedValue);
+                console.log(`[v3.1] Thuộc tính của object:`, Object.keys(parsedValue));
             } catch (e) {
-                console.log(`[v3.1] ❌ JSON解析失败，保持原值: ${e.message}`);
-                console.log(`[v3.1] 原始值:`, value);
+                console.log(`[v3.1] ❌ Phân tích JSON thất bại, giữ nguyên giá trị gốc: ${e.message}`);
+                console.log(`[v3.1] Giá trị gốc:`, value);
             }
         }
 
-        // 推入数组（对象直接推入，字符串检查重复）
+        // Đẩy vào mảng (Object thì đẩy trực tiếp, Chuỗi thì kiểm tra trùng lặp)
         if (typeof parsedValue === 'object' && parsedValue !== null) {
             arr.push(parsedValue);
             this.setValue(key, arr);
-            console.log(`[v3.1] ✅ JSON对象已添加到 ${key}，当前数组长度: ${arr.length}`);
-            this.log(`[追加] ${key}: JSON对象已添加 (name: ${parsedValue.name || 'N/A'})`);
+            console.log(`[v3.1] ✅ Object JSON đã được thêm vào ${key}, độ dài mảng hiện tại: ${arr.length}`);
+            this.log(`[Nối thêm] ${key}: Đã thêm Object JSON (name: ${parsedValue.name || 'N/A'})`);
         } else {
-            // 字符串类型才检查重复（history等）
+            // Nếu là kiểu chuỗi mới kiểm tra trùng lặp (history v.v.)
             if (!arr.includes(parsedValue)) {
                 arr.push(parsedValue);
                 this.setValue(key, arr);
-                this.log(`[追加] ${key}: ${parsedValue.substring(0, 30)}${parsedValue.length > 30 ? '...' : ''}`);
+                this.log(`[Nối thêm] ${key}: ${parsedValue.substring(0, 30)}${parsedValue.length > 30 ? '...' : ''}`);
             }
         }
     }
 
     /**
-     * 处理关系的历史记录追加
-     * 格式：柳如烟.history: 互动文本
+     * Xử lý nối thêm lịch sử quan hệ
+     * Định dạng: Liễu Như Yên.history: Đoạn văn bản tương tác
      */
     processRelationshipHistory(key, value) {
-        console.log(`[v3.1] 处理关系历史: ${key} = ${value}`);
+        console.log(`[v3.1] Xử lý lịch sử quan hệ: ${key} = ${value}`);
 
         const parts = key.split('.');
         const name = parts[0];
 
         const relationships = this.getValue('relationships') || [];
-        console.log(`[v3.1] 当前关系列表:`, relationships);
+        console.log(`[v3.1] Danh sách quan hệ hiện tại:`, relationships);
 
         let relationship = relationships.find(r => r.name === name);
 
@@ -716,137 +716,137 @@ class VariableInstructionParserV31 {
             relationship = { name };
             relationships.push(relationship);
             this.setValue('relationships', relationships);
-            this.log(`[关系] 创建新关系: ${name}`);
-            console.log(`[v3.1] 已创建新关系: ${name}`);
+            this.log(`[Quan hệ] Tạo mối quan hệ mới: ${name}`);
+            console.log(`[v3.1] Đã tạo mối quan hệ mới: ${name}`);
         }
 
-        console.log(`[v3.1] 找到关系: ${name}, 当前历史:`, relationship.history);
+        console.log(`[v3.1] Tìm thấy quan hệ: ${name}, lịch sử hiện tại:`, relationship.history);
 
-        // 初始化历史数组
+        // Khởi tạo mảng lịch sử
         if (!relationship.history) {
             relationship.history = [];
-            console.log(`[v3.1] 初始化 ${name} 的历史数组`);
+            console.log(`[v3.1] Khởi tạo mảng lịch sử của ${name}`);
         }
 
-        // 避免重复
+        // Tránh trùng lặp
         if (!relationship.history.includes(value)) {
             relationship.history.push(value);
-            this.log(`[关系] ${name}.history: ${value.substring(0, 30)}${value.length > 30 ? '...' : ''}`);
-            console.log(`[v3.1] 已添加历史记录: ${name}.history =`, relationship.history);
+            this.log(`[Quan hệ] ${name}.history: ${value.substring(0, 30)}${value.length > 30 ? '...' : ''}`);
+            console.log(`[v3.1] Đã thêm ghi chép lịch sử: ${name}.history =`, relationship.history);
         } else {
-            console.log(`[v3.1] 历史记录已存在，跳过: ${value}`);
+            console.log(`[v3.1] Ghi chép lịch sử đã tồn tại, bỏ qua: ${value}`);
         }
     }
 
     /**
-     * 🆕 处理角色重命名操作
-     * 格式：>>rename: 旧名称 -> 新名称
-     * 用于角色从别名（如"玄衣少年"）揭示真名（如"张三"）时，合并变量表
+     * 🆕 Xử lý thao tác đổi tên nhân vật
+     * Định dạng: >>rename: Tên cũ -> Tên mới
+     * Dùng cho việc gộp bảng biến khi nhân vật để lộ tên thật (ví dụ "Trương Tam") từ bí danh (ví dụ "Huyền Y Thiếu Niên")
      */
     processRename(oldName, newName) {
-        console.log(`[v3.1] 🔄 处理角色重命名: "${oldName}" -> "${newName}"`);
+        console.log(`[v3.1] 🔄 Xử lý đổi tên nhân vật: "${oldName}" -> "${newName}"`);
 
         const relationships = this.getValue('relationships') || [];
 
-        // 查找旧名称的记录
+        // Tìm bản ghi của tên cũ
         const oldIndex = relationships.findIndex(r => r.name === oldName);
 
         if (oldIndex === -1) {
-            console.log(`[v3.1] ⚠️ 未找到角色 "${oldName}"，将创建新角色 "${newName}"`);
-            // 如果旧名称不存在，创建一个新角色
+            console.log(`[v3.1] ⚠️ Không tìm thấy nhân vật "${oldName}", sẽ tạo nhân vật mới "${newName}"`);
+            // Nếu tên cũ không tồn tại, tạo một nhân vật mới
             relationships.push({ name: newName });
             this.setValue('relationships', relationships);
-            this.log(`[重命名] 创建新角色: ${newName}`);
+            this.log(`[Đổi tên] Tạo nhân vật mới: ${newName}`);
             return;
         }
 
-        // 检查新名称是否已存在
+        // Kiểm tra xem tên mới đã tồn tại chưa
         const newIndex = relationships.findIndex(r => r.name === newName);
 
         if (newIndex !== -1 && newIndex !== oldIndex) {
-            // 如果新名称已存在，合并两个记录（旧名称的数据优先，因为是同一个人）
-            console.log(`[v3.1] ⚠️ 角色 "${newName}" 已存在，将合并数据`);
+            // Nếu tên mới đã tồn tại, gộp 2 bản ghi (Ưu tiên dữ liệu của tên cũ, vì là cùng một người)
+            console.log(`[v3.1] ⚠️ Nhân vật "${newName}" đã tồn tại, tiến hành gộp dữ liệu`);
             const oldRecord = relationships[oldIndex];
             const newRecord = relationships[newIndex];
 
-            // 合并：旧记录的数据覆盖到新记录（保留旧记录的数据）
+            // Gộp: Ghi đè dữ liệu của bản ghi cũ lên bản ghi mới (Giữ lại dữ liệu của bản ghi cũ)
             for (const key of Object.keys(oldRecord)) {
-                if (key === 'name') continue; // 跳过 name 字段
+                if (key === 'name') continue; // Bỏ qua trường name
                 if (key === 'history' && Array.isArray(oldRecord.history) && Array.isArray(newRecord.history)) {
-                    // 合并历史记录（去重）
+                    // Gộp lịch sử (Loại bỏ trùng lặp)
                     newRecord.history = [...new Set([...newRecord.history, ...oldRecord.history])];
                 } else if (oldRecord[key] !== undefined) {
-                    // 其他字段：使用旧记录的值（因为是同一个人的原始数据）
+                    // Các trường khác: Dùng giá trị của bản ghi cũ (Vì là dữ liệu gốc của cùng một người)
                     newRecord[key] = oldRecord[key];
                 }
             }
 
-            // 删除旧记录
+            // Xóa bản ghi cũ
             relationships.splice(oldIndex, 1);
             this.setValue('relationships', relationships);
-            this.log(`[重命名] 合并 "${oldName}" 到 "${newName}"，删除旧记录`);
+            this.log(`[Đổi tên] Gộp "${oldName}" vào "${newName}", xóa bản ghi cũ`);
         } else {
-            // 直接重命名
+            // Đổi tên trực tiếp
             relationships[oldIndex].name = newName;
             this.setValue('relationships', relationships);
-            this.log(`[重命名] "${oldName}" -> "${newName}"`);
+            this.log(`[Đổi tên] "${oldName}" -> "${newName}"`);
         }
 
-        console.log(`[v3.1] ✅ 角色重命名完成: "${oldName}" -> "${newName}"`);
+        console.log(`[v3.1] ✅ Đổi tên nhân vật hoàn tất: "${oldName}" -> "${newName}"`);
     }
 
     /**
-     * 添加历史
+     * Thêm lịch sử
      */
     addHistory(text) {
         this.appendToArray('history', text);
     }
 
     /**
-     * 解析值（移除引号、解析特殊值）
+     * Phân tích giá trị (Loại bỏ dấu ngoặc kép, phân tích giá trị đặc biệt)
      */
     parseValue(value) {
         const trimmed = value.trim();
 
-        // 移除首尾的引号
+        // Loại bỏ dấu ngoặc kép ở đầu và cuối
         if ((trimmed.startsWith('"') && trimmed.endsWith('"')) ||
             (trimmed.startsWith("'") && trimmed.endsWith("'"))) {
             return trimmed.slice(1, -1);
         }
 
-        // 解析特殊值 - 布尔值（支持大小写）
+        // Phân tích giá trị đặc biệt - Giá trị boolean (Hỗ trợ viết hoa/thường)
         const lowerTrimmed = trimmed.toLowerCase();
         if (trimmed === 'null' || lowerTrimmed === 'null') return null;
         if (trimmed === 'true' || lowerTrimmed === 'true') {
-            console.log('[parseValue] 解析布尔值 true:', value);
+            console.log('[parseValue] Phân tích giá trị boolean true:', value);
             return true;
         }
         if (trimmed === 'false' || lowerTrimmed === 'false') {
-            console.log('[parseValue] 解析布尔值 false:', value);
+            console.log('[parseValue] Phân tích giá trị boolean false:', value);
             return false;
         }
 
-        // 支持 =true / =false 格式
+        // Hỗ trợ định dạng =true / =false
         if (lowerTrimmed.startsWith('=true') || lowerTrimmed === '=true') {
-            console.log('[parseValue] 解析 =true:', value);
+            console.log('[parseValue] Phân tích =true:', value);
             return true;
         }
         if (lowerTrimmed.startsWith('=false') || lowerTrimmed === '=false') {
-            console.log('[parseValue] 解析 =false:', value);
+            console.log('[parseValue] Phân tích =false:', value);
             return false;
         }
 
-        // 尝试解析数字
+        // Thử phân tích số
         if (!isNaN(trimmed) && trimmed !== '') {
             return parseFloat(trimmed);
         }
 
-        // 返回裁剪后的值（而不是原始值）
+        // Trả về giá trị đã cắt bỏ khoảng trắng (thay vì giá trị gốc)
         return trimmed;
     }
 
     /**
-     * 分割键值
+     * Tách key-value
      */
     splitKeyValue(line) {
         const colonIndex = line.indexOf(':');
@@ -856,7 +856,7 @@ class VariableInstructionParserV31 {
     }
 
     /**
-     * 获取值
+     * Lấy giá trị
      */
     getValue(path) {
         const parts = path.split('.');
@@ -873,7 +873,7 @@ class VariableInstructionParserV31 {
     }
 
     /**
-     * 设置值
+     * Thiết lập giá trị
      */
     setValue(path, value) {
         const parts = path.split('.');
@@ -891,31 +891,31 @@ class VariableInstructionParserV31 {
     }
 
     /**
-     * 记录日志
+     * Ghi log
      */
     log(message) {
         if (this.options.debug) {
-            console.log(`[变量指令 v3.1] ${message}`);
+            console.log(`[Lệnh biến v3.1] ${message}`);
             this.executionLog.push(message);
         }
     }
 
     /**
-     * 获取执行日志
+     * Lấy log thực thi
      */
     getExecutionLog() {
         return [...this.executionLog];
     }
 
     /**
-     * 清空日志
+     * Xóa log
      */
     clearLog() {
         this.executionLog = [];
     }
 }
 
-// 导出
+// Export
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = VariableInstructionParserV31;
 }

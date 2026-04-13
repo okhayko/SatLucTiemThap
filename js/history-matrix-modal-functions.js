@@ -1,7 +1,7 @@
-// 🆕 History矩阵支持函数
-// 这些函数为 viewHistoryMatrix() 提供支持
+// 🆕 Các hàm hỗ trợ ma trận History
+// Những hàm này cung cấp hỗ trợ cho viewHistoryMatrix()
 
-// 过滤矩阵层
+// Lọc các tầng ma trận
 function filterMatrixLayers(keyword) {
     const items = document.querySelectorAll('.matrix-layer-item');
     const lowerKeyword = keyword.toLowerCase();
@@ -16,14 +16,14 @@ function filterMatrixLayers(keyword) {
     });
 }
 
-// 显示矩阵层详情
+// Hiển thị chi tiết tầng ma trận
 function showMatrixLayerDetail(layerIndex) {
     const layer = window.matrixManager.historyMatrix.layers[layerIndex];
     if (!layer) return;
 
     let detailHtml = `
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h2 style="color: #28a745; margin: 0;">📋 矩阵层 ${layerIndex + 1} 详情</h2>
+            <h2 style="color: #28a745; margin: 0;">📋 Chi tiết tầng ma trận ${layerIndex + 1}</h2>
             <button onclick="document.getElementById('matrixLayerDetailModal').remove()" style="
                 padding: 8px 16px;
                 background: #dc3545;
@@ -32,44 +32,44 @@ function showMatrixLayerDetail(layerIndex) {
                 border-radius: 5px;
                 cursor: pointer;
                 font-size: 14px;
-            ">关闭</button>
+            ">Đóng</button>
         </div>
         
         <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 15px;">
-            <div style="font-weight: bold; color: #666; margin-bottom: 8px;">📊 层信息</div>
+            <div style="font-weight: bold; color: #666; margin-bottom: 8px;">📊 Thông tin tầng</div>
             <div style="font-size: 13px; line-height: 1.8;">
-                🏷️ 话题：${layer.topic || '未分类'}<br>
-                ⚖️ 权重：${layer.weight ? layer.weight.toFixed(3) : '0.000'}<br>
-                📦 向量数量：${layer.vectors ? layer.vectors.length : 0}<br>
-                🕐 创建时间：${layer.createTime ? new Date(layer.createTime).toLocaleString('zh-CN') : '未知'}<br>
-                🔄 更新时间：${layer.lastUpdateTime ? new Date(layer.lastUpdateTime).toLocaleString('zh-CN') : '未知'}
+                🏷️ Chủ đề: ${layer.topic || 'Chưa phân loại'}<br>
+                ⚖️ Trọng số: ${layer.weight ? layer.weight.toFixed(3) : '0.000'}<br>
+                📦 Số lượng vector: ${layer.vectors ? layer.vectors.length : 0}<br>
+                🕐 Thời gian tạo: ${layer.createTime ? new Date(layer.createTime).toLocaleString('vi-VN') : 'Không rõ'}<br>
+                🔄 Thời gian cập nhật: ${layer.lastUpdateTime ? new Date(layer.lastUpdateTime).toLocaleString('vi-VN') : 'Không rõ'}
             </div>
         </div>
 
         <div style="background: #e7f5e9; padding: 15px; border-radius: 10px; margin-bottom: 15px;">
-            <div style="font-weight: bold; color: #28a745; margin-bottom: 8px;">📦 包含的向量</div>
+            <div style="font-weight: bold; color: #28a745; margin-bottom: 8px;">📦 Các vector bao gồm</div>
             <div style="max-height: 300px; overflow-y: auto;">
     `;
 
     if (layer.vectors && layer.vectors.length > 0) {
         layer.vectors.forEach((vector, index) => {
-            const content = vector.content || vector.text || vector.aiResponse || '无内容';
+            const content = vector.content || vector.text || vector.aiResponse || 'Không có nội dung';
             const preview = content.length > 150 ? content.substring(0, 150) + '...' : content;
             const turnIndex = vector.turnIndex || '?';
             const historyIndex = vector.historyIndex || '?';
-            const timestamp = vector.timestamp ? new Date(vector.timestamp).toLocaleString('zh-CN') : '未知时间';
+            const timestamp = vector.timestamp ? new Date(vector.timestamp).toLocaleString('vi-VN') : 'Không rõ thời gian';
             
             detailHtml += `
                 <div style="background: white; padding: 10px; border-radius: 5px; margin-bottom: 8px; border-left: 3px solid #28a745;">
                     <div style="font-size: 11px; color: #666; margin-bottom: 5px;">
-                        [${index + 1}] 轮${turnIndex}-条${historyIndex} | ${timestamp}
+                        [${index + 1}] Lượt ${turnIndex}-Mục ${historyIndex} | ${timestamp}
                     </div>
                     <div style="font-size: 12px; color: #333; line-height: 1.4;">${preview}</div>
                 </div>
             `;
         });
     } else {
-        detailHtml += `<div style="color: #666; font-style: italic;">该层暂无向量数据</div>`;
+        detailHtml += `<div style="color: #666; font-style: italic;">Tầng này hiện chưa có dữ liệu vector</div>`;
     }
 
     detailHtml += `
@@ -87,7 +87,7 @@ function showMatrixLayerDetail(layerIndex) {
                 cursor: pointer;
                 font-size: 14px;
                 font-weight: bold;
-            ">🧪 测试此层检索</button>
+            ">🧪 Kiểm tra truy xuất tầng này</button>
         </div>
     `;
 
@@ -130,47 +130,47 @@ function showMatrixLayerDetail(layerIndex) {
     };
 }
 
-// 测试矩阵检索
+// Kiểm tra truy xuất ma trận
 function testMatrixRetrieval() {
-    const keyword = prompt('请输入测试关键词（如：青云宗、长老、修炼等）：');
+    const keyword = prompt('Vui lòng nhập từ khóa kiểm tra (ví dụ: Thanh Vân Tông, Trưởng lão, Tu luyện...):');
     if (!keyword) return;
 
     try {
         const results = window.matrixManager.historyMatrix.searchByMatrix(keyword, 5);
         
         if (results.length === 0) {
-            alert(`🧪 矩阵检索测试结果\n\n关键词："${keyword}"\n\n❌ 未找到相关结果\n\n💡 可能原因：\n• 矩阵为空\n• 关键词与现有内容不匹配\n• 相似度阈值过高`);
+            alert(`🧪 Kết quả kiểm tra truy xuất ma trận\n\nTừ khóa: "${keyword}"\n\n❌ Không tìm thấy kết quả liên quan\n\n💡 Nguyên nhân có thể:\n• Ma trận trống\n• Từ khóa không khớp với nội dung hiện có\n• Ngưỡng tương đồng quá cao`);
         } else {
-            let resultText = `🧪 矩阵检索测试结果\n\n关键词："${keyword}"\n找到 ${results.length} 条相关结果：\n\n`;
+            let resultText = `🧪 Kết quả kiểm tra truy xuất ma trận\n\nTừ khóa: "${keyword}"\nTìm thấy ${results.length} kết quả liên quan:\n\n`;
             
             results.forEach((result, index) => {
-                const content = result.content || result.text || result.aiResponse || '无内容';
+                const content = result.content || result.text || result.aiResponse || 'Không có nội dung';
                 const preview = content.length > 80 ? content.substring(0, 80) + '...' : content;
                 const score = result.matchScore ? (result.matchScore * 100).toFixed(2) : '0.00';
                 
-                resultText += `${index + 1}. [相似度: ${score}%] ${preview}\n`;
+                resultText += `${index + 1}. [Độ tương đồng: ${score}%] ${preview}\n`;
             });
             
             alert(resultText);
         }
     } catch (error) {
-        alert(`❌ 检索测试失败：${error.message}`);
+        alert(`❌ Kiểm tra truy xuất thất bại: ${error.message}`);
     }
 }
 
-// 测试层检索
+// Kiểm tra truy xuất tầng
 function testLayerRetrieval(layerIndex) {
-    const keyword = prompt('请输入测试关键词：');
+    const keyword = prompt('Vui lòng nhập từ khóa kiểm tra:');
     if (!keyword) return;
 
     try {
         const layer = window.matrixManager.historyMatrix.layers[layerIndex];
         if (!layer) {
-            alert('❌ 层不存在');
+            alert('❌ Tầng không tồn tại');
             return;
         }
 
-        // 在该层内搜索
+        // Tìm kiếm trong tầng này
         const results = [];
         const queryVector = window.contextVectorManager.createKeywordVector(keyword);
         
@@ -182,40 +182,40 @@ function testLayerRetrieval(layerIndex) {
         });
 
         if (results.length === 0) {
-            alert(`🧪 层${layerIndex + 1}检索测试\n\n关键词："${keyword}"\n\n❌ 未找到相关结果`);
+            alert(`🧪 Kiểm tra truy xuất tầng ${layerIndex + 1}\n\nTừ khóa: "${keyword}"\n\n❌ Không tìm thấy kết quả liên quan`);
         } else {
-            let resultText = `🧪 层${layerIndex + 1}检索测试\n\n关键词："${keyword}"\n找到 ${results.length} 条相关结果：\n\n`;
+            let resultText = `🧪 Kiểm tra truy xuất tầng ${layerIndex + 1}\n\nTừ khóa: "${keyword}"\nTìm thấy ${results.length} kết quả liên quan:\n\n`;
             
             results.forEach((result, index) => {
-                const content = result.vector.content || result.vector.text || result.vector.aiResponse || '无内容';
+                const content = result.vector.content || result.vector.text || result.vector.aiResponse || 'Không có nội dung';
                 const preview = content.length > 60 ? content.substring(0, 60) + '...' : content;
-                resultText += `${index + 1}. [相似度: ${result.similarity}%] ${preview}\n`;
+                resultText += `${index + 1}. [Độ tương đồng: ${result.similarity}%] ${preview}\n`;
             });
             
             alert(resultText);
         }
     } catch (error) {
-        alert(`❌ 层检索测试失败：${error.message}`);
+        alert(`❌ Kiểm tra truy xuất tầng thất bại: ${error.message}`);
     }
 }
 
-// 重建History矩阵
+// Xây dựng lại ma trận History
 async function rebuildHistoryMatrix() {
-    if (!confirm('⚠️ 确定要重建History矩阵吗？\n\n这将清空现有矩阵并重新从向量库构建。\n如果向量库为空，将自动从history记录构建。')) {
+    if (!confirm('⚠️ Xác nhận xây dựng lại ma trận History?\n\nThao tác này sẽ xóa sạch ma trận hiện tại và xây dựng lại từ kho lưu trữ vector.\nNếu kho lưu trữ vector trống, hệ thống sẽ tự động xây dựng từ nhật ký history.')) {
         return;
     }
 
     try {
-        // 清空现有矩阵
+        // Xóa ma trận hiện tại
         window.matrixManager.historyMatrix.clear();
         
-        // 🔧 修复：如果historyEmbeddings为空，先从gameState.variables.history构建
+        // 🔧 Sửa lỗi: Nếu historyEmbeddings trống, xây dựng trước từ gameState.variables.history
         if (window.contextVectorManager.historyEmbeddings.length === 0) {
             const history = window.gameState?.variables?.history;
             if (history && Array.isArray(history) && history.length > 0) {
-                console.log(`[History矩阵] 🔄 向量库为空，从history记录构建（${history.length}条）...`);
+                console.log(`[Ma trận History] 🔄 Kho vector trống, đang xây dựng từ nhật ký history (${history.length} mục)...`);
                 
-                // 显示进度提示
+                // Hiển thị thông báo tiến độ
                 const progressMsg = document.createElement('div');
                 progressMsg.id = 'rebuildProgress';
                 progressMsg.style.cssText = `
@@ -232,26 +232,26 @@ async function rebuildHistoryMatrix() {
                 `;
                 progressMsg.innerHTML = `
                     <div style="color: #28a745; font-size: 20px; font-weight: bold; margin-bottom: 15px;">
-                        🔄 正在重建History向量库...
+                        🔄 Đang xây dựng lại kho vector History...
                     </div>
                     <div style="color: #666; font-size: 14px;">
-                        请稍候，正在处理 <span id="rebuildCurrentItem">0</span>/${history.length} 条记录
+                        Vui lòng đợi, đang xử lý mục <span id="rebuildCurrentItem">0</span>/${history.length}
                     </div>
                 `;
                 document.body.appendChild(progressMsg);
                 
-                // 清空并重建historyEmbeddings
+                // Xóa và xây dựng lại historyEmbeddings
                 window.contextVectorManager.historyEmbeddings = [];
                 
                 for (let i = 0; i < history.length; i++) {
                     const historyText = history[i];
                     if (!historyText || typeof historyText !== 'string') continue;
                     
-                    // 更新进度
+                    // Cập nhật tiến độ
                     const progressSpan = document.getElementById('rebuildCurrentItem');
                     if (progressSpan) progressSpan.textContent = i + 1;
                     
-                    // 生成向量
+                    // Tạo vector
                     let vector;
                     try {
                         if (window.contextVectorManager.embeddingMethod === 'keyword') {
@@ -263,7 +263,7 @@ async function rebuildHistoryMatrix() {
                         vector = window.contextVectorManager.createKeywordVector(historyText);
                     }
                     
-                    // 添加到historyEmbeddings
+                    // Thêm vào historyEmbeddings
                     window.contextVectorManager.historyEmbeddings.push({
                         content: historyText,
                         vector: vector,
@@ -272,45 +272,45 @@ async function rebuildHistoryMatrix() {
                         timestamp: Date.now()
                     });
                     
-                    // 让UI有机会更新
+                    // Cho phép UI cập nhật
                     if (i % 10 === 0) {
                         await new Promise(resolve => setTimeout(resolve, 0));
                     }
                 }
                 
-                // 移除进度提示
+                // Gỡ bỏ thông báo tiến độ
                 progressMsg.remove();
                 
-                console.log(`[History矩阵] ✅ 已从history记录构建 ${window.contextVectorManager.historyEmbeddings.length} 条向量`);
+                console.log(`[Ma trận History] ✅ Đã xây dựng ${window.contextVectorManager.historyEmbeddings.length} vector từ nhật ký history`);
                 
-                // 保存到IndexedDB
+                // Lưu vào IndexedDB
                 await window.contextVectorManager.saveToIndexedDB();
             } else {
-                alert('⚠️ 矩阵重建失败：向量库为空且无history记录可用');
+                alert('⚠️ Xây dựng lại ma trận thất bại: Kho vector trống và không có nhật ký history khả dụng');
                 return;
             }
         }
         
-        // 重新初始化矩阵
+        // Khởi tạo lại ma trận
         const data = await window.matrixManager.initializeHistoryMatrix();
         if (data) {
-            alert(`✅ History矩阵重建成功！\n\n重建了 ${data.stats.totalLayers} 层矩阵\n包含 ${data.stats.totalVectors} 个向量`);
+            alert(`✅ Xây dựng lại ma trận History thành công!\n\nĐã xây dựng ${data.stats.totalLayers} tầng ma trận\nBao gồm ${data.stats.totalVectors} vector`);
             
-            // 刷新当前显示
+            // Làm mới hiển thị hiện tại
             document.getElementById('historyMatrixModal')?.remove();
             viewHistoryMatrix();
         } else {
-            alert('⚠️ 矩阵重建失败：无法初始化矩阵');
+            alert('⚠️ Xây dựng lại ma trận thất bại: Không thể khởi tạo ma trận');
         }
     } catch (error) {
-        console.error('[History矩阵] 重建失败:', error);
-        alert(`❌ 矩阵重建失败：${error.message}`);
-        // 移除可能残留的进度提示
+        console.error('[Ma trận History] Xây dựng lại thất bại:', error);
+        alert(`❌ Xây dựng lại ma trận thất bại: ${error.message}`);
+        // Gỡ bỏ thông báo tiến độ nếu còn sót lại
         document.getElementById('rebuildProgress')?.remove();
     }
 }
 
-// 导出History矩阵
+// Xuất ma trận History
 function exportHistoryMatrix() {
     try {
         const data = {
@@ -332,16 +332,16 @@ function exportHistoryMatrix() {
 
         const a = document.createElement('a');
         a.href = url;
-        a.download = `History矩阵_${new Date().toLocaleString('zh-CN').replace(/[/:]/g, '-')}.json`;
+        a.download = `MaTranHistory_${new Date().toLocaleString('vi-VN').replace(/[/:]/g, '-')}.json`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
 
-        alert('✅ History矩阵已导出！');
+        alert('✅ Đã xuất ma trận History!');
     } catch (error) {
-        alert(`❌ 导出失败：${error.message}`);
+        alert(`❌ Xuất thất bại: ${error.message}`);
     }
 }
 
-console.log('[History矩阵] 支持函数已加载');
+console.log('[Ma trận History] Các hàm hỗ trợ đã được tải');

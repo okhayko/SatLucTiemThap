@@ -1,9 +1,9 @@
 /**
- * 修仙游戏 - 回合制战斗系统 Part 1
- * 战斗状态管理和解析功能
+ * Trò chơi Tu Tiên - Hệ thống chiến đấu theo lượt Part 1
+ * Quản lý trạng thái chiến đấu và chức năng phân tích (parsing)
  */
 
-// 战斗状态管理
+// Quản lý trạng thái chiến đấu
 const combatState = {
     isActive: false,
     player: null,
@@ -17,7 +17,7 @@ const combatState = {
 };
 
 /**
- * 解析AI输出的战斗信息
+ * Phân tích thông tin chiến đấu từ đầu ra của AI
  */
 function parseCombatInfo(story) {
     if (!story || !story.includes('===战斗开始===')) {
@@ -95,20 +95,20 @@ function parseCombatInfo(story) {
             spells: spells
         };
     } catch (error) {
-        console.error('解析战斗信息失败:', error);
+        console.error('Phân tích thông tin chiến đấu thất bại:', error);
         return null;
     }
 }
 
 /**
- * 添加战斗日志
+ * Thêm nhật ký chiến đấu
  */
 function addCombatLog(message) {
     combatState.combatLog.push(message);
 }
 
 /**
- * 渲染战斗日志
+ * Hiển thị nhật ký chiến đấu lên giao diện
  */
 function renderCombatLog() {
     const logContainer = document.getElementById('combatLog');

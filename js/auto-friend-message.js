@@ -1,79 +1,80 @@
 /**
- * 📨 好友自动消息功能模块
- * 类似动态世界，每隔N层楼自动触发，随机选择好友发送消息
+ * 📨 Module chức năng tin nhắn tự động từ bạn bè
+ * Tương tự như thế giới động, tự động kích hoạt sau mỗi N tầng hội thoại, 
+ * lựa chọn ngẫu nhiên một người bạn để gửi tin nhắn.
  */
 
-// 消息计数器（用于判断是否达到触发间隔）
+// Bộ đếm tin nhắn (dùng để xác định khoảng cách kích hoạt)
 window.autoFriendMessageCounter = 0;
 
-// 是否正在处理中
+// Trạng thái đang xử lý
 window.autoFriendMessageProcessing = false;
 
 /**
- * 生成好友自动消息
- * @param {boolean} forceGenerate - 是否强制生成（忽略间隔计数）
+ * Tạo tin nhắn tự động từ bạn bè
+ * @param {boolean} forceGenerate - Có bắt buộc tạo hay không (bỏ qua bộ đếm khoảng cách)
  */
 async function generateAutoFriendMessage(forceGenerate = false) {
-    console.log('[📨好友自动消息] 触发生成函数');
+    console.log('[📨Tin nhắn bạn bè] Kích hoạt hàm tạo');
     
-    // 获取设置
+    // Lấy cài đặt
     const settings = window.mobilePhoneSettings || {};
     
-    // 检查是否启用
+    // Kiểm tra xem chức năng có được bật không
     if (!settings.enableAutoFriendMessage) {
-        console.log('[📨好友自动消息] 功能未启用，跳过');
+        console.log('[📨Tin nhắn bạn bè] Chức năng chưa bật, bỏ qua');
         return;
     }
     
-    // 检查手机API是否配置
+    // Kiểm tra cấu hình API điện thoại
     const mobileApiConfig = window.mobileApiConfig || {};
     if (!mobileApiConfig.enabled || !mobileApiConfig.key) {
-        console.warn('[📨好友自动消息] 手机API未配置，跳过');
+        console.warn('[📨Tin nhắn bạn bè] API điện thoại chưa cấu hình, bỏ qua');
         return;
     }
     
-    // 增加计数器并检查间隔
+    // Tăng bộ đếm và kiểm tra khoảng cách
     if (!forceGenerate) {
         window.autoFriendMessageCounter = (window.autoFriendMessageCounter || 0) + 1;
         const interval = settings.autoFriendMessageInterval || 3;
         
         if (window.autoFriendMessageCounter < interval) {
-            console.log(`[📨好友自动消息] 未达到间隔（${window.autoFriendMessageCounter}/${interval}），跳过`);
+            console.log(`[📨Tin nhắn bạn bè] Chưa đạt khoảng cách (${window.autoFriendMessageCounter}/${interval}), bỏ qua`);
             return;
         }
         
-        // 达到间隔，重置计数器
-        console.log('[📨好友自动消息] 达到生成间隔，开始生成');
+        // Đạt khoảng cách, đặt lại bộ đếm
+        console.log('[📨Tin nhắn bạn bè] Đạt khoảng cách yêu cầu, bắt đầu tạo');
         window.autoFriendMessageCounter = 0;
     } else {
-        console.log('[📨好友自动消息] 强制触发生成');
+        console.log('[📨Tin nhắn bạn bè] Bắt buộc kích hoạt tạo tin nhắn');
     }
     
-    // 避免重复处理
+    // Tránh xử lý trùng lặp
     if (window.autoFriendMessageProcessing) {
-        console.warn('[📨好友自动消息] 正在处理中，跳过');
+        console.warn('[📨Tin nhắn bạn bè] Đang trong quá trình xử lý, bỏ qua');
         return;
     }
     
     window.autoFriendMessageProcessing = true;
     
     try {
-        // 1. 获取好友列表
+        // 1. Lấy danh sách bạn bè
         const contacts = getAvailableContacts();
         if (contacts.length === 0) {
-            console.log('[📨好友自动消息] 没有可用的好友联系人');
+            console.log('[📨Tin nhắn bạn bè] Không có liên lạc bạn bè khả dụng');
             window.autoFriendMessageProcessing = false;
             return;
         }
         
-        // 2. 随机选择一位好友
+        // 2. Chọn ngẫu nhiên một người bạn
         const randomFriend = contacts[Math.floor(Math.random() * contacts.length)];
-        console.log('[📨好友自动消息] 随机选中好友:', randomFriend.name);
+        console.log('[📨Tin nhắn bạn bè] Đã chọn ngẫu nhiên:', randomFriend.name);
         
-        // 3. 收集上下文信息
+        // 3. Thu thập thông tin ngữ cảnh
         const contextData = await collectContextData(randomFriend, settings);
         
-        // 4. 构建API请求
+        // 4. Xây dựng yêu cầu API
         const messageCount = {
             min: settings.autoFriendMessageMinCount || 3,
             max: settings.autoFriendMessageMaxCount || 5
@@ -92,73 +93,71 @@ async function generateAutoFriendMessage(forceGenerate = false) {
             historyRecords: contextData.historyRecords
         });
         
-        console.log('[📨好友自动消息] 发送API请求...');
-        console.log('[📨好友自动消息] 系统提示词长度:', systemPrompt?.length || 0);
-        console.log('[📨好友自动消息] 用户消息长度:', userMessage?.length || 0);
+        console.log('[📨Tin nhắn bạn bè] Đang gửi yêu cầu API...');
+        console.log('[📨Tin nhắn bạn bè] Độ dài System Prompt:', systemPrompt?.length || 0);
+        console.log('[📨Tin nhắn bạn bè] Độ dài User Message:', userMessage?.length || 0);
         
-        // 检查消息是否正确构建
+        // Kiểm tra tin nhắn đã được xây dựng đúng chưa
         if (!systemPrompt || !userMessage) {
-            console.error('[📨好友自动消息] 消息构建失败！');
-            console.error('  - systemPrompt:', systemPrompt);
-            console.error('  - userMessage:', userMessage);
+            console.error('[📨Tin nhắn bạn bè] Xây dựng tin nhắn thất bại!');
             window.autoFriendMessageProcessing = false;
             return;
         }
         
-        // 5. 调用手机API
+        // 5. Gọi API điện thoại
         const messages = [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userMessage }
         ];
         
-        console.log('[📨好友自动消息] 发送消息预览:', JSON.stringify(messages).substring(0, 500) + '...');
+        console.log('[📨Tin nhắn bạn bè] Xem trước tin nhắn gửi đi:', JSON.stringify(messages).substring(0, 500) + '...');
         
         const response = await callMobileAPIForAutoMessage(messages);
         
-        console.log('[📨好友自动消息] API响应:', response?.substring(0, 500) || '(空响应)');
+        console.log('[📨Tin nhắn bạn bè] Phản hồi API:', response?.substring(0, 500) || '(Phản hồi trống)');
         
-        // 6. 解析回复
+        // 6. Phân tích phản hồi
         const replies = window.MobilePrompts?.autoFriendMessage?.parseAIReply(response);
         
         if (!replies || replies.length === 0) {
-            console.warn('[📨好友自动消息] AI未返回有效消息');
+            console.warn('[📨Tin nhắn bạn bè] AI không trả về tin nhắn hợp lệ');
             window.autoFriendMessageProcessing = false;
             return;
         }
         
-        console.log(`[📨好友自动消息] 收到 ${replies.length} 条消息`);
+        console.log(`[📨Tin nhắn bạn bè] Nhận được ${replies.length} tin nhắn`);
         
-        // 7. 保存消息到聊天记录
+        // 7. Lưu tin nhắn vào lịch sử chat
         await saveAutoMessages(randomFriend, replies);
         
-        // 8. 显示通知
+        // 8. Hiển thị thông báo
         showAutoMessageNotification(randomFriend, replies.length);
         
-        // 9. 🔧 触发自动存档，确保消息持久化到IndexedDB
+        // 9. 🔧 Kích hoạt tự động lưu để đảm bảo tin nhắn được ghi vào IndexedDB
         if (typeof saveGameHistory === 'function') {
             saveGameHistory().then(() => {
-                console.log('[📨好友自动消息] 已自动保存到存档');
+                console.log('[📨Tin nhắn bạn bè] Đã tự động lưu vào bản ghi');
             }).catch(err => {
-                console.warn('[📨好友自动消息] 自动存档失败:', err);
+                console.warn('[📨Tin nhắn bạn bè] Tự động lưu thất bại:', err);
             });
         }
         
-        console.log('[📨好友自动消息] 生成完成');
+        console.log('[📨Tin nhắn bạn bè] Hoàn tất quá trình tạo');
         
     } catch (error) {
-        console.error('[📨好友自动消息] 生成失败:', error);
+        console.error('[📨Tin nhắn bạn bè] Quá trình tạo thất bại:', error);
     } finally {
         window.autoFriendMessageProcessing = false;
     }
 }
 
 /**
- * 获取可用的好友联系人列表
+ * Lấy danh sách liên lạc bạn bè khả dụng
  */
 function getAvailableContacts() {
     let contacts = [];
     
-    // 从 localStorage 获取手机聊天数据
+    // Lấy dữ liệu chat điện thoại từ localStorage
     try {
         const saved = localStorage.getItem('mobileChatData');
         if (saved) {
@@ -166,15 +165,15 @@ function getAvailableContacts() {
             contacts = data.contacts || [];
         }
     } catch (e) {
-        console.warn('[📨好友自动消息] 读取联系人失败:', e);
+        console.warn('[📨Tin nhắn bạn bè] Đọc danh sách liên lạc thất bại:', e);
     }
     
-    // 过滤掉群聊，只保留私聊好友
+    // Loại bỏ chat nhóm, chỉ giữ lại chat riêng tư
     return contacts.filter(c => c.type === 'private');
 }
 
 /**
- * 收集上下文数据
+ * Thu thập dữ liệu ngữ cảnh
  */
 async function collectContextData(friend, settings) {
     const contextData = {
@@ -185,60 +184,59 @@ async function collectContextData(friend, settings) {
         historyRecords: []
     };
     
-    // 1. 获取人物图谱信息
+    // 1. Lấy thông tin sơ đồ nhân vật
     if (settings.autoFriendUseCharacterGraph) {
         contextData.friendInfo = getCharacterGraphInfo(friend.name);
         if (!contextData.friendInfo) {
-            // 如果图谱中没有，尝试从 relationships 获取
+            // Nếu không có trong sơ đồ, thử lấy từ relationships
             contextData.friendInfo = getRelationshipInfo(friend.name);
         }
         if (!contextData.friendInfo) {
-            // 最后使用基本信息
+            // Cuối cùng sử dụng thông tin cơ bản
             contextData.friendInfo = { name: friend.name };
         }
-        console.log('[📨好友自动消息] 人物图谱:', contextData.friendInfo?.name || '无');
+        console.log('[📨Tin nhắn bạn bè] Sơ đồ nhân vật:', contextData.friendInfo?.name || 'Không có');
     }
     
-    // 2. 获取聊天历史
+    // 2. Lấy lịch sử chat
     if (settings.autoFriendUseChatHistory) {
         const chatId = `chat_${friend.id}`;
         contextData.chatHistory = getChatHistory(chatId);
-        console.log('[📨好友自动消息] 聊天历史:', contextData.chatHistory.length, '条');
+        console.log('[📨Tin nhắn bạn bè] Lịch sử chat:', contextData.chatHistory.length, 'mục');
     }
     
-    // 3. 获取主线剧情上下文
+    // 3. Lấy ngữ cảnh cốt truyện chính
     const historyDepth = settings.autoFriendMainHistoryDepth || 5;
     if (historyDepth > 0) {
         contextData.gameContext = getGameContext(historyDepth);
-        console.log('[📨好友自动消息] 游戏上下文:', contextData.gameContext ? '有' : '无');
+        console.log('[📨Tin nhắn bạn bè] Ngữ cảnh game:', contextData.gameContext ? 'Có' : 'Không');
     }
     
-    // 4. 向量匹配主线正文
+    // 4. Khớp nội dung chính qua Vector
     if (settings.autoFriendUseVectorSearch && window.contextVectorManager) {
         const vectorCount = settings.autoFriendVectorCount || 3;
         const queryText = `${friend.name} ${contextData.friendInfo?.relation || ''} ${contextData.friendInfo?.personality || ''}`;
         
         try {
-            // 使用正确的API: retrieveRelevant
             const results = await window.contextVectorManager.retrieveRelevant(queryText, vectorCount, 'conversation');
             contextData.vectorMatches = results || [];
-            console.log('[📨好友自动消息] 向量匹配:', contextData.vectorMatches.length, '条');
+            console.log('[📨Tin nhắn bạn bè] Khớp Vector:', contextData.vectorMatches.length, 'mục');
         } catch (e) {
-            console.warn('[📨好友自动消息] 向量匹配失败:', e);
+            console.warn('[📨Tin nhắn bạn bè] Khớp Vector thất bại:', e);
         }
     }
     
-    // 5. 获取 History 记录
+    // 5. Lấy bản ghi History
     if (settings.autoFriendUseHistory && window.gameState?.history) {
         contextData.historyRecords = window.gameState.history.slice(-20) || [];
-        console.log('[📨好友自动消息] History记录:', contextData.historyRecords.length, '条');
+        console.log('[📨Tin nhắn bạn bè] Bản ghi History:', contextData.historyRecords.length, 'mục');
     }
     
     return contextData;
 }
 
 /**
- * 从人物图谱获取角色信息
+ * Lấy thông tin nhân vật từ sơ đồ nhân vật
  */
 function getCharacterGraphInfo(name) {
     if (!window.characterGraphManager) return null;
@@ -247,13 +245,13 @@ function getCharacterGraphInfo(name) {
         const characters = window.characterGraphManager.getAllCharacters?.() || [];
         return characters.find(c => c.name === name);
     } catch (e) {
-        console.warn('[📨好友自动消息] 读取人物图谱失败:', e);
+        console.warn('[📨Tin nhắn bạn bè] Đọc sơ đồ nhân vật thất bại:', e);
         return null;
     }
 }
 
 /**
- * 从 relationships 获取角色信息
+ * Lấy thông tin nhân vật từ relationships
  */
 function getRelationshipInfo(name) {
     if (!window.gameState?.variables?.relationships) return null;
@@ -262,7 +260,7 @@ function getRelationshipInfo(name) {
 }
 
 /**
- * 获取聊天历史
+ * Lấy lịch sử chat
  */
 function getChatHistory(chatId) {
     try {
@@ -273,13 +271,13 @@ function getChatHistory(chatId) {
             return chat?.history || [];
         }
     } catch (e) {
-        console.warn('[📨好友自动消息] 读取聊天历史失败:', e);
+        console.warn('[📨Tin nhắn bạn bè] Đọc lịch sử chat thất bại:', e);
     }
     return [];
 }
 
 /**
- * 获取游戏上下文
+ * Lấy ngữ cảnh trò chơi
  */
 function getGameContext(depth) {
     if (!window.gameState?.conversationHistory) return null;
@@ -291,7 +289,7 @@ function getGameContext(depth) {
     
     let context = '';
     recentMessages.forEach(msg => {
-        const role = msg.role === 'user' ? '【玩家行动】' : '【剧情发展】';
+        const role = msg.role === 'user' ? '【Hành động người chơi】' : '【Phát triển cốt truyện】';
         const content = msg.content?.length > 300 ? msg.content.substring(0, 300) + '...' : msg.content;
         context += `${role}: ${content}\n\n`;
     });
@@ -300,96 +298,47 @@ function getGameContext(depth) {
 }
 
 /**
- * 调用手机API（用于自动消息）
+ * Gọi API điện thoại (Dành cho tin nhắn tự động)
+ * Hàm này ghi đè với xử lý hỗ trợ stream và định dạng đa dạng.
  */
 async function callMobileAPIForAutoMessage(messages) {
     const config = window.mobileApiConfig;
-    
+
     if (!config || !config.key || !config.endpoint) {
-        throw new Error('手机API未配置');
+        throw new Error('API điện thoại chưa được cấu hình.');
     }
-    
-    const apiType = config.type || 'openai';
-    
-    let url, headers, body;
-    
-    if (apiType === 'gemini') {
-        // Gemini API
-        url = `${config.endpoint}/v1beta/models/${config.model}:generateContent?key=${config.key}`;
-        headers = { 'Content-Type': 'application/json' };
-        body = {
-            contents: messages.map(msg => ({
-                role: msg.role === 'assistant' ? 'model' : msg.role === 'system' ? 'user' : msg.role,
-                parts: [{ text: msg.content }]
-            })),
-            generationConfig: {
-                maxOutputTokens: 8192,
-                temperature: 0.8
-            }
-        };
-    } else {
-        // OpenAI 兼容 API
-        url = `${config.endpoint}/chat/completions`;
-        headers = {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${config.key}`
-        };
-        body = {
-            model: config.model,
-            messages: messages,
-            max_tokens: 8192,
-            temperature: 0.8
-        };
+
+    if ((config.type || 'openai') === 'gemini') {
+        return await requestGeminiCompletion(config, messages, {
+            temperature: 0.8,
+            maxTokens: 8192,
+            errorPrefix: 'Lỗi Gemini API tin nhắn tự động',
+            blockedMessage: '(Tin nhắn tự động) Gemini không trả về nội dung.'
+        });
     }
-    
-    console.log('[📨好友自动消息] 调用API:', url);
-    console.log('[📨好友自动消息] API类型:', apiType);
-    console.log('[📨好友自动消息] 请求体大小:', JSON.stringify(body).length, '字符');
-    
-    const response = await fetch(url, {
-        method: 'POST',
-        headers: headers,
-        body: JSON.stringify(body)
+
+    return await requestOpenAICompatibleCompletion(config, messages, {
+        temperature: 0.8,
+        maxTokens: 8192,
+        errorPrefix: 'Lỗi API tin nhắn tự động',
+        logPrefix: '[Tin nhắn tự động] Phản hồi thô:',
+        warnPrefix: '[callMobileAPIForAutoMessage] Thiếu lựa chọn (choices):',
+        emptyMessage: 'Định dạng phản hồi API tin nhắn tự động không hợp lệ.'
     });
-    
-    if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`API请求失败: ${response.status} - ${errorText}`);
-    }
-    
-    const data = await response.json();
-    console.log('[📨好友自动消息] API原始响应:', JSON.stringify(data).substring(0, 1000));
-    
-    // 提取回复内容
-    let content = '';
-    if (apiType === 'gemini') {
-        content = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    } else {
-        content = data.choices?.[0]?.message?.content || '';
-    }
-    
-    // 如果OpenAI格式没有内容，尝试Gemini格式（某些代理API可能混合格式）
-    if (!content && data.candidates) {
-        content = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-        console.log('[📨好友自动消息] 使用Gemini格式解析');
-    }
-    
-    console.log('[📨好友自动消息] 提取的内容长度:', content?.length || 0);
-    return content;
 }
 
 /**
- * 保存自动消息到聊天记录
+ * Lưu tin nhắn tự động vào lịch sử chat
  */
 async function saveAutoMessages(friend, replies) {
     const chatId = `chat_${friend.id}`;
     
     try {
-        // 读取现有数据
+        // Đọc dữ liệu hiện có
         const saved = localStorage.getItem('mobileChatData');
         const data = saved ? JSON.parse(saved) : { chatStorage: {}, contacts: [] };
         
-        // 确保聊天记录存在
+        // Đảm bảo bản ghi chat tồn tại
         if (!data.chatStorage[chatId]) {
             data.chatStorage[chatId] = {
                 info: { name: friend.name, id: chatId, type: 'private' },
@@ -398,17 +347,17 @@ async function saveAutoMessages(friend, replies) {
             };
         }
         
-        // 添加消息
+        // Thêm tin nhắn
         replies.forEach(reply => {
             const message = {
                 direction: 'incoming',
                 chatType: 'private',
-                target: { name: '我', id: 'self' },
+                target: { name: 'Tôi', id: 'self' },
                 sender: { name: friend.name, id: friend.id },
                 msgType: 'text',
                 content: reply.content,
                 timestamp: Date.now(),
-                isAutoGenerated: true  // 标记为自动生成
+                isAutoGenerated: true  // Đánh dấu là tạo tự động
             };
             
             data.chatStorage[chatId].messages.push(message);
@@ -419,17 +368,17 @@ async function saveAutoMessages(friend, replies) {
             });
         });
         
-        // 限制历史记录长度
+        // Giới hạn độ dài lịch sử
         if (data.chatStorage[chatId].history.length > 50) {
             data.chatStorage[chatId].history = data.chatStorage[chatId].history.slice(-50);
         }
         
-        // 保存回 localStorage
+        // Lưu lại vào localStorage
         localStorage.setItem('mobileChatData', JSON.stringify(data));
         
-        console.log(`[📨好友自动消息] 已保存 ${replies.length} 条消息到 ${friend.name} 的聊天记录`);
+        console.log(`[📨Tin nhắn bạn bè] Đã lưu ${replies.length} tin nhắn vào lịch sử chat của ${friend.name}`);
         
-        // 通知手机 iframe 刷新数据（如果存在）
+        // Thông báo cho iframe điện thoại làm mới dữ liệu (nếu có)
         try {
             const mobileFrame = document.getElementById('mobileFrame');
             if (mobileFrame && mobileFrame.contentWindow) {
@@ -439,59 +388,32 @@ async function saveAutoMessages(friend, replies) {
                 }, '*');
             }
         } catch (e) {
-            // iframe 可能不存在或跨域
+            // iframe có thể không tồn tại hoặc lỗi khác nguồn (CORS)
         }
         
     } catch (e) {
-        console.error('[📨好友自动消息] 保存消息失败:', e);
+        console.error('[📨Tin nhắn bạn bè] Lưu tin nhắn thất bại:', e);
     }
-}
-
-// Override with stream-aware mobile API handling.
-async function callMobileAPIForAutoMessage(messages) {
-    const config = window.mobileApiConfig;
-
-    if (!config || !config.key || !config.endpoint) {
-        throw new Error('Mobile API is not configured.');
-    }
-
-    if ((config.type || 'openai') === 'gemini') {
-        return await requestGeminiCompletion(config, messages, {
-            temperature: 0.8,
-            maxTokens: 8192,
-            errorPrefix: 'Auto friend Gemini API error',
-            blockedMessage: '(Auto friend) mobile Gemini returned no content.'
-        });
-    }
-
-    return await requestOpenAICompatibleCompletion(config, messages, {
-        temperature: 0.8,
-        maxTokens: 8192,
-        errorPrefix: 'Auto friend API error',
-        logPrefix: '[Auto friend] Raw response:',
-        warnPrefix: '[callMobileAPIForAutoMessage] Missing choices:',
-        emptyMessage: 'Auto friend API response format is invalid.'
-    });
 }
 
 /**
- * 显示自动消息通知
+ * Hiển thị thông báo tin nhắn tự động
  */
 function showAutoMessageNotification(friend, messageCount) {
-    // 创建通知元素
+    // Tạo phần tử thông báo
     const notification = document.createElement('div');
     notification.className = 'auto-friend-message-notification';
     notification.innerHTML = `
         <div style="display: flex; align-items: center; gap: 10px;">
             <span style="font-size: 24px;">📱</span>
             <div>
-                <div style="font-weight: bold;">${friend.name} 发来了消息</div>
-                <div style="font-size: 12px; opacity: 0.8;">收到 ${messageCount} 条新消息</div>
+                <div style="font-weight: bold;">${friend.name} đã gửi tin nhắn</div>
+                <div style="font-size: 12px; opacity: 0.8;">Nhận được ${messageCount} tin nhắn mới</div>
             </div>
         </div>
     `;
     
-    // 样式
+    // CSS trực tiếp cho thông báo
     notification.style.cssText = `
         position: fixed;
         top: 20px;
@@ -506,7 +428,7 @@ function showAutoMessageNotification(friend, messageCount) {
         cursor: pointer;
     `;
     
-    // 添加动画样式
+    // Thêm các keyframe animation vào head nếu chưa có
     if (!document.getElementById('auto-friend-notification-style')) {
         const style = document.createElement('style');
         style.id = 'auto-friend-notification-style';
@@ -523,7 +445,7 @@ function showAutoMessageNotification(friend, messageCount) {
         document.head.appendChild(style);
     }
     
-    // 点击关闭
+    // Click để đóng
     notification.onclick = () => {
         notification.style.animation = 'slideOut 0.3s ease-in forwards';
         setTimeout(() => notification.remove(), 300);
@@ -531,7 +453,7 @@ function showAutoMessageNotification(friend, messageCount) {
     
     document.body.appendChild(notification);
     
-    // 5秒后自动消失
+    // Tự động biến mất sau 5 giây
     setTimeout(() => {
         if (notification.parentNode) {
             notification.style.animation = 'slideOut 0.3s ease-in forwards';
@@ -540,7 +462,7 @@ function showAutoMessageNotification(friend, messageCount) {
     }, 5000);
 }
 
-// 暴露全局函数
+// Phơi bày hàm ra phạm vi toàn cục
 window.generateAutoFriendMessage = generateAutoFriendMessage;
 
-console.log('[📨好友自动消息] 模块已加载');
+console.log('[📨Tin nhắn bạn bè] Module đã được tải');

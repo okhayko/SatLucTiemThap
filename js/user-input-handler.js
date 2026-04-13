@@ -1,144 +1,144 @@
-// 用户输入处理函数
+// Hàm xử lý đầu vào người dùng
 
-// 发送用户自定义输入
+// Gửi đầu vào tùy chỉnh của người dùng
 async function sendUserInput() {
     const inputBox = document.getElementById('userInput');
     let userText = inputBox.value.trim();
 
     if (!userText) {
-        alert('请输入内容！');
+        alert('Vui lòng nhập nội dung!');
         return;
     }
 
     if (gameState.isProcessing) return;
 
     if (!gameState.isGameStarted) {
-        alert('请先创建角色并开始游戏！');
+        alert('Vui lòng tạo nhân vật và bắt đầu trò chơi trước!');
         return;
     }
 
-    // 🆕 自动附加操作缓存
+    // 🆕 Tự động đính kèm bộ nhớ đệm hành động
     const actionsSummary = getPendingActionsSummary();
     if (actionsSummary) {
         userText = actionsSummary + userText;
     }
 
-    // 🆕 在控制台显示完整的用户输入
-    console.log('📤 [用户输入]', userText);
+    // 🆕 Hiển thị đầu vào người dùng đầy đủ trong console
+    console.log('📤 [Đầu vào người dùng]', userText);
 
-    // 清空输入框
+    // Xóa nội dung khung nhập liệu
     inputBox.value = '';
 
     gameState.isProcessing = true;
 
-    // 显示用户输入
+    // Hiển thị đầu vào người dùng
     displayUserMessage(userText);
 
-    // 添加到历史记录
+    // Thêm vào lịch sử
     gameState.conversationHistory.push({
         role: 'user',
         content: userText
     });
 
-    // 保存当前变量快照（用户消息）
+    // Lưu snapshot biến hiện tại (tin nhắn người dùng)
     gameState.variableSnapshots.push(JSON.parse(JSON.stringify(gameState.variables)));
 
-    // 🆕 清空操作缓存
+    // 🆕 Xóa bộ nhớ đệm hành động
     clearPendingActions();
 
-    // 保存游戏历史
-    saveGameHistory().catch(err => console.error('保存历史失败:', err));
+    // Lưu lịch sử trò chơi
+    saveGameHistory().catch(err => console.error('Lưu lịch sử thất bại:', err));
 
-    // 显示加载提示
+    // Hiển thị thông báo đang tải
     const historyDiv = document.getElementById('gameHistory');
     const loadingDiv = document.createElement('div');
     loadingDiv.className = 'message ai-message';
-    loadingDiv.innerHTML = '<div class="message-content"><span class="loading"></span> AI思考中...</div>';
+    loadingDiv.innerHTML = '<div class="message-content"><span class="loading"></span> AI đang suy nghĩ...</div>';
     loadingDiv.id = 'loading-message';
     historyDiv.appendChild(loadingDiv);
     historyDiv.scrollTop = historyDiv.scrollHeight;
 
     try {
-        // 🎭 用户输入分析（如果启用）
+        // 🎭 Phân tích đầu vào người dùng (nếu được bật)
         let userProfileEnhancement = '';
         if (window.userProfileAnalyzer && window.userProfileAnalyzer.isEnabled()) {
-            console.log('[🎭用户画像] 正在分析用户输入...');
-
-            // 更新加载提示
+            console.log('[🎭Hồ sơ người dùng] Đang phân tích đầu vào người dùng...');
+            
+            // Cập nhật thông báo đang tải
             const loadingEl = document.getElementById('loading-message');
             if (loadingEl) {
-                loadingEl.innerHTML = '<div class="message-content"><span class="loading"></span> 正在分析用户意图...</div>';
+                loadingEl.innerHTML = '<div class="message-content"><span class="loading"></span> Đang phân tích ý định người dùng...</div>';
             }
-
+            
             try {
-                // 构建游戏上下文（传递给分析API）
+                // Xây dựng bối cảnh trò chơi (truyền cho API phân tích)
                 const gameContext = {
-                    currentLocation: gameState.variables.location || '未知',
+                    currentLocation: gameState.variables.location || 'Không rõ',
                     currentScene: gameState.conversationHistory.slice(-2).map(h => h.content?.substring(0, 200)).join('\n'),
-                    characterName: gameState.variables.name || '未知',
-                    realm: gameState.variables.realm || '凡人'
+                    characterName: gameState.variables.name || 'Không rõ',
+                    realm: gameState.variables.realm || 'Phàm nhân'
                 };
-
+                
                 const analysisResult = await window.userProfileAnalyzer.analyze(userText, gameContext);
-
+                
                 if (analysisResult) {
                     userProfileEnhancement = window.userProfileAnalyzer.getEnhancedPrompt(analysisResult);
-                    console.log('[🎭用户画像] 分析完成，增强提示已生成');
+                    console.log('[🎭Hồ sơ người dùng] Phân tích hoàn tất, gợi ý nâng cao đã được tạo');
                 }
             } catch (analysisError) {
-                console.warn('[🎭用户画像] 分析失败，将使用原始输入:', analysisError);
+                console.warn('[🎭Hồ sơ người dùng] Phân tích thất bại, sẽ sử dụng đầu vào gốc:', analysisError);
             }
-
-            // 恢复加载提示
+            
+            // Khôi phục thông báo đang tải
             if (loadingEl) {
-                loadingEl.innerHTML = '<div class="message-content"><span class="loading"></span> AI思考中...</div>';
+                loadingEl.innerHTML = '<div class="message-content"><span class="loading"></span> AI đang suy nghĩ...</div>';
             }
         }
-
-        // 🎯 使用统一函数构建增强提示
+        
+        // 🎯 Sử dụng hàm thống nhất để xây dựng prompt nâng cao
         let enhancedInput = buildEnhancedPrompt(userText);
-
-        // 🎭 如果有用户画像增强，添加到提示中
+        
+        // 🎭 Nếu có tăng cường từ hồ sơ người dùng, thêm vào prompt
         if (userProfileEnhancement) {
             enhancedInput = userProfileEnhancement + '\n\n---\n\n' + enhancedInput;
         }
 
-        // 🆕 在控制台显示完整的增强提示
-        console.log('📤 [原始用户输入]', userText);
+        // 🆕 Hiển thị prompt nâng cao đầy đủ trong console
+        console.log('📤 [Đầu vào người dùng gốc]', userText);
         if (userProfileEnhancement) {
-            console.log('🎭 [用户画像增强]', userProfileEnhancement);
+            console.log('🎭 [Tăng cường hồ sơ người dùng]', userProfileEnhancement);
         }
-        console.log('🤖 [发送给AI的完整Prompt]', enhancedInput);
+        console.log('🤖 [Prompt đầy đủ gửi cho AI]', enhancedInput);
 
-        // 🔧 传入完整的增强提示词用于向量检索（包含用户画像增强 + 统一构建提示词）
-        const response = await callAI(enhancedInput, false, enhancedInput);
+        // 🔧 Truyền đầu vào gốc của người dùng (dùng cho tìm kiếm vector)
+        const response = await callAI(enhancedInput, false, userText);
 
-        // 移除加载提示
+        // Xóa thông báo đang tải
         const loading = document.getElementById('loading-message');
         if (loading) loading.remove();
 
         handleAIResponse(response);
 
-        // 触发动态世界生成（异步，不阻塞主流程）
-        generateDynamicWorld().catch(err => console.error('[动态世界] 生成异常:', err));
+        // Kích hoạt tạo thế giới động (bất đồng bộ, không chặn luồng chính)
+        generateDynamicWorld().catch(err => console.error('[Thế giới động] Lỗi tạo:', err));
 
-        // 📨 触发好友自动消息（异步，不阻塞主流程）
+        // 📨 Kích hoạt tin nhắn bạn bè tự động (bất đồng bộ, không chặn luồng chính)
         if (typeof window.generateAutoFriendMessage === 'function') {
-            window.generateAutoFriendMessage().catch(err => console.error('[📨好友自动消息] 生成异常:', err));
+            window.generateAutoFriendMessage().catch(err => console.error('[📨Tin nhắn bạn bè tự động] Lỗi tạo:', err));
         }
 
     } catch (error) {
-        // 移除加载提示
+        // Xóa thông báo đang tải
         const loading = document.getElementById('loading-message');
         if (loading) loading.remove();
 
-        // ❌ 不要移除用户消息！显示错误和重试按钮
-        displayErrorMessageWithRetry('AI响应失败：' + error.message, async () => {
-            // 移除错误消息
+        // ❌ Không xóa tin nhắn người dùng! Hiển thị lỗi và nút thử lại
+        displayErrorMessageWithRetry('AI phản hồi thất bại: ' + error.message, async () => {
+            // Xóa thông báo lỗi
             const errorDiv = document.getElementById('error-message-with-retry');
             if (errorDiv) errorDiv.remove();
-
-            // 重新生成最后的响应
+            
+            // Tạo lại phản hồi cuối cùng
             await regenerateLastResponse();
         });
     }
@@ -146,796 +146,796 @@ async function sendUserInput() {
     gameState.isProcessing = false;
 }
 
-// 创建思维链显示组件
-function createReasoningDisplay(reasoning) {
-    const container = document.createElement('div');
-    container.className = 'reasoning-container';
+// Tạo thành phần hiển thị chuỗi suy nghĩ (Chain of Thought)
+        function createReasoningDisplay(reasoning) {
+            const container = document.createElement('div');
+            container.className = 'reasoning-container';
 
-    // 创建可折叠的标题
-    const header = document.createElement('div');
-    header.className = 'reasoning-header';
-    header.innerHTML = `
-                <span>🧠 AI思维链</span>
-                <span class="reasoning-toggle">点击展开/折叠</span>
+            // Tạo tiêu đề có thể thu gọn
+            const header = document.createElement('div');
+            header.className = 'reasoning-header';
+            header.innerHTML = `
+                <span>🧠 Chuỗi suy nghĩ AI</span>
+                <span class="reasoning-toggle">Nhấn để mở rộng/thu gọn</span>
             `;
 
-    // 创建内容区域
-    const content = document.createElement('div');
-    content.className = 'reasoning-content';
+            // Tạo vùng nội dung
+            const content = document.createElement('div');
+            content.className = 'reasoning-content';
 
-    // 情况分析
-    if (reasoning.situation) {
-        const section = document.createElement('div');
-        section.className = 'reasoning-section';
-        section.innerHTML = `
-                    <div class="reasoning-section-title">📊 情况分析</div>
+            // Phân tích tình huống
+            if (reasoning.situation) {
+                const section = document.createElement('div');
+                section.className = 'reasoning-section';
+                section.innerHTML = `
+                    <div class="reasoning-section-title">📊 Phân tích tình huống</div>
                     <div class="reasoning-text">${reasoning.situation}</div>
                 `;
-        content.appendChild(section);
-    }
+                content.appendChild(section);
+            }
 
-    // 玩家选择分析
-    if (reasoning.playerChoice) {
-        const section = document.createElement('div');
-        section.className = 'reasoning-section';
-        section.innerHTML = `
-                    <div class="reasoning-section-title">🎯 选择分析</div>
+            // Phân tích lựa chọn của người chơi
+            if (reasoning.playerChoice) {
+                const section = document.createElement('div');
+                section.className = 'reasoning-section';
+                section.innerHTML = `
+                    <div class="reasoning-section-title">🎯 Phân tích lựa chọn</div>
                     <div class="reasoning-text">${reasoning.playerChoice}</div>
                 `;
-        content.appendChild(section);
-    }
+                content.appendChild(section);
+            }
 
-    // 推理链条
-    if (reasoning.logicChain && Array.isArray(reasoning.logicChain)) {
-        const section = document.createElement('div');
-        section.className = 'reasoning-section';
-        section.innerHTML = `<div class="reasoning-section-title">🔗 推理步骤</div>`;
+            // Chuỗi logic
+            if (reasoning.logicChain && Array.isArray(reasoning.logicChain)) {
+                const section = document.createElement('div');
+                section.className = 'reasoning-section';
+                section.innerHTML = `<div class="reasoning-section-title">🔗 Các bước suy luận</div>`;
+                
+                const list = document.createElement('ul');
+                list.className = 'reasoning-chain';
+                reasoning.logicChain.forEach((step, index) => {
+                    const li = document.createElement('li');
+                    li.textContent = step;
+                    list.appendChild(li);
+                });
+                section.appendChild(list);
+                content.appendChild(section);
+            }
 
-        const list = document.createElement('ul');
-        list.className = 'reasoning-chain';
-        reasoning.logicChain.forEach((step, index) => {
-            const li = document.createElement('li');
-            li.textContent = step;
-            list.appendChild(li);
-        });
-        section.appendChild(list);
-        content.appendChild(section);
-    }
-
-    // 最终决策
-    if (reasoning.outcome) {
-        const section = document.createElement('div');
-        section.className = 'reasoning-section';
-        section.innerHTML = `
-                    <div class="reasoning-section-title">✅ 最终决策</div>
+            // Quyết định cuối cùng
+            if (reasoning.outcome) {
+                const section = document.createElement('div');
+                section.className = 'reasoning-section';
+                section.innerHTML = `
+                    <div class="reasoning-section-title">✅ Quyết định cuối cùng</div>
                     <div class="reasoning-text">${reasoning.outcome}</div>
                 `;
-        content.appendChild(section);
-    }
+                content.appendChild(section);
+            }
 
-    // 添加点击事件来折叠/展开
-    header.onclick = () => {
-        content.classList.toggle('expanded');
-    };
+            // Thêm sự kiện click để thu gọn/mở rộng
+            header.onclick = () => {
+                content.classList.toggle('expanded');
+            };
 
-    container.appendChild(header);
-    container.appendChild(content);
+            container.appendChild(header);
+            container.appendChild(content);
 
-    return container;
-}
+            return container;
+        }
 
-// 显示AI消息
-// isRestore: 是否从存档恢复（恢复时不自动生成图片，只显示"点击生成"按钮）
-function displayAIMessage(story, options, reasoning = null, imgPrompt = null, isRestore = false) {
-    const historyDiv = document.getElementById('gameHistory');
+        // Hiển thị tin nhắn AI
+        // isRestore: Có phải khôi phục từ file lưu hay không (khi khôi phục không tự động tạo ảnh, chỉ hiện nút "Nhấn để tạo")
+        function displayAIMessage(story, options, reasoning = null, imgPrompt = null, isRestore = false) {
+            const historyDiv = document.getElementById('gameHistory');
 
-    const messageDiv = document.createElement('div');
-    messageDiv.className = 'message ai-message';
-    messageDiv.setAttribute('data-message-index', historyDiv.children.length);
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message ai-message';
+            messageDiv.setAttribute('data-message-index', historyDiv.children.length);
 
-    const headerDiv = document.createElement('div');
-    headerDiv.className = 'message-header';
+            const headerDiv = document.createElement('div');
+            headerDiv.className = 'message-header';
 
-    // 添加复选框（仅在删除模式下显示）
-    const checkbox = document.createElement('input');
-    checkbox.type = 'checkbox';
-    checkbox.className = 'message-checkbox';
-    checkbox.style.display = gameState.deleteMode ? 'inline-block' : 'none';
-    checkbox.onclick = (e) => {
-        e.stopPropagation();
-        handleMessageCheck(messageDiv);
-    };
+            // Thêm hộp kiểm (chỉ hiển thị trong chế độ xóa)
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = 'message-checkbox';
+            checkbox.style.display = gameState.deleteMode ? 'inline-block' : 'none';
+            checkbox.onclick = (e) => {
+                e.stopPropagation();
+                handleMessageCheck(messageDiv);
+            };
 
-    headerDiv.innerHTML = `
-                <span>世界</span>
+            headerDiv.innerHTML = `
+                <span>Thế giới</span>
                 <button class="regenerate-btn" onclick="regenerateLastResponseDebounced()">🔄</button>
             `;
-    headerDiv.insertBefore(checkbox, headerDiv.firstChild);
+            headerDiv.insertBefore(checkbox, headerDiv.firstChild);
 
-    messageDiv.appendChild(headerDiv);
+            messageDiv.appendChild(headerDiv);
 
-    // 添加思维链显示（如果有且用户开启了显示）
-    const showReasoningCheckbox = document.getElementById('showReasoning');
-    if (reasoning && showReasoningCheckbox && showReasoningCheckbox.checked) {
-        const reasoningDiv = createReasoningDisplay(reasoning);
-        messageDiv.appendChild(reasoningDiv);
-    }
+            // Thêm hiển thị chuỗi suy nghĩ (nếu có và người dùng bật hiển thị)
+            const showReasoningCheckbox = document.getElementById('showReasoning');
+            if (reasoning && showReasoningCheckbox && showReasoningCheckbox.checked) {
+                const reasoningDiv = createReasoningDisplay(reasoning);
+                messageDiv.appendChild(reasoningDiv);
+            }
 
-    const contentDiv = document.createElement('div');
-    contentDiv.className = 'message-content';
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            
+            // 🎨 Nếu bật NovelAI và câu chuyện chứa định dạng img:, xử lý từ gợi ý ảnh
+            const hasImagePrompt = story && story.includes('img:');
+            if (hasImagePrompt && window.novelAIGenerator && window.novelAIGenerator.enabled && typeof processStoryWithImages === 'function') {
+                contentDiv.innerHTML = processStoryWithImages(story);
+            } else {
+                contentDiv.textContent = story;
+            }
 
-    // 🎨 如果启用了 NovelAI 且故事中包含 img: 格式，处理图片提示词
-    const hasImagePrompt = story && story.includes('img:');
-    if (hasImagePrompt && window.novelAIGenerator && window.novelAIGenerator.enabled && typeof processStoryWithImages === 'function') {
-        contentDiv.innerHTML = processStoryWithImages(story);
-    } else {
-        contentDiv.textContent = story;
-    }
-
-    messageDiv.appendChild(contentDiv);
-
-    // 🎨 如果有独立的 img 字段且启用了 NovelAI，生成图片
-    console.log('[displayAIMessage] 🖼️ 收到 imgPrompt:', imgPrompt ? imgPrompt.substring(0, 50) + '...' : '无');
-    console.log('[displayAIMessage] 🎨 NovelAI 启用状态:', window.novelAIGenerator ? window.novelAIGenerator.enabled : 'generator不存在');
-    console.log('[displayAIMessage] 📦 isRestore:', isRestore);
-    if (imgPrompt && window.novelAIGenerator && window.novelAIGenerator.enabled) {
-        const imgContainer = document.createElement('div');
-        imgContainer.className = 'nai-image-container';
-
-        // 🎨 如果是存档恢复，显示可编辑的提示词界面
-        if (isRestore) {
-            // 生成唯一ID用于标识这个编辑器
-            const editorId = 'nai-editor-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-            imgContainer.innerHTML = `
+            messageDiv.appendChild(contentDiv);
+            
+            // 🎨 Nếu có trường img độc lập và bật NovelAI, tạo ảnh
+            console.log('[displayAIMessage] 🖼️ Nhận được imgPrompt:', imgPrompt ? imgPrompt.substring(0, 50) + '...' : 'Không');
+            console.log('[displayAIMessage] 🎨 Trạng thái NovelAI:', window.novelAIGenerator ? window.novelAIGenerator.enabled : 'generator không tồn tại');
+            console.log('[displayAIMessage] 📦 isRestore:', isRestore);
+            if (imgPrompt && window.novelAIGenerator && window.novelAIGenerator.enabled) {
+                const imgContainer = document.createElement('div');
+                imgContainer.className = 'nai-image-container';
+                
+                // 🎨 Nếu là khôi phục từ file lưu, hiển thị giao diện từ gợi ý có thể chỉnh sửa
+                if (isRestore) {
+                    // Tạo ID duy nhất để định danh trình chỉnh sửa này
+                    const editorId = 'nai-editor-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+                    imgContainer.innerHTML = `
                         <div class="nai-image-restore-placeholder" data-editor-id="${editorId}">
                             <div class="nai-restore-actions">
                                 <button class="nai-btn nai-restore-generate-btn" onclick="generateRestoredImageFromEditor('${editorId}')">
-                                    🖼️ 生成图片
+                                    🖼️ Tạo hình ảnh
                                 </button>
                                 <button class="nai-btn nai-view-prompt-btn" onclick="togglePromptEditor('${editorId}')">
-                                    📝 查看/编辑提示词
+                                    📝 Xem/Chỉnh sửa từ gợi ý
                                 </button>
                             </div>
                             <div class="nai-prompt-editor-container" id="${editorId}" style="display: none;">
                                 <div class="nai-prompt-editor-header">
-                                    <span>✏️ 编辑提示词</span>
-                                    <button class="nai-btn nai-btn-small" onclick="togglePromptEditor('${editorId}')">收起</button>
+                                    <span>✏️ Chỉnh sửa từ gợi ý</span>
+                                    <button class="nai-btn nai-btn-small" onclick="togglePromptEditor('${editorId}')">Thu gọn</button>
                                 </div>
                                 <textarea class="nai-prompt-textarea" id="${editorId}-textarea" rows="4">${imgPrompt}</textarea>
                                 <div class="nai-prompt-editor-footer">
-                                    <span class="nai-prompt-char-count">字符数: ${imgPrompt.length}</span>
+                                    <span class="nai-prompt-char-count">Số ký tự: ${imgPrompt.length}</span>
                                     <div class="nai-prompt-editor-buttons">
-                                        <button class="nai-btn nai-btn-reset" onclick="resetPromptEditor('${editorId}', '${imgPrompt.replace(/'/g, "\\'")}')">🔄 重置</button>
-                                        <button class="nai-btn nai-btn-generate" onclick="generateRestoredImageFromEditor('${editorId}')">🎨 生成图片</button>
+                                        <button class="nai-btn nai-btn-reset" onclick="resetPromptEditor('${editorId}', '${imgPrompt.replace(/'/g, "\\'")}')">🔄 Đặt lại</button>
+                                        <button class="nai-btn nai-btn-generate" onclick="generateRestoredImageFromEditor('${editorId}')">🎨 Tạo hình ảnh</button>
                                     </div>
                                 </div>
                             </div>
                             <div class="nai-image-prompt-preview">
-                                提示词预览: ${imgPrompt.substring(0, 80)}${imgPrompt.length > 80 ? '...' : ''}
+                                Xem trước từ gợi ý: ${imgPrompt.substring(0, 80)}${imgPrompt.length > 80 ? '...' : ''}
                             </div>
                         </div>
                     `;
-            // 存储原始提示词
-            imgContainer.dataset.originalPrompt = imgPrompt;
-            messageDiv.appendChild(imgContainer);
-        } else {
-            // 正常生成流程
-            imgContainer.innerHTML = `
+                    // Lưu từ gợi ý gốc
+                    imgContainer.dataset.originalPrompt = imgPrompt;
+                    messageDiv.appendChild(imgContainer);
+                } else {
+                    // Quy trình tạo bình thường
+                    imgContainer.innerHTML = `
                         <div class="nai-image-loading">
-                            <div>🎨 正在生成插图...</div>
+                            <div>🎨 Đang tạo minh họa...</div>
                             <div class="nai-image-prompt-preview">${imgPrompt.substring(0, 80)}...</div>
                         </div>
                     `;
-            messageDiv.appendChild(imgContainer);
-
-            // 异步生成图片
-            (async () => {
-                try {
-                    console.log('[NovelAI] 🎨 开始生成图片:', imgPrompt.substring(0, 50) + '...');
-                    const imageBase64 = await window.novelAIGenerator.generateImage(imgPrompt);
-
-                    // 检查返回值是否已包含 data URL 前缀
-                    const imageSrc = imageBase64.startsWith('data:') ? imageBase64 : `data:image/png;base64,${imageBase64}`;
-
-                    imgContainer.innerHTML = `
+                    messageDiv.appendChild(imgContainer);
+                    
+                    // Tạo ảnh bất đồng bộ
+                    (async () => {
+                        try {
+                            console.log('[NovelAI] 🎨 Bắt đầu tạo ảnh:', imgPrompt.substring(0, 50) + '...');
+                            const imageBase64 = await window.novelAIGenerator.generateImage(imgPrompt);
+                            
+                            // Kiểm tra xem giá trị trả về đã bao gồm tiền tố data URL chưa
+                            const imageSrc = imageBase64.startsWith('data:') ? imageBase64 : `data:image/png;base64,${imageBase64}`;
+                            
+                            imgContainer.innerHTML = `
                                 <div class="nai-generated-image-container">
                                     <img class="nai-generated-image" src="${imageSrc}" 
-                                         onclick="openNAIImageModal(this.src)" title="点击放大" />
+                                         onclick="openNAIImageModal(this.src)" title="Nhấn để phóng to" />
                                     <div class="nai-image-actions">
-                                        <button class="nai-btn" onclick="this.parentElement.nextElementSibling.style.display = this.parentElement.nextElementSibling.style.display === 'none' ? 'block' : 'none'">📝 提示词</button>
-                                        <button class="nai-btn" onclick="regenerateNAIImage(this, '${imgPrompt.replace(/'/g, "\\'")}')">🔄 重新生成</button>
+                                        <button class="nai-btn" onclick="this.parentElement.nextElementSibling.style.display = this.parentElement.nextElementSibling.style.display === 'none' ? 'block' : 'none'">📝 Từ gợi ý</button>
+                                        <button class="nai-btn" onclick="regenerateNAIImage(this, '${imgPrompt.replace(/'/g, "\\'")}')">🔄 Tạo lại</button>
                                     </div>
                                     <div class="nai-image-prompt-hidden" style="display:none;"><code>${imgPrompt}</code></div>
                                 </div>
                             `;
-                    console.log('[NovelAI] ✅ 图片生成成功');
-                } catch (error) {
-                    console.error('[NovelAI] ❌ 图片生成失败:', error);
-                    imgContainer.innerHTML = `
+                            console.log('[NovelAI] ✅ Tạo ảnh thành công');
+                        } catch (error) {
+                            console.error('[NovelAI] ❌ Tạo ảnh thất bại:', error);
+                            imgContainer.innerHTML = `
                                 <div class="nai-image-error">
-                                    <strong>❌ 图片生成失败</strong>
+                                    <strong>❌ Tạo ảnh thất bại</strong>
                                     <div>${error.message}</div>
-                                    <button class="nai-btn" onclick="regenerateNAIImage(this, '${imgPrompt.replace(/'/g, "\\'")}')">🔄 重试</button>
+                                    <button class="nai-btn" onclick="regenerateNAIImage(this, '${imgPrompt.replace(/'/g, "\\'")}')">🔄 Thử lại</button>
                                 </div>
                             `;
+                        }
+                    })();
                 }
-            })();
-        }
-    }
-
-    // 添加选项
-    if (options && options.length > 0) {
-        const optionsDiv = document.createElement('div');
-        optionsDiv.className = 'options-container';
-
-        // 选项图标映射 - 白虎宗游戏只显示4个选项（移除战斗）
-        const isBhzGame = window.location.pathname.includes('game-bhz.html') || document.title.includes('白虎宗');
-        const optionIcons = isBhzGame ? ['💬', '🚪', '⚡', '💕'] : ['💬', '🚪', '⚡', '💕', '⚔️'];
-        const optionTitles = isBhzGame ? ['对话/交互', '跳过/离开', '转折/行动', 'R18选项'] : ['对话/交互', '跳过/离开', '转折/行动', 'R18选项', '回合制战斗'];
-
-        // 白虎宗游戏只处理前4个选项
-        const maxOptions = isBhzGame ? 4 : options.length;
-        options.slice(0, maxOptions).forEach((option, index) => {
-            const btn = document.createElement('button');
-            btn.className = 'option-btn';
-
-            // 确保option是字符串
-            const optionText = typeof option === 'string' ? option : String(option);
-
-            // 解析属性要求
-            const requirement = parseAttributeRequirement(optionText);
-            const checkResult = checkAttributeRequirement(requirement);
-
-            // 添加图标
-            const icon = optionIcons[index] || '📌';
-            const title = optionTitles[index] || '选项';
-
-            // 构建显示文本
-            let displayText = `${icon} ${requirement.cleanText}`;
-
-            // 如果有属性要求，添加状态显示
-            if (requirement.hasRequirement) {
-                const statusIcon = checkResult.met ? '✅' : '❌';
-                const statusClass = checkResult.met ? 'requirement-met' : 'requirement-not-met';
-                const reqText = `${checkResult.attributeName}${requirement.operator}${requirement.value}`;
-                const currentText = `当前:${checkResult.currentValue}`;
-
-                displayText += ` <span class="option-requirement ${statusClass}">${statusIcon}${reqText} (${currentText})</span>`;
-
-                // 设置tooltip
-                const tooltipText = checkResult.met
-                    ? `${title} - 属性检定：通过`
-                    : `${title} - 属性检定：未通过（可能失败）`;
-                btn.setAttribute('title', tooltipText);
-            } else {
-                btn.setAttribute('title', title);
             }
 
-            btn.innerHTML = displayText;
+            // Thêm các tùy chọn
+            if (options && options.length > 0) {
+                const optionsDiv = document.createElement('div');
+                optionsDiv.className = 'options-container';
 
-            // 存储原始选项和检定结果
-            btn.setAttribute('data-option', optionText);
-            btn.setAttribute('data-check-result', JSON.stringify(checkResult));
+                // Bản đồ biểu tượng tùy chọn - Game Bạch Hổ Tông chỉ hiển thị 4 tùy chọn (bỏ chiến đấu)
+                const isBhzGame = window.location.pathname.includes('game-bhz.html') || document.title.includes('Bạch Hổ Tông');
+                const optionIcons = isBhzGame ? ['💬', '🚪', '⚡', '💕'] : ['💬', '🚪', '⚡', '💕', '⚔️'];
+                const optionTitles = isBhzGame ? ['Đối thoại/Tương tác', 'Bỏ qua/Rời đi', 'Bước ngoặt/Hành động', 'Tùy chọn R18'] : ['Đối thoại/Tương tác', 'Bỏ qua/Rời đi', 'Bước ngoặt/Hành động', 'Tùy chọn R18', 'Chiến đấu theo lượt'];
 
-            btn.onclick = async () => {
-                try {
-                    // 尝试使用全局 selectOption 函数
-                    if (typeof window.selectOption === 'function') {
-                        await window.selectOption(optionText);
+                // Game Bạch Hổ Tông chỉ xử lý 4 tùy chọn đầu
+                const maxOptions = isBhzGame ? 4 : options.length;
+                options.slice(0, maxOptions).forEach((option, index) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'option-btn';
+
+                    // Đảm bảo option là chuỗi
+                    const optionText = typeof option === 'string' ? option : String(option);
+
+                    // Phân tích yêu cầu thuộc tính
+                    const requirement = parseAttributeRequirement(optionText);
+                    const checkResult = checkAttributeRequirement(requirement);
+
+                    // Thêm biểu tượng
+                    const icon = optionIcons[index] || '📌';
+                    const title = optionTitles[index] || 'Tùy chọn';
+
+                    // Xây dựng văn bản hiển thị
+                    let displayText = `${icon} ${requirement.cleanText}`;
+
+                    // Nếu có yêu cầu thuộc tính, thêm hiển thị trạng thái
+                    if (requirement.hasRequirement) {
+                        const statusIcon = checkResult.met ? '✅' : '❌';
+                        const statusClass = checkResult.met ? 'requirement-met' : 'requirement-not-met';
+                        const reqText = `${checkResult.attributeName}${requirement.operator}${requirement.value}`;
+                        const currentText = `Hiện tại:${checkResult.currentValue}`;
+
+                        displayText += ` <span class="option-requirement ${statusClass}">${statusIcon}${reqText} (${currentText})</span>`;
+
+                        // Thiết lập tooltip
+                        const tooltipText = checkResult.met
+                            ? `${title} - Kiểm tra thuộc tính: Đạt`
+                            : `${title} - Kiểm tra thuộc tính: Không đạt (Có thể thất bại)`;
+                        btn.setAttribute('title', tooltipText);
                     } else {
-                        // 备用选项处理逻辑
-                        console.log('使用备用选项处理逻辑');
+                        btn.setAttribute('title', title);
+                    }
 
-                        if (gameState.isProcessing) return;
+                    btn.innerHTML = displayText;
 
-                        gameState.isProcessing = true;
+                    // Lưu tùy chọn gốc và kết quả kiểm tra
+                    btn.setAttribute('data-option', optionText);
+                    btn.setAttribute('data-check-result', JSON.stringify(checkResult));
 
-                        // 显示用户选择
-                        displayUserMessage(optionText);
-
-                        // 添加到历史记录
-                        gameState.conversationHistory.push({
-                            role: 'user',
-                            content: optionText
-                        });
-
-                        // 保存游戏历史
-                        if (typeof saveGameHistory === 'function') {
-                            saveGameHistory().catch(err => console.error('保存历史失败:', err));
-                        }
-
-                        // 显示加载提示
-                        const historyDiv = document.getElementById('gameHistory');
-                        const loadingDiv = document.createElement('div');
-                        loadingDiv.className = 'message ai-message';
-                        loadingDiv.innerHTML = '<div class="message-content"><span class="loading"></span> AI思考中...</div>';
-                        loadingDiv.id = 'loading-message';
-                        historyDiv.appendChild(loadingDiv);
-                        historyDiv.scrollTop = historyDiv.scrollHeight;
-
+                    btn.onclick = async () => {
                         try {
-                            // 🎭 用户输入分析（如果启用）
-                            let optionEnhancement = '';
-                            if (window.userProfileAnalyzer && window.userProfileAnalyzer.isEnabled()) {
-                                try {
-                                    const loadingEl = document.getElementById('loading-message');
-                                    if (loadingEl) {
-                                        loadingEl.innerHTML = '<div class="message-content"><span class="loading"></span> 正在分析用户意图...</div>';
-                                    }
-
-                                    const gameContext = {
-                                        currentLocation: gameState.variables.location || '未知',
-                                        characterName: gameState.variables.name || '未知',
-                                        realm: gameState.variables.realm || '凡人'
-                                    };
-
-                                    const analysisResult = await window.userProfileAnalyzer.analyze(optionText, gameContext);
-
-                                    if (analysisResult) {
-                                        optionEnhancement = window.userProfileAnalyzer.getEnhancedPrompt(analysisResult);
-                                    }
-
-                                    if (loadingEl) {
-                                        loadingEl.innerHTML = '<div class="message-content"><span class="loading"></span> AI思考中...</div>';
-                                    }
-                                } catch (analysisErr) {
-                                    console.warn('[🎭用户画像] 选项分析失败:', analysisErr);
-                                }
-                            }
-
-                            // 调用AI
-                            if (typeof callAI === 'function') {
-                                let enhancedOption = optionText;
-                                if (optionEnhancement) {
-                                    enhancedOption = optionEnhancement + '\n\n---\n\n用户选择：' + optionText;
-                                }
-                                // 🔧 传入完整的增强提示词用于向量检索
-                                const response = await callAI(enhancedOption, false, enhancedOption);
-
-                                // 移除加载提示
-                                const loading = document.getElementById('loading-message');
-                                if (loading) loading.remove();
-
-                                // 处理AI响应
-                                if (typeof handleAIResponse === 'function') {
-                                    handleAIResponse(response);
-                                }
+                            // Cố gắng sử dụng hàm toàn cục selectOption
+                            if (typeof window.selectOption === 'function') {
+                                await window.selectOption(optionText);
                             } else {
-                                throw new Error('AI调用函数未定义');
+                                // Logic xử lý tùy chọn dự phòng
+                                console.log('Sử dụng logic xử lý tùy chọn dự phòng');
+                                
+                                if (gameState.isProcessing) return;
+                                
+                                gameState.isProcessing = true;
+                                
+                                // Hiển thị lựa chọn người dùng
+                                displayUserMessage(optionText);
+                                
+                                // Thêm vào lịch sử
+                                gameState.conversationHistory.push({
+                                    role: 'user',
+                                    content: optionText
+                                });
+                                
+                                // Lưu lịch sử trò chơi
+                                if (typeof saveGameHistory === 'function') {
+                                    saveGameHistory().catch(err => console.error('Lưu lịch sử thất bại:', err));
+                                }
+                                
+                                // Hiển thị thông báo đang tải
+                                const historyDiv = document.getElementById('gameHistory');
+                                const loadingDiv = document.createElement('div');
+                                loadingDiv.className = 'message ai-message';
+                                loadingDiv.innerHTML = '<div class="message-content"><span class="loading"></span> AI đang suy nghĩ...</div>';
+                                loadingDiv.id = 'loading-message';
+                                historyDiv.appendChild(loadingDiv);
+                                historyDiv.scrollTop = historyDiv.scrollHeight;
+                                
+                                try {
+                                    // 🎭 Phân tích đầu vào người dùng (nếu được bật)
+                                    let optionEnhancement = '';
+                                    if (window.userProfileAnalyzer && window.userProfileAnalyzer.isEnabled()) {
+                                        try {
+                                            const loadingEl = document.getElementById('loading-message');
+                                            if (loadingEl) {
+                                                loadingEl.innerHTML = '<div class="message-content"><span class="loading"></span> Đang phân tích ý định người dùng...</div>';
+                                            }
+                                            
+                                            const gameContext = {
+                                                currentLocation: gameState.variables.location || 'Không rõ',
+                                                characterName: gameState.variables.name || 'Không rõ',
+                                                realm: gameState.variables.realm || 'Phàm nhân'
+                                            };
+                                            
+                                            const analysisResult = await window.userProfileAnalyzer.analyze(optionText, gameContext);
+                                            
+                                            if (analysisResult) {
+                                                optionEnhancement = window.userProfileAnalyzer.getEnhancedPrompt(analysisResult);
+                                            }
+                                            
+                                            if (loadingEl) {
+                                                loadingEl.innerHTML = '<div class="message-content"><span class="loading"></span> AI đang suy nghĩ...</div>';
+                                            }
+                                        } catch (analysisErr) {
+                                            console.warn('[🎭Hồ sơ người dùng] Phân tích tùy chọn thất bại:', analysisErr);
+                                        }
+                                    }
+                                    
+                                    // Gọi AI
+                                    if (typeof callAI === 'function') {
+                                        let enhancedOption = optionText;
+                                        if (optionEnhancement) {
+                                            enhancedOption = optionEnhancement + '\n\n---\n\nLựa chọn của người dùng：' + optionText;
+                                        }
+                                        
+                                        const response = await callAI(enhancedOption, false, optionText);
+                                        
+                                        // Xóa thông báo đang tải
+                                        const loading = document.getElementById('loading-message');
+                                        if (loading) loading.remove();
+                                        
+                                        // Xử lý phản hồi AI
+                                        if (typeof handleAIResponse === 'function') {
+                                            handleAIResponse(response);
+                                        }
+                                    } else {
+                                        throw new Error('Hàm gọi AI chưa được định nghĩa');
+                                    }
+                                } catch (error) {
+                                    // Xóa thông báo đang tải
+                                    const loading = document.getElementById('loading-message');
+                                    if (loading) loading.remove();
+                                    
+                                    console.error('Xử lý tùy chọn thất bại:', error);
+                                    alert('Có lỗi khi xử lý tùy chọn: ' + error.message);
+                                }
+                                
+                                gameState.isProcessing = false;
                             }
                         } catch (error) {
-                            // 移除加载提示
-                            const loading = document.getElementById('loading-message');
-                            if (loading) loading.remove();
-
-                            console.error('选项处理失败:', error);
-                            alert('处理选项时出错：' + error.message);
+                            console.error('Xử lý click tùy chọn thất bại:', error);
+                            alert('Xử lý tùy chọn thất bại, vui lòng tải lại trang và thử lại');
                         }
+                    };
+                    optionsDiv.appendChild(btn);
+                });
 
-                        gameState.isProcessing = false;
-                    }
-                } catch (error) {
-                    console.error('选项点击处理失败:', error);
-                    alert('选项处理失败，请刷新页面重试');
-                }
-            };
-            optionsDiv.appendChild(btn);
-        });
+                messageDiv.appendChild(optionsDiv);
+            }
 
-        messageDiv.appendChild(optionsDiv);
-    }
+            historyDiv.appendChild(messageDiv);
+            historyDiv.scrollTop = historyDiv.scrollHeight;
+        }
 
-    historyDiv.appendChild(messageDiv);
-    historyDiv.scrollTop = historyDiv.scrollHeight;
-}
+        // Biến toàn cục: Lưu callback thử lại cho lỗi hiện tại
+        let currentErrorRetryCallback = null;
 
-// 全局变量：保存当前错误的重试回调
-let currentErrorRetryCallback = null;
+        // Hiển thị thông báo lỗi và nút thử lại
+        function displayErrorMessageWithRetry(errorMessage, retryCallback) {
+            const historyDiv = document.getElementById('gameHistory');
 
-// 显示错误消息和重试按钮
-function displayErrorMessageWithRetry(errorMessage, retryCallback) {
-    const historyDiv = document.getElementById('gameHistory');
+            // Xóa thông báo lỗi đã tồn tại
+            const existingError = document.getElementById('error-message-with-retry');
+            if (existingError) existingError.remove();
 
-    // 移除已存在的错误消息
-    const existingError = document.getElementById('error-message-with-retry');
-    if (existingError) existingError.remove();
+            // Lưu hàm callback vào biến toàn cục
+            currentErrorRetryCallback = retryCallback;
 
-    // 保存回调函数到全局变量
-    currentErrorRetryCallback = retryCallback;
+            // 🔍 Tạo thông tin chẩn đoán
+            const diagnosticInfo = generateDiagnosticInfo(errorMessage);
 
-    // 🔍 生成诊断信息
-    const diagnosticInfo = generateDiagnosticInfo(errorMessage);
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message ai-message';
+            messageDiv.id = 'error-message-with-retry';
+            messageDiv.style.background = 'linear-gradient(135deg, #ffe6e6 0%, #ffd6d6 100%)';
 
-    const messageDiv = document.createElement('div');
-    messageDiv.className = 'message ai-message';
-    messageDiv.id = 'error-message-with-retry';
-    messageDiv.style.background = 'linear-gradient(135deg, #ffe6e6 0%, #ffd6d6 100%)';
+            const headerDiv = document.createElement('div');
+            headerDiv.className = 'message-header';
+            headerDiv.innerHTML = '<span>❌ Lỗi</span>';
 
-    const headerDiv = document.createElement('div');
-    headerDiv.className = 'message-header';
-    headerDiv.innerHTML = '<span>❌ 错误</span>';
-
-    const contentDiv = document.createElement('div');
-    contentDiv.className = 'message-content';
-    contentDiv.style.color = '#c85a54';
-    contentDiv.innerHTML = `
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            contentDiv.style.color = '#c85a54';
+            contentDiv.innerHTML = `
                 <div style="font-weight: bold; margin-bottom: 10px; line-height: 1.6;">${errorMessage}</div>
                 ${diagnosticInfo}
                 <div style="margin-top: 15px; display: flex; gap: 10px;">
                     <button class="btn btn-primary" onclick="retryLastError()" style="flex: 1;">
-                        🔄 重新生成
+                        🔄 Tạo lại
                     </button>
                     <button class="btn btn-secondary" onclick="dismissError()" style="flex: 1;">
-                        ❌ 关闭错误
+                        ❌ Đóng lỗi
                     </button>
                 </div>
                 <div style="margin-top: 10px; padding: 10px; background: rgba(255,255,255,0.5); border-radius: 5px; font-size: 12px; color: #666;">
-                    💡 提示：如果多次失败，请打开浏览器控制台（F12）查看详细错误信息。
+                    💡 Gợi ý: Nếu thất bại nhiều lần, vui lòng mở bảng điều khiển trình duyệt (F12) để xem thông tin lỗi chi tiết.
                 </div>
             `;
 
-    messageDiv.appendChild(headerDiv);
-    messageDiv.appendChild(contentDiv);
-    historyDiv.appendChild(messageDiv);
-    historyDiv.scrollTop = historyDiv.scrollHeight;
-}
+            messageDiv.appendChild(headerDiv);
+            messageDiv.appendChild(contentDiv);
+            historyDiv.appendChild(messageDiv);
+            historyDiv.scrollTop = historyDiv.scrollHeight;
+        }
 
-// 生成诊断信息
-function generateDiagnosticInfo(errorMessage) {
-    let suggestions = [];
+        // Tạo thông tin chẩn đoán
+        function generateDiagnosticInfo(errorMessage) {
+            let suggestions = [];
 
-    // 根据错误类型提供建议
-    if (errorMessage.includes('Failed to fetch') || errorMessage.includes('NetworkError')) {
-        suggestions.push('🔌 网络连接问题 - 检查网络或 API 端点是否正确');
-    }
-    if (errorMessage.includes('401') || errorMessage.includes('Unauthorized')) {
-        suggestions.push('🔑 API密钥错误 - 请检查密钥是否正确');
-    }
-    if (errorMessage.includes('429') || errorMessage.includes('rate limit')) {
-        suggestions.push('⏰ API调用频率限制 - 请稍后再试');
-    }
-    if (errorMessage.includes('500') || errorMessage.includes('502') || errorMessage.includes('503')) {
-        suggestions.push('🚨 API服务器错误 - 稍后重试或更换API');
-    }
-    if (errorMessage.includes('timeout')) {
-        suggestions.push('⏱️ 请求超时 - 降低字数要求或更换网络');
-    }
-    if (errorMessage.includes('解析') || errorMessage.includes('JSON')) {
-        suggestions.push('📄 JSON解析失败 - 可能是 API 截断输出');
-        suggestions.push('🔧 建议：增加"最大输出Tokens"到 16384 或更高');
-    }
+            // Cung cấp gợi ý dựa trên loại lỗi
+            if (errorMessage.includes('Failed to fetch') || errorMessage.includes('NetworkError')) {
+                suggestions.push('🔌 Vấn đề kết nối mạng - Kiểm tra mạng hoặc điểm cuối API có đúng không');
+            }
+            if (errorMessage.includes('401') || errorMessage.includes('Unauthorized')) {
+                suggestions.push('🔑 Lỗi khóa API - Vui lòng kiểm tra khóa có đúng không');
+            }
+            if (errorMessage.includes('429') || errorMessage.includes('rate limit')) {
+                suggestions.push('⏰ Giới hạn tần suất gọi API - Vui lòng thử lại sau');
+            }
+            if (errorMessage.includes('500') || errorMessage.includes('502') || errorMessage.includes('503')) {
+                suggestions.push('🚨 Lỗi máy chủ API - Thử lại sau hoặc thay đổi API');
+            }
+            if (errorMessage.includes('timeout')) {
+                suggestions.push('⏱️ Yêu cầu hết thời gian - Giảm yêu cầu số từ hoặc thay đổi mạng');
+            }
+            if (errorMessage.includes('解析') || errorMessage.includes('JSON')) {
+                suggestions.push('📄 Phân tích JSON thất bại - Có thể API cắt bớt đầu ra');
+                suggestions.push('🔧 Gợi ý: Tăng "Token đầu ra tối đa" lên 16384 hoặc cao hơn');
+            }
 
-    if (suggestions.length === 0) {
-        suggestions.push('❓ 未知错误 - 查看控制台（F12）了解详情');
-    }
+            if (suggestions.length === 0) {
+                suggestions.push('❓ Lỗi không xác định - Xem bảng điều khiển (F12) để biết chi tiết');
+            }
 
-    return `
+            return `
                 <div style="margin-top: 10px; padding: 10px; background: rgba(255,200,200,0.3); border-radius: 5px; border-left: 3px solid #c85a54;">
-                    <div style="font-weight: bold; font-size: 12px; margin-bottom: 5px;">🔍 可能的解决方案：</div>
+                    <div style="font-weight: bold; font-size: 12px; margin-bottom: 5px;">🔍 Các giải pháp khả thi:</div>
                     ${suggestions.map(s => `<div style="font-size: 11px; margin: 3px 0;">• ${s}</div>`).join('')}
                 </div>
             `;
-}
+        }
 
-// 重试最后的错误
-async function retryLastError() {
-    if (currentErrorRetryCallback) {
-        await currentErrorRetryCallback();
-    } else {
-        alert('没有可重试的操作！');
-    }
-}
-
-// 关闭错误消息
-function dismissError() {
-    const errorDiv = document.getElementById('error-message-with-retry');
-    if (errorDiv) errorDiv.remove();
-    currentErrorRetryCallback = null;
-    gameState.isProcessing = false;
-}
-
-// 显示用户消息
-function displayUserMessage(message, forceRender = false) {
-    const historyDiv = document.getElementById('gameHistory');
-    // 调试模式：不渲染用户楼层，直接输出到调试区
-    // forceRender参数可以强制渲染（用于加载存档时）
-    const debugCheckbox = document.getElementById('debugMode');
-    if (!forceRender && debugCheckbox && debugCheckbox.checked) {
-        appendDebug('USER', message);
-        return;
-    }
-
-    const messageDiv = document.createElement('div');
-    messageDiv.className = 'message user-message';
-    const messageIndex = historyDiv.children.length;
-    messageDiv.setAttribute('data-message-index', messageIndex);
-
-    const headerDiv = document.createElement('div');
-    headerDiv.className = 'message-header';
-
-    // 添加复选框（仅在删除模式下显示）
-    const checkbox = document.createElement('input');
-    checkbox.type = 'checkbox';
-    checkbox.className = 'message-checkbox';
-    checkbox.style.display = gameState.deleteMode ? 'inline-block' : 'none';
-    checkbox.onclick = (e) => {
-        e.stopPropagation();
-        handleMessageCheck(messageDiv);
-    };
-
-    // 添加操作按钮容器
-    const actionsDiv = document.createElement('div');
-    actionsDiv.style.cssText = 'display: flex; gap: 5px; align-items: center;';
-
-    // 编辑按钮
-    const editBtn = document.createElement('button');
-    editBtn.className = 'regenerate-btn';
-    editBtn.innerHTML = '✏️';
-    editBtn.style.background = '#17a2b8';
-    editBtn.onclick = () => editUserMessage(messageIndex);
-
-    // 重新发送按钮
-    const resendBtn = document.createElement('button');
-    resendBtn.className = 'regenerate-btn';
-    resendBtn.innerHTML = '🔄';
-    resendBtn.onclick = () => resendUserMessage(messageIndex);
-
-    actionsDiv.appendChild(editBtn);
-    actionsDiv.appendChild(resendBtn);
-
-    headerDiv.innerHTML = '<span>👤 你的选择</span>';
-    headerDiv.insertBefore(checkbox, headerDiv.firstChild);
-    headerDiv.appendChild(actionsDiv);
-
-    const contentDiv = document.createElement('div');
-    contentDiv.className = 'message-content';
-    contentDiv.textContent = message;
-    contentDiv.setAttribute('data-original-text', message);
-
-    messageDiv.appendChild(headerDiv);
-    messageDiv.appendChild(contentDiv);
-
-    historyDiv.appendChild(messageDiv);
-    historyDiv.scrollTop = historyDiv.scrollHeight;
-}
-
-// 🎨 切换提示词编辑器显示/隐藏
-window.togglePromptEditor = function (editorId) {
-    const editor = document.getElementById(editorId);
-    if (editor) {
-        const isHidden = editor.style.display === 'none';
-        editor.style.display = isHidden ? 'block' : 'none';
-
-        // 更新字符计数
-        if (isHidden) {
-            const textarea = document.getElementById(editorId + '-textarea');
-            if (textarea) {
-                updatePromptCharCount(editorId, textarea.value.length);
-                // 添加输入监听
-                textarea.oninput = () => updatePromptCharCount(editorId, textarea.value.length);
+        // Thử lại lỗi cuối cùng
+        async function retryLastError() {
+            if (currentErrorRetryCallback) {
+                await currentErrorRetryCallback();
+            } else {
+                alert('Không có thao tác nào để thử lại!');
             }
         }
-    }
-};
 
-// 🎨 更新字符计数
-window.updatePromptCharCount = function (editorId, count) {
-    const editor = document.getElementById(editorId);
-    if (editor) {
-        const charCount = editor.querySelector('.nai-prompt-char-count');
-        if (charCount) {
-            charCount.textContent = `字符数: ${count}`;
+        // Đóng thông báo lỗi
+        function dismissError() {
+            const errorDiv = document.getElementById('error-message-with-retry');
+            if (errorDiv) errorDiv.remove();
+            currentErrorRetryCallback = null;
+            gameState.isProcessing = false;
         }
-    }
-};
 
-// 🎨 重置提示词编辑器
-window.resetPromptEditor = function (editorId, originalPrompt) {
-    const textarea = document.getElementById(editorId + '-textarea');
-    if (textarea) {
-        textarea.value = originalPrompt;
-        updatePromptCharCount(editorId, originalPrompt.length);
-    }
-};
+        // Hiển thị tin nhắn người dùng
+        function displayUserMessage(message, forceRender = false) {
+            const historyDiv = document.getElementById('gameHistory');
+            // Chế độ gỡ lỗi: Không render tầng người dùng, xuất trực tiếp ra vùng gỡ lỗi
+            // Tham số forceRender có thể buộc render (dùng khi tải file lưu)
+            const debugCheckbox = document.getElementById('debugMode');
+            if (!forceRender && debugCheckbox && debugCheckbox.checked) {
+                appendDebug('USER', message);
+                return;
+            }
 
-// 🎨 从编辑器获取提示词并生成图片
-window.generateRestoredImageFromEditor = async function (editorId) {
-    const textarea = document.getElementById(editorId + '-textarea');
-    const container = document.querySelector(`[data-editor-id="${editorId}"]`)?.closest('.nai-image-container');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message user-message';
+            const messageIndex = historyDiv.children.length;
+            messageDiv.setAttribute('data-message-index', messageIndex);
 
-    if (!textarea || !container) {
-        console.error('[NovelAI] 找不到编辑器或容器');
-        return;
-    }
+            const headerDiv = document.createElement('div');
+            headerDiv.className = 'message-header';
 
-    const imgPrompt = textarea.value.trim();
-    if (!imgPrompt) {
-        alert('提示词不能为空！');
-        return;
-    }
+            // Thêm hộp kiểm (chỉ hiển thị trong chế độ xóa)
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = 'message-checkbox';
+            checkbox.style.display = gameState.deleteMode ? 'inline-block' : 'none';
+            checkbox.onclick = (e) => {
+                e.stopPropagation();
+                handleMessageCheck(messageDiv);
+            };
 
-    // 显示加载状态
-    container.innerHTML = `
+            // Thêm container nút thao tác
+            const actionsDiv = document.createElement('div');
+            actionsDiv.style.cssText = 'display: flex; gap: 5px; align-items: center;';
+            
+            // Nút chỉnh sửa
+            const editBtn = document.createElement('button');
+            editBtn.className = 'regenerate-btn';
+            editBtn.innerHTML = '✏️';
+            editBtn.style.background = '#17a2b8';
+            editBtn.onclick = () => editUserMessage(messageIndex);
+            
+            // Nút gửi lại
+            const resendBtn = document.createElement('button');
+            resendBtn.className = 'regenerate-btn';
+            resendBtn.innerHTML = '🔄';
+            resendBtn.onclick = () => resendUserMessage(messageIndex);
+            
+            actionsDiv.appendChild(editBtn);
+            actionsDiv.appendChild(resendBtn);
+
+            headerDiv.innerHTML = '<span>👤 Lựa chọn của bạn</span>';
+            headerDiv.insertBefore(checkbox, headerDiv.firstChild);
+            headerDiv.appendChild(actionsDiv);
+
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            contentDiv.textContent = message;
+            contentDiv.setAttribute('data-original-text', message);
+
+            messageDiv.appendChild(headerDiv);
+            messageDiv.appendChild(contentDiv);
+
+            historyDiv.appendChild(messageDiv);
+            historyDiv.scrollTop = historyDiv.scrollHeight;
+        }
+
+        // 🎨 Bật/tắt hiển thị trình chỉnh sửa từ gợi ý
+        window.togglePromptEditor = function(editorId) {
+            const editor = document.getElementById(editorId);
+            if (editor) {
+                const isHidden = editor.style.display === 'none';
+                editor.style.display = isHidden ? 'block' : 'none';
+                
+                // Cập nhật số ký tự
+                if (isHidden) {
+                    const textarea = document.getElementById(editorId + '-textarea');
+                    if (textarea) {
+                        updatePromptCharCount(editorId, textarea.value.length);
+                        // Thêm lắng nghe đầu vào
+                        textarea.oninput = () => updatePromptCharCount(editorId, textarea.value.length);
+                    }
+                }
+            }
+        };
+
+        // 🎨 Cập nhật số ký tự
+        window.updatePromptCharCount = function(editorId, count) {
+            const editor = document.getElementById(editorId);
+            if (editor) {
+                const charCount = editor.querySelector('.nai-prompt-char-count');
+                if (charCount) {
+                    charCount.textContent = `Số ký tự: ${count}`;
+                }
+            }
+        };
+
+        // 🎨 Đặt lại trình chỉnh sửa từ gợi ý
+        window.resetPromptEditor = function(editorId, originalPrompt) {
+            const textarea = document.getElementById(editorId + '-textarea');
+            if (textarea) {
+                textarea.value = originalPrompt;
+                updatePromptCharCount(editorId, originalPrompt.length);
+            }
+        };
+
+        // 🎨 Lấy từ gợi ý từ trình chỉnh sửa và tạo ảnh
+        window.generateRestoredImageFromEditor = async function(editorId) {
+            const textarea = document.getElementById(editorId + '-textarea');
+            const container = document.querySelector(`[data-editor-id="${editorId}"]`)?.closest('.nai-image-container');
+            
+            if (!textarea || !container) {
+                console.error('[NovelAI] Không tìm thấy trình chỉnh sửa hoặc container');
+                return;
+            }
+            
+            const imgPrompt = textarea.value.trim();
+            if (!imgPrompt) {
+                alert('Từ gợi ý không được để trống!');
+                return;
+            }
+            
+            // Hiển thị trạng thái đang tải
+            container.innerHTML = `
                 <div class="nai-image-loading">
-                    <div>🎨 正在生成插图...</div>
+                    <div>🎨 Đang tạo minh họa...</div>
                     <div class="nai-image-prompt-preview">${imgPrompt.substring(0, 80)}...</div>
                 </div>
             `;
-
-    try {
-        console.log('[NovelAI] 🎨 开始生成图片:', imgPrompt.substring(0, 50) + '...');
-        const imageBase64 = await window.novelAIGenerator.generateImage(imgPrompt);
-
-        // 检查返回值是否已包含 data URL 前缀
-        const imageSrc = imageBase64.startsWith('data:') ? imageBase64 : `data:image/png;base64,${imageBase64}`;
-        const escapedPrompt = imgPrompt.replace(/'/g, "\\'").replace(/\n/g, '\\n');
-
-        container.innerHTML = `
+            
+            try {
+                console.log('[NovelAI] 🎨 Bắt đầu tạo ảnh:', imgPrompt.substring(0, 50) + '...');
+                const imageBase64 = await window.novelAIGenerator.generateImage(imgPrompt);
+                
+                // Kiểm tra xem giá trị trả về đã bao gồm tiền tố data URL chưa
+                const imageSrc = imageBase64.startsWith('data:') ? imageBase64 : `data:image/png;base64,${imageBase64}`;
+                const escapedPrompt = imgPrompt.replace(/'/g, "\\'").replace(/\n/g, '\\n');
+                
+                container.innerHTML = `
                     <div class="nai-generated-image-container">
                         <img class="nai-generated-image" src="${imageSrc}" 
-                             onclick="openNAIImageModal(this.src)" title="点击放大" />
+                             onclick="openNAIImageModal(this.src)" title="Nhấn để phóng to" />
                         <div class="nai-image-actions">
-                            <button class="nai-btn" onclick="toggleGeneratedPromptView(this)">📝 查看提示词</button>
-                            <button class="nai-btn" onclick="editAndRegenerateImage(this)">✏️ 编辑并重新生成</button>
+                            <button class="nai-btn" onclick="toggleGeneratedPromptView(this)">📝 Xem từ gợi ý</button>
+                            <button class="nai-btn" onclick="editAndRegenerateImage(this)">✏️ Chỉnh sửa và tạo lại</button>
                         </div>
                         <div class="nai-image-prompt-hidden" style="display:none;">
-                            <div class="nai-prompt-view-header">当前提示词：</div>
+                            <div class="nai-prompt-view-header">Từ gợi ý hiện tại：</div>
                             <code>${imgPrompt}</code>
                         </div>
                         <div class="nai-image-edit-panel" style="display:none;">
                             <textarea class="nai-prompt-textarea" rows="4">${imgPrompt}</textarea>
                             <div class="nai-prompt-editor-footer">
-                                <button class="nai-btn nai-btn-cancel" onclick="cancelEditPrompt(this)">取消</button>
-                                <button class="nai-btn nai-btn-generate" onclick="regenerateWithEditedPrompt(this)">🎨 重新生成</button>
+                                <button class="nai-btn nai-btn-cancel" onclick="cancelEditPrompt(this)">Hủy</button>
+                                <button class="nai-btn nai-btn-generate" onclick="regenerateWithEditedPrompt(this)">🎨 Tạo lại</button>
                             </div>
                         </div>
                     </div>
                 `;
-        console.log('[NovelAI] ✅ 图片生成成功');
-    } catch (error) {
-        console.error('[NovelAI] ❌ 图片生成失败:', error);
-        // 恢复编辑界面
-        const newEditorId = 'nai-editor-' + Date.now();
-        container.innerHTML = `
+                console.log('[NovelAI] ✅ Tạo ảnh thành công');
+            } catch (error) {
+                console.error('[NovelAI] ❌ Tạo ảnh thất bại:', error);
+                // Khôi phục giao diện chỉnh sửa
+                const newEditorId = 'nai-editor-' + Date.now();
+                container.innerHTML = `
                     <div class="nai-image-error">
-                        <strong>❌ 图片生成失败</strong>
+                        <strong>❌ Tạo ảnh thất bại</strong>
                         <div>${error.message}</div>
                     </div>
                     <div class="nai-image-restore-placeholder" data-editor-id="${newEditorId}">
                         <div class="nai-restore-actions">
                             <button class="nai-btn nai-restore-generate-btn" onclick="generateRestoredImageFromEditor('${newEditorId}')">
-                                🖼️ 重试生成
+                                🖼️ Thử lại
                             </button>
                             <button class="nai-btn nai-view-prompt-btn" onclick="togglePromptEditor('${newEditorId}')">
-                                📝 编辑提示词
+                                📝 Chỉnh sửa từ gợi ý
                             </button>
                         </div>
                         <div class="nai-prompt-editor-container" id="${newEditorId}" style="display: block;">
                             <textarea class="nai-prompt-textarea" id="${newEditorId}-textarea" rows="4">${imgPrompt}</textarea>
                             <div class="nai-prompt-editor-footer">
-                                <span class="nai-prompt-char-count">字符数: ${imgPrompt.length}</span>
-                                <button class="nai-btn nai-btn-generate" onclick="generateRestoredImageFromEditor('${newEditorId}')">🎨 重试</button>
+                                <span class="nai-prompt-char-count">Số ký tự: ${imgPrompt.length}</span>
+                                <button class="nai-btn nai-btn-generate" onclick="generateRestoredImageFromEditor('${newEditorId}')">🎨 Thử lại</button>
                             </div>
                         </div>
                     </div>
                 `;
-    }
-};
+            }
+        };
 
-// 🎨 切换已生成图片的提示词显示
-window.toggleGeneratedPromptView = function (btn) {
-    const container = btn.closest('.nai-generated-image-container');
-    if (container) {
-        const promptHidden = container.querySelector('.nai-image-prompt-hidden');
-        const editPanel = container.querySelector('.nai-image-edit-panel');
-        if (promptHidden) {
-            // 隐藏编辑面板
-            if (editPanel) editPanel.style.display = 'none';
-            // 切换显示
-            promptHidden.style.display = promptHidden.style.display === 'none' ? 'block' : 'none';
-        }
-    }
-};
+        // 🎨 Bật/tắt xem từ gợi ý của ảnh đã tạo
+        window.toggleGeneratedPromptView = function(btn) {
+            const container = btn.closest('.nai-generated-image-container');
+            if (container) {
+                const promptHidden = container.querySelector('.nai-image-prompt-hidden');
+                const editPanel = container.querySelector('.nai-image-edit-panel');
+                if (promptHidden) {
+                    // Ẩn bảng chỉnh sửa
+                    if (editPanel) editPanel.style.display = 'none';
+                    // Bật/tắt hiển thị
+                    promptHidden.style.display = promptHidden.style.display === 'none' ? 'block' : 'none';
+                }
+            }
+        };
 
-// 🎨 编辑并重新生成图片
-window.editAndRegenerateImage = function (btn) {
-    const container = btn.closest('.nai-generated-image-container');
-    if (container) {
-        const promptHidden = container.querySelector('.nai-image-prompt-hidden');
-        const editPanel = container.querySelector('.nai-image-edit-panel');
-        if (promptHidden && editPanel) {
-            // 隐藏提示词显示
-            promptHidden.style.display = 'none';
-            // 显示编辑面板
-            editPanel.style.display = 'block';
-        }
-    }
-};
+        // 🎨 Chỉnh sửa và tạo lại ảnh
+        window.editAndRegenerateImage = function(btn) {
+            const container = btn.closest('.nai-generated-image-container');
+            if (container) {
+                const promptHidden = container.querySelector('.nai-image-prompt-hidden');
+                const editPanel = container.querySelector('.nai-image-edit-panel');
+                if (promptHidden && editPanel) {
+                    // Ẩn hiển thị từ gợi ý
+                    promptHidden.style.display = 'none';
+                    // Hiển thị bảng chỉnh sửa
+                    editPanel.style.display = 'block';
+                }
+            }
+        };
 
-// 🎨 取消编辑提示词
-window.cancelEditPrompt = function (btn) {
-    const container = btn.closest('.nai-generated-image-container');
-    if (container) {
-        const editPanel = container.querySelector('.nai-image-edit-panel');
-        if (editPanel) {
-            editPanel.style.display = 'none';
-        }
-    }
-};
+        // 🎨 Hủy chỉnh sửa từ gợi ý
+        window.cancelEditPrompt = function(btn) {
+            const container = btn.closest('.nai-generated-image-container');
+            if (container) {
+                const editPanel = container.querySelector('.nai-image-edit-panel');
+                if (editPanel) {
+                    editPanel.style.display = 'none';
+                }
+            }
+        };
 
-// 🎨 用编辑后的提示词重新生成图片
-window.regenerateWithEditedPrompt = async function (btn) {
-    const container = btn.closest('.nai-generated-image-container');
-    const imgContainer = btn.closest('.nai-image-container');
-    if (!container || !imgContainer) return;
-
-    const textarea = container.querySelector('.nai-image-edit-panel textarea');
-    if (!textarea) return;
-
-    const imgPrompt = textarea.value.trim();
-    if (!imgPrompt) {
-        alert('提示词不能为空！');
-        return;
-    }
-
-    // 显示加载状态
-    imgContainer.innerHTML = `
+        // 🎨 Dùng từ gợi ý đã chỉnh sửa để tạo lại ảnh
+        window.regenerateWithEditedPrompt = async function(btn) {
+            const container = btn.closest('.nai-generated-image-container');
+            const imgContainer = btn.closest('.nai-image-container');
+            if (!container || !imgContainer) return;
+            
+            const textarea = container.querySelector('.nai-image-edit-panel textarea');
+            if (!textarea) return;
+            
+            const imgPrompt = textarea.value.trim();
+            if (!imgPrompt) {
+                alert('Từ gợi ý không được để trống!');
+                return;
+            }
+            
+            // Hiển thị trạng thái đang tải
+            imgContainer.innerHTML = `
                 <div class="nai-image-loading">
-                    <div>🎨 正在重新生成插图...</div>
+                    <div>🎨 Đang tạo lại minh họa...</div>
                     <div class="nai-image-prompt-preview">${imgPrompt.substring(0, 80)}...</div>
                 </div>
             `;
-
-    try {
-        console.log('[NovelAI] 🎨 开始重新生成图片:', imgPrompt.substring(0, 50) + '...');
-        const imageBase64 = await window.novelAIGenerator.generateImage(imgPrompt);
-
-        const imageSrc = imageBase64.startsWith('data:') ? imageBase64 : `data:image/png;base64,${imageBase64}`;
-
-        imgContainer.innerHTML = `
+            
+            try {
+                console.log('[NovelAI] 🎨 Bắt đầu tạo lại ảnh:', imgPrompt.substring(0, 50) + '...');
+                const imageBase64 = await window.novelAIGenerator.generateImage(imgPrompt);
+                
+                const imageSrc = imageBase64.startsWith('data:') ? imageBase64 : `data:image/png;base64,${imageBase64}`;
+                
+                imgContainer.innerHTML = `
                     <div class="nai-generated-image-container">
                         <img class="nai-generated-image" src="${imageSrc}" 
-                             onclick="openNAIImageModal(this.src)" title="点击放大" />
+                             onclick="openNAIImageModal(this.src)" title="Nhấn để phóng to" />
                         <div class="nai-image-actions">
-                            <button class="nai-btn" onclick="toggleGeneratedPromptView(this)">📝 查看提示词</button>
-                            <button class="nai-btn" onclick="editAndRegenerateImage(this)">✏️ 编辑并重新生成</button>
+                            <button class="nai-btn" onclick="toggleGeneratedPromptView(this)">📝 Xem từ gợi ý</button>
+                            <button class="nai-btn" onclick="editAndRegenerateImage(this)">✏️ Chỉnh sửa và tạo lại</button>
                         </div>
                         <div class="nai-image-prompt-hidden" style="display:none;">
-                            <div class="nai-prompt-view-header">当前提示词：</div>
+                            <div class="nai-prompt-view-header">Từ gợi ý hiện tại：</div>
                             <code>${imgPrompt}</code>
                         </div>
                         <div class="nai-image-edit-panel" style="display:none;">
                             <textarea class="nai-prompt-textarea" rows="4">${imgPrompt}</textarea>
                             <div class="nai-prompt-editor-footer">
-                                <button class="nai-btn nai-btn-cancel" onclick="cancelEditPrompt(this)">取消</button>
-                                <button class="nai-btn nai-btn-generate" onclick="regenerateWithEditedPrompt(this)">🎨 重新生成</button>
+                                <button class="nai-btn nai-btn-cancel" onclick="cancelEditPrompt(this)">Hủy</button>
+                                <button class="nai-btn nai-btn-generate" onclick="regenerateWithEditedPrompt(this)">🎨 Tạo lại</button>
                             </div>
                         </div>
                     </div>
                 `;
-        console.log('[NovelAI] ✅ 重新生成成功');
-    } catch (error) {
-        console.error('[NovelAI] ❌ 重新生成失败:', error);
-        const newEditorId = 'nai-editor-' + Date.now();
-        imgContainer.innerHTML = `
+                console.log('[NovelAI] ✅ Tạo lại thành công');
+            } catch (error) {
+                console.error('[NovelAI] ❌ Tạo lại thất bại:', error);
+                const newEditorId = 'nai-editor-' + Date.now();
+                imgContainer.innerHTML = `
                     <div class="nai-image-error">
-                        <strong>❌ 图片生成失败</strong>
+                        <strong>❌ Tạo ảnh thất bại</strong>
                         <div>${error.message}</div>
                     </div>
                     <div class="nai-image-restore-placeholder" data-editor-id="${newEditorId}">
                         <div class="nai-restore-actions">
                             <button class="nai-btn nai-restore-generate-btn" onclick="generateRestoredImageFromEditor('${newEditorId}')">
-                                🖼️ 重试
+                                🖼️ Thử lại
                             </button>
                         </div>
                         <div class="nai-prompt-editor-container" id="${newEditorId}" style="display: block;">
                             <textarea class="nai-prompt-textarea" id="${newEditorId}-textarea" rows="4">${imgPrompt}</textarea>
                             <div class="nai-prompt-editor-footer">
-                                <span class="nai-prompt-char-count">字符数: ${imgPrompt.length}</span>
-                                <button class="nai-btn nai-btn-generate" onclick="generateRestoredImageFromEditor('${newEditorId}')">🎨 重试</button>
+                                <span class="nai-prompt-char-count">Số ký tự: ${imgPrompt.length}</span>
+                                <button class="nai-btn nai-btn-generate" onclick="generateRestoredImageFromEditor('${newEditorId}')">🎨 Thử lại</button>
                             </div>
                         </div>
                     </div>
                 `;
-    }
-};
+            }
+        };

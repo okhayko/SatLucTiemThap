@@ -1,50 +1,50 @@
 /**
- * GraphRAG-Lite - 浏览器端轻量级知识图谱检索系统
- * 基于微软GraphRAG核心思想，适配浏览器环境
- * 
- * 功能：
- * 1. 实体/关系/维度的存储和管理
- * 2. Local Search - 从实体出发的扇形检索
- * 3. Global Search - 基于维度的全局查询
- * 4. IndexedDB持久化
- * 5. 与记忆调度器模式集成
+ * GraphRAG-Lite - Hệ thống truy vấn đồ thị tri thức hạng nhẹ trên trình duyệt
+ * Dựa trên ý tưởng cốt lõi của Microsoft GraphRAG, tinh chỉnh phù hợp cho môi trường trình duyệt
+ *
+ * Chức năng:
+ * 1. Lưu trữ và quản lý Thực thể/Quan hệ/Chiều hướng
+ * 2. Local Search - Truy vấn hình quạt (fan-out) xuất phát từ thực thể
+ * 3. Global Search - Truy vấn toàn cục dựa trên chiều hướng
+ * 4. Lưu trữ bền vững (Persistence) bằng IndexedDB
+ * 5. Tích hợp với mô hình bộ điều phối bộ nhớ (memory dispatcher)
  */
 
 class GraphRAGLite {
     constructor() {
-        // 数据存储
-        this.entities = new Map();      // entityId -> Entity
-        this.relations = [];            // Relation[]
-        this.dimensions = new Map();    // dimensionName -> Dimension
+        // Lưu trữ dữ liệu
+        this.entities = new Map();      // entityId -> Thực thể (Entity)
+        this.relations = [];            // Quan hệ (Relation)[]
+        this.dimensions = new Map();    // dimensionName -> Chiều hướng (Dimension)
         this.vectors = new Map();       // entityId -> vector
 
-        // 配置
+        // Cấu hình
         this.config = {
-            localMaxEntities: 5,        // Local Search最大实体数
-            localMaxDepth: 2,           // 扇形扩展深度
-            globalMaxDimensions: 5,     // Global Search最大维度数
-            matchThreshold: 0.3,        // 向量匹配阈值
-            enabled: true,              // 是否启用
-            debug: true                 // 调试模式
+            localMaxEntities: 5,         // Số thực thể tối đa cho Local Search
+            localMaxDepth: 2,            // Độ sâu mở rộng hình quạt
+            globalMaxDimensions: 5,      // Số chiều hướng tối đa cho Global Search
+            matchThreshold: 0.3,         // Ngưỡng khớp vector
+            enabled: true,               // Trạng thái kích hoạt
+            debug: true                  // Chế độ gỡ lỗi (debug)
         };
 
-        // 状态
+        // Trạng thái
         this.isInitialized = false;
         this.indexedDB = null;
         this.dbName = 'GraphRAGLiteDB';
         this.dbVersion = 1;
 
-        // 统计
+        // Thống kê
         this.stats = {
             searchCount: 0,
             lastSearchAt: null
         };
     }
 
-    // ==================== 初始化 ====================
+    // ==================== KHỞI TẠO ====================
 
     /**
-     * 初始化GraphRAG-Lite
+     * Khởi tạo GraphRAG-Lite
      */
     async init() {
         if (this.isInitialized) return;
@@ -53,16 +53,16 @@ class GraphRAGLite {
             await this.initIndexedDB();
             await this.loadFromIndexedDB();
             this.isInitialized = true;
-            this.log('✅ GraphRAG-Lite 初始化完成');
-            this.log(`   实体: ${this.entities.size}, 关系: ${this.relations.length}, 维度: ${this.dimensions.size}`);
+            this.log('✅ GraphRAG-Lite Khởi tạo hoàn tất');
+            this.log(`   Thực thể: ${this.entities.size}, Quan hệ: ${this.relations.length}, Chiều hướng: ${this.dimensions.size}`);
         } catch (error) {
-            console.error('[GraphRAG-Lite] 初始化失败:', error);
-            this.isInitialized = true; // 即使失败也标记为已初始化，使用内存模式
+            console.error('[GraphRAG-Lite] Khởi tạo thất bại:', error);
+            this.isInitialized = true; // Ngay cả khi lỗi cũng đánh dấu đã khởi tạo để dùng chế độ bộ nhớ tạm (memory)
         }
     }
 
     /**
-     * 初始化IndexedDB
+     * Khởi tạo IndexedDB
      */
     async initIndexedDB() {
         return new Promise((resolve, reject) => {
@@ -77,7 +77,7 @@ class GraphRAGLite {
             request.onupgradeneeded = (event) => {
                 const db = event.target.result;
 
-                // 实体存储
+                // Kho lưu trữ Thực thể
                 if (!db.objectStoreNames.contains('entities')) {
                     const entityStore = db.createObjectStore('entities', { keyPath: 'id' });
                     entityStore.createIndex('name', 'name', { unique: false });
@@ -85,19 +85,19 @@ class GraphRAGLite {
                     entityStore.createIndex('turnIndex', 'turnIndex', { unique: false });
                 }
 
-                // 关系存储
+                // Kho lưu trữ Quan hệ
                 if (!db.objectStoreNames.contains('relations')) {
                     const relationStore = db.createObjectStore('relations', { keyPath: 'id' });
                     relationStore.createIndex('subject', 'subject', { unique: false });
                     relationStore.createIndex('object', 'object', { unique: false });
                 }
 
-                // 维度存储
+                // Kho lưu trữ Chiều hướng
                 if (!db.objectStoreNames.contains('dimensions')) {
                     db.createObjectStore('dimensions', { keyPath: 'name' });
                 }
 
-                // 配置存储
+                // Kho lưu trữ Cấu hình
                 if (!db.objectStoreNames.contains('config')) {
                     db.createObjectStore('config', { keyPath: 'key' });
                 }
@@ -106,12 +106,12 @@ class GraphRAGLite {
     }
 
     /**
-     * 从IndexedDB加载数据
+     * Tải dữ liệu từ IndexedDB
      */
     async loadFromIndexedDB() {
         if (!this.indexedDB) return;
 
-        // 加载实体
+        // Tải thực thể
         const entities = await this.getAllFromStore('entities');
         entities.forEach(entity => {
             this.entities.set(entity.id, entity);
@@ -120,22 +120,22 @@ class GraphRAGLite {
             }
         });
 
-        // 加载关系
+        // Tải quan hệ
         this.relations = await this.getAllFromStore('relations');
 
-        // 加载维度
+        // Tải chiều hướng
         const dimensions = await this.getAllFromStore('dimensions');
         dimensions.forEach(dim => {
-            // 将entities数组转回Set
+            // Chuyển mảng entities ngược lại thành Set
             dim.entities = new Set(dim.entities || []);
             this.dimensions.set(dim.name, dim);
         });
 
-        this.log(`从IndexedDB加载: ${entities.length}实体, ${this.relations.length}关系, ${dimensions.length}维度`);
+        this.log(`Đã tải từ IndexedDB: ${entities.length} thực thể, ${this.relations.length} quan hệ, ${dimensions.length} chiều hướng`);
     }
 
     /**
-     * 从存储获取所有数据
+     * Lấy tất cả dữ liệu từ một kho lưu trữ cụ thể
      */
     async getAllFromStore(storeName) {
         return new Promise((resolve, reject) => {
@@ -151,16 +151,16 @@ class GraphRAGLite {
         });
     }
 
-    // ==================== 实体管理 ====================
+    // ==================== QUẢN LÝ THỰC THỂ ====================
 
     /**
-     * 添加或更新实体
-     * @param {Object} entityData - 实体数据
-     * @param {number} turnIndex - 轮次索引
-     * @param {Array} precomputedVector - 预生成的向量（可选，用于批量处理时避免重复API调用）
+     * Thêm hoặc cập nhật thực thể
+     * @param {Object} entityData - Dữ liệu thực thể
+     * @param {number} turnIndex - Chỉ số lượt hội thoại
+     * @param {Array} precomputedVector - Vector tính toán sẵn (tùy chọn)
      */
     async addOrUpdateEntity(entityData, turnIndex = null, precomputedVector = null) {
-        const id = `entity_${entityData.name}_${entityData.type || 'concept'}`;  // 与processUpdate保持一致
+        const id = `entity_${entityData.name}_${entityData.type || 'concept'}`; 
         const existing = this.entities.get(id);
 
         const entity = {
@@ -172,7 +172,7 @@ class GraphRAGLite {
             description: entityData.description || existing?.description || '',
             vector: null,
 
-            // 元数据
+            // Siêu dữ liệu (Metadata)
             createdAt: existing?.createdAt || Date.now(),
             updatedAt: Date.now(),
             turnIndex: turnIndex ?? existing?.turnIndex ?? (window.gameState?.conversationHistory?.length || 0),
@@ -180,37 +180,37 @@ class GraphRAGLite {
             matchCount: existing?.matchCount || 0
         };
 
-        // 生成向量（优先使用预生成的向量）
+        // Tạo vector (ưu tiên vector tính toán sẵn)
         try {
             if (precomputedVector) {
                 entity.vector = precomputedVector;
-                console.log(`[GraphRAG-Lite] 使用预生成向量: ${entity.name}`);
+                console.log(`[GraphRAG-Lite] Sử dụng vector tính sẵn: ${entity.name}`);
             } else {
-                console.log(`[GraphRAG-Lite] 无预生成向量，调用API: ${entity.name}`);
+                console.log(`[GraphRAG-Lite] Không có vector sẵn, đang gọi API: ${entity.name}`);
                 entity.vector = await this.generateVector(entity);
             }
             this.vectors.set(id, entity.vector);
         } catch (e) {
-            this.log(`生成向量失败: ${entity.name}`, 'warn');
+            this.log(`Tạo vector thất bại: ${entity.name}`, 'warn');
         }
 
-        // 保存
+        // Lưu vào bộ nhớ
         this.entities.set(id, entity);
 
-        // 更新维度索引
+        // Cập nhật chỉ mục chiều hướng
         for (const dimName of entity.dimensions) {
             this.addEntityToDimension(id, dimName);
         }
 
-        // 持久化
+        // Lưu trữ bền vững
         await this.saveEntityToIndexedDB(entity);
 
-        this.log(`${existing ? '更新' : '新增'}实体: ${entity.name} (${entity.type})`);
+        this.log(`${existing ? 'Cập nhật' : 'Thêm mới'} thực thể: ${entity.name} (${entity.type})`);
         return entity;
     }
 
     /**
-     * 根据名称获取实体
+     * Lấy thực thể theo tên
      */
     getEntityByName(name) {
         for (const [id, entity] of this.entities) {
@@ -222,20 +222,20 @@ class GraphRAGLite {
     }
 
     /**
-     * 获取所有实体
+     * Lấy danh sách tất cả thực thể
      */
     getAllEntities() {
         return Array.from(this.entities.values());
     }
 
     /**
-     * 删除实体
+     * Xóa thực thể
      */
     async deleteEntity(name) {
         const entity = this.getEntityByName(name);
         if (!entity) return false;
 
-        // 从维度中移除
+        // Loại bỏ thực thể khỏi các chiều hướng
         for (const dimName of entity.dimensions) {
             const dim = this.dimensions.get(dimName);
             if (dim) {
@@ -243,30 +243,30 @@ class GraphRAGLite {
             }
         }
 
-        // 删除相关关系
+        // Xóa các quan hệ liên quan
         this.relations = this.relations.filter(rel =>
             rel.subject !== name && rel.object !== name
         );
 
-        // 删除实体
+        // Xóa thực thể và vector
         this.entities.delete(entity.id);
         this.vectors.delete(entity.id);
 
-        // 持久化删除
+        // Xóa trong IndexedDB
         await this.deleteFromIndexedDB('entities', entity.id);
 
-        this.log(`删除实体: ${name}`);
+        this.log(`Đã xóa thực thể: ${name}`);
         return true;
     }
 
     /**
-     * 删除指定轮次及之后的所有实体和关系
-     * 用于删除楼层或重新生成时同步清除语义数据
-     * @param {number} turnIndex - 从该轮次开始删除（包含该轮次）
+     * Xóa thực thể và quan hệ theo lượt hội thoại
+     * Dùng để đồng bộ dữ liệu ngữ nghĩa khi xóa tầng hoặc tạo lại nội dung
+     * @param {number} turnIndex - Bắt đầu xóa từ lượt này (bao gồm cả lượt này)
      */
     async deleteByTurnIndex(turnIndex) {
         if (turnIndex === null || turnIndex === undefined) {
-            console.warn('[GraphRAG-Lite] deleteByTurnIndex: turnIndex为空');
+            console.warn('[GraphRAG-Lite] deleteByTurnIndex: turnIndex trống');
             return { deletedEntities: 0, deletedRelations: 0, deletedDimensions: 0 };
         }
 
@@ -274,7 +274,7 @@ class GraphRAGLite {
         let deletedRelations = 0;
         let deletedDimensions = 0;
 
-        // 1. 收集需要删除的实体ID
+        // 1. Thu thập ID thực thể cần xóa
         const entityIdsToDelete = new Set();
         const entitiesToDelete = [];
         for (const [id, entity] of this.entities) {
@@ -284,7 +284,7 @@ class GraphRAGLite {
             }
         }
 
-        // 2. 删除实体
+        // 2. Xóa thực thể
         for (const { id, name } of entitiesToDelete) {
             this.entities.delete(id);
             this.vectors.delete(id);
@@ -292,11 +292,11 @@ class GraphRAGLite {
             deletedEntities++;
         }
 
-        // 3. 删除关系
+        // 3. Xóa quan hệ
         const originalRelationsCount = this.relations.length;
         this.relations = this.relations.filter(rel => {
             if (rel.turnIndex !== undefined && rel.turnIndex >= turnIndex) {
-                // 异步删除IndexedDB中的关系（静默处理）
+                // Xóa quan hệ trong IndexedDB bất đồng bộ
                 if (rel.id) {
                     this.deleteFromIndexedDB('relations', rel.id).catch(() => { });
                 }
@@ -306,22 +306,20 @@ class GraphRAGLite {
         });
         deletedRelations = originalRelationsCount - this.relations.length;
 
-        // 4. 清理维度：从维度中移除被删除的实体，如果维度变空则删除该维度
+        // 4. Dọn dẹp chiều hướng: Loại bỏ thực thể bị xóa, nếu chiều hướng rỗng thì xóa chiều hướng đó
         const dimensionsToDelete = [];
         for (const [dimName, dimension] of this.dimensions) {
-            // 从维度的实体集合中移除被删除的实体ID
             for (const entityId of entityIdsToDelete) {
                 if (dimension.entities.has(entityId)) {
                     dimension.entities.delete(entityId);
                 }
             }
-            // 如果维度变空，标记为待删除
             if (dimension.entities.size === 0) {
                 dimensionsToDelete.push(dimName);
             }
         }
 
-        // 删除空维度
+        // Xóa chiều hướng rỗng
         for (const dimName of dimensionsToDelete) {
             this.dimensions.delete(dimName);
             await this.deleteFromIndexedDB('dimensions', dimName);
@@ -329,24 +327,24 @@ class GraphRAGLite {
         }
 
         if (deletedEntities > 0 || deletedRelations > 0 || deletedDimensions > 0) {
-            this.log(`按轮次删除: 从第${turnIndex}轮开始，删除了 ${deletedEntities} 个实体, ${deletedRelations} 条关系, ${deletedDimensions} 个空维度`);
+            this.log(`Xóa theo lượt: Từ lượt ${turnIndex}, đã xóa ${deletedEntities} thực thể, ${deletedRelations} quan hệ, ${deletedDimensions} chiều hướng rỗng`);
         }
 
         return { deletedEntities, deletedRelations, deletedDimensions };
     }
 
-    // ==================== 关系管理 ====================
+    // ==================== QUẢN LÝ QUAN HỆ ====================
 
     /**
-     * 添加关系
+     * Thêm quan hệ
      */
     async addRelation(relationData, turnIndex = null) {
         const id = `rel_${relationData.subject}_${relationData.predicate}_${relationData.object}`;
 
-        // 检查是否已存在
+        // Kiểm tra tồn tại
         const existing = this.relations.find(r => r.id === id);
         if (existing) {
-            // 更新可信度（取较高值）
+            // Cập nhật độ tin cậy (lấy giá trị cao hơn)
             existing.certainty = Math.max(existing.certainty, relationData.certainty || 0.8);
             return existing;
         }
@@ -364,15 +362,15 @@ class GraphRAGLite {
 
         this.relations.push(relation);
 
-        // 持久化
+        // Lưu trữ bền vững
         await this.saveRelationToIndexedDB(relation);
 
-        this.log(`新增关系: ${relation.subject} --${relation.predicate}--> ${relation.object}`);
+        this.log(`Thêm quan hệ: ${relation.subject} --${relation.predicate}--> ${relation.object}`);
         return relation;
     }
 
     /**
-     * 获取实体的所有关系
+     * Lấy tất cả quan hệ của một thực thể
      */
     getRelationsFor(entityName) {
         return this.relations.filter(rel =>
@@ -380,10 +378,10 @@ class GraphRAGLite {
         );
     }
 
-    // ==================== 维度管理 ====================
+    // ==================== QUẢN LÝ CHIỀU HƯỚNG ====================
 
     /**
-     * 添加实体到维度
+     * Thêm thực thể vào chiều hướng
      */
     addEntityToDimension(entityId, dimensionName) {
         let dim = this.dimensions.get(dimensionName);
@@ -403,71 +401,69 @@ class GraphRAGLite {
         dim.entities.add(entityId);
         dim.updatedAt = Date.now();
 
-        // 异步生成维度向量和更新摘要
+        // Cập nhật vector chiều hướng và tóm tắt bất đồng bộ
         this.updateDimensionAsync(dimensionName);
     }
 
     /**
-     * 异步更新维度（向量和摘要）
-     * 🔧 优化：维度向量使用关键词方法，避免额外API调用
+     * Cập nhật chiều hướng bất đồng bộ (Vector và Tóm tắt)
+     * Tối ưu: Vector chiều hướng dùng từ khóa, tránh gọi API bổ sung
      */
     async updateDimensionAsync(dimensionName) {
         const dim = this.dimensions.get(dimensionName);
         if (!dim) return;
 
-        // 🔧 使用关键词方法生成维度向量（不调用API）
+        // Sử dụng phương pháp từ khóa để tạo vector (không gọi API)
         try {
             dim.vector = this.createSimpleKeywordVector(dimensionName);
-        } catch (e) {
-            // 忽略
-        }
+        } catch (e) { /* Bỏ qua */ }
 
-        // 生成摘要
+        // Tạo tóm tắt
         const entityNames = Array.from(dim.entities).map(id => {
             const entity = this.entities.get(id);
             return entity?.name || id;
         });
-        dim.summary = `包含${entityNames.length}个相关实体: ${entityNames.slice(0, 5).join('、')}${entityNames.length > 5 ? '等' : ''}`;
+        dim.summary = `Chứa ${entityNames.length} thực thể liên quan: ${entityNames.slice(0, 5).join('、')}${entityNames.length > 5 ? '...' : ''}`;
 
-        // 持久化
+        // Lưu trữ bền vững
         await this.saveDimensionToIndexedDB(dim);
     }
 
     /**
-     * 获取所有维度
+     * Lấy tất cả các chiều hướng
      */
     getAllDimensions() {
         return Array.from(this.dimensions.values());
     }
 
-    // ==================== Local Search ====================
+    // ==================== LOCAL SEARCH ====================
 
     /**
-     * Local Search - 从实体出发的扇形检索
-     * @param {string} query - 查询文本
-     * @param {number} maxEntities - 最大返回实体数
-     * @param {number} maxDepth - 扇形扩展深度
-     * @param {Array} precomputedVector - 预生成的查询向量（可选，用于避免重复计算）
+     * Local Search - Truy vấn hình quạt xuất phát từ thực thể
+     * @param {string} query - Văn bản truy vấn
+     * @param {number} maxEntities - Số thực thể tối đa trả về
+     * @param {number} maxDepth - Độ sâu mở rộng hình quạt
+     * @param {Array} precomputedVector - Vector truy vấn tính sẵn
      */
     async localSearch(query, maxEntities = null, maxDepth = null, precomputedVector = null) {
         maxEntities = maxEntities ?? this.config.localMaxEntities;
         maxDepth = maxDepth ?? this.config.localMaxDepth;
 
-        this.log(`Local Search: "${query.substring(0, 50)}..." (max: ${maxEntities}, depth: ${maxDepth})`);
+        this.log(`Local Search: "${query.substring(0, 50)}..." (max: ${maxEntities}, độ sâu: ${maxDepth})`);
         this.stats.searchCount++;
         this.stats.lastSearchAt = Date.now();
 
-        // 1. 识别目标实体（传入预生成向量）
+        // 1. Nhận diện thực thể đích
         const targetEntities = await this.identifyEntities(query, precomputedVector);
 
         if (targetEntities.length === 0) {
-            this.log('未识别到相关实体');
+            this.log('Không nhận diện được thực thể liên quan');
             return { entities: [], relations: [], dimensions: [] };
         }
 
-        this.log(`识别到${targetEntities.length}个目标实体: ${targetEntities.map(e => e.name).join(', ')}`);
+        this.log(`Nhận diện được ${targetEntities.length} thực thể đích: ${targetEntities.map(e => e.name).join(', ')}`);
 
-        // 2. 扇形扩展
+        // 2. Mở rộng hình quạt
         const result = {
             entities: new Map(),
             relations: [],
@@ -478,12 +474,12 @@ class GraphRAGLite {
             await this.fanOut(entity, result, maxDepth, 0);
         }
 
-        // 3. 通过维度扩展
+        // 3. Mở rộng thông qua chiều hướng
         for (const dimName of result.dimensions) {
             const dim = this.dimensions.get(dimName);
             if (dim) {
                 for (const entityId of dim.entities) {
-                    if (result.entities.size < maxEntities * 2) { // 多取一些，后面排序截取
+                    if (result.entities.size < maxEntities * 2) { 
                         const entity = this.entities.get(entityId);
                         if (entity && !result.entities.has(entityId)) {
                             result.entities.set(entityId, { ...entity, source: 'dimension', viaD: dimName });
@@ -493,17 +489,17 @@ class GraphRAGLite {
             }
         }
 
-        // 4. 排序并截取
+        // 4. Sắp xếp và cắt bớt
         const sortedEntities = Array.from(result.entities.values())
             .sort((a, b) => {
-                // 优先直接关联，其次维度关联
+                // Ưu tiên liên kết trực tiếp, sau đó tới liên kết chiều hướng
                 if (a.source === 'direct' && b.source !== 'direct') return -1;
                 if (b.source === 'direct' && a.source !== 'direct') return 1;
                 return (b.matchCount || 0) - (a.matchCount || 0);
             })
             .slice(0, maxEntities);
 
-        // 5. 更新匹配计数
+        // 5. Cập nhật số lần khớp
         sortedEntities.forEach(e => {
             const entity = this.entities.get(e.id);
             if (entity) {
@@ -512,7 +508,7 @@ class GraphRAGLite {
             }
         });
 
-        this.log(`Local Search返回: ${sortedEntities.length}实体, ${result.relations.length}关系`);
+        this.log(`Local Search trả về: ${sortedEntities.length} thực thể, ${result.relations.length} quan hệ`);
 
         return {
             entities: sortedEntities,
@@ -522,26 +518,26 @@ class GraphRAGLite {
     }
 
     /**
-     * 扇形扩展
+     * Mở rộng hình quạt (Fan-out)
      */
     async fanOut(entity, result, maxDepth, currentDepth) {
         if (currentDepth >= maxDepth) return;
 
-        // 添加当前实体
+        // Thêm thực thể hiện tại
         result.entities.set(entity.id, { ...entity, source: 'direct', depth: currentDepth });
 
-        // 添加维度
+        // Thêm chiều hướng
         (entity.dimensions || []).forEach(dim => result.dimensions.add(dim));
 
-        // 查找相关关系
+        // Tìm kiếm các quan hệ liên quan
         const relations = this.getRelationsFor(entity.name);
         for (const rel of relations) {
-            // 避免重复添加关系
+            // Tránh lặp lại quan hệ
             if (!result.relations.find(r => r.id === rel.id)) {
                 result.relations.push(rel);
             }
 
-            // 扇形扩展到关联实体
+            // Mở rộng tới thực thể liên kết
             const targetName = rel.subject === entity.name ? rel.object : rel.subject;
             const targetEntity = this.getEntityByName(targetName);
             if (targetEntity && !result.entities.has(targetEntity.id)) {
@@ -550,22 +546,22 @@ class GraphRAGLite {
         }
     }
 
-    /**
-     * 识别查询中的实体
-     * @param {string} query - 查询文本
-     * @param {Array} precomputedVector - 预生成的查询向量（可选）
+/**
+     * Nhận diện thực thể trong câu truy vấn
+     * @param {string} query - Văn bản truy vấn
+     * @param {Array} precomputedVector - Vector truy vấn đã tính toán trước (tùy chọn)
      */
     async identifyEntities(query, precomputedVector = null) {
         const matched = [];
 
-        // 1. 名称精确匹配
+        // 1. Khớp chính xác theo tên
         for (const [id, entity] of this.entities) {
             if (query.includes(entity.name)) {
                 matched.push({ ...entity, matchType: 'exact' });
             }
         }
 
-        // 2. 如果没有精确匹配，使用向量相似度（复用预生成向量或重新生成）
+        // 2. Nếu không có khớp chính xác, sử dụng độ tương đồng vector (tái sử dụng hoặc tạo mới vector)
         if (matched.length === 0) {
             const queryVector = precomputedVector || await this.generateVector({ name: query, type: 'query' });
             if (queryVector) {
@@ -578,41 +574,41 @@ class GraphRAGLite {
                         }
                     }
                 }
-                // 按相似度排序
+                // Sắp xếp theo độ tương đồng giảm dần
                 matched.sort((a, b) => (b.similarity || 0) - (a.similarity || 0));
             }
         }
 
-        return matched.slice(0, 5); // 最多返回5个
+        return matched.slice(0, 5); // Trả về tối đa 5 thực thể
     }
 
     // ==================== Global Search ====================
 
     /**
-     * Global Search - 基于维度的全局查询
-     * @param {string} query - 查询文本
-     * @param {number} maxDimensions - 最大返回维度数
-     * @param {Array} precomputedVector - 预生成的查询向量（可选，用于避免重复计算）
+     * Global Search - Truy vấn toàn cục dựa trên chiều hướng
+     * @param {string} query - Văn bản truy vấn
+     * @param {number} maxDimensions - Số lượng chiều hướng tối đa trả về
+     * @param {Array} precomputedVector - Vector truy vấn tính trước (tránh tính toán lặp lại)
      */
     async globalSearch(query, maxDimensions = null, precomputedVector = null) {
         maxDimensions = maxDimensions ?? this.config.globalMaxDimensions;
 
         this.log(`Global Search: "${query.substring(0, 50)}..."`);
 
-        // 1. 使用预生成向量或重新生成
+        // 1. Sử dụng vector tính trước hoặc tạo mới
         const queryVector = precomputedVector || await this.generateVector({ name: query, type: 'query' });
 
-        // 2. 匹配相关维度
+        // 2. Khớp các chiều hướng liên quan
         const matchedDimensions = [];
 
         for (const [name, dim] of this.dimensions) {
-            // 名称匹配
+            // Khớp theo tên
             if (query.includes(name)) {
                 matchedDimensions.push({ ...dim, similarity: 1.0, matchType: 'exact' });
                 continue;
             }
 
-            // 向量匹配
+            // Khớp theo vector
             if (dim.vector && queryVector) {
                 const similarity = this.cosineSimilarity(queryVector, dim.vector);
                 if (similarity > this.config.matchThreshold) {
@@ -621,15 +617,15 @@ class GraphRAGLite {
             }
         }
 
-        // 3. 排序
+        // 3. Sắp xếp
         matchedDimensions.sort((a, b) => b.similarity - a.similarity);
         const topDimensions = matchedDimensions.slice(0, maxDimensions);
 
-        // 4. 格式化返回
+        // 4. Định dạng kết quả trả về
         return {
             dimensions: topDimensions.map(dim => ({
                 name: dim.name,
-                summary: dim.summary || `包含${dim.entities.size}个实体`,
+                summary: dim.summary || `Bao gồm ${dim.entities.size} thực thể`,
                 entities: Array.from(dim.entities).slice(0, 5).map(id => {
                     const entity = this.entities.get(id);
                     return entity?.name || id;
@@ -639,12 +635,12 @@ class GraphRAGLite {
         };
     }
 
-    // ==================== 处理更新 ====================
+    // ==================== Xử lý cập nhật ====================
 
     /**
-     * 处理语义提取的更新
-     * @param {Object} semanticUpsert - 从Flash API提取的语义数据
-     * @param {number} turnIndex - 当前轮次
+     * Xử lý cập nhật trích xuất ngữ nghĩa
+     * @param {Object} semanticUpsert - Dữ liệu ngữ nghĩa trích xuất từ Flash API
+     * @param {number} turnIndex - Lượt hội thoại hiện tại
      */
     async processUpdate(semanticUpsert, turnIndex = null) {
         if (!semanticUpsert) return;
@@ -653,11 +649,10 @@ class GraphRAGLite {
         let entityCount = 0;
         let relationCount = 0;
 
-        // 1. 批量处理新实体（一次API调用生成所有向量）
+        // 1. Xử lý hàng loạt thực thể mới (một lần gọi API tạo tất cả vector)
         if (semanticUpsert.newEntities && Array.isArray(semanticUpsert.newEntities) && semanticUpsert.newEntities.length > 0) {
-            // 先批量生成向量，使用与addOrUpdateEntity相同的ID格式
             const entitiesToProcess = semanticUpsert.newEntities.map(e => ({
-                id: `entity_${e.name}_${e.type || 'concept'}`,  // 与addOrUpdateEntity保持一致
+                id: `entity_${e.name}_${e.type || 'concept'}`,
                 name: e.name,
                 type: e.type || 'concept',
                 description: e.description
@@ -665,17 +660,17 @@ class GraphRAGLite {
 
             const batchVectors = await this.generateBatchVectors(entitiesToProcess);
 
-            // 然后添加实体（使用预生成的向量）
+            // Thêm thực thể (sử dụng vector đã tính toán hàng loạt)
             for (const entityData of semanticUpsert.newEntities) {
                 const entityId = `entity_${entityData.name}_${entityData.type || 'concept'}`;
                 const precomputedVector = batchVectors.get(entityId);
-                console.log(`[GraphRAG-Lite] 尝试获取预生成向量: ${entityId} -> ${precomputedVector ? '✓找到' : '✗未找到'}`);
+                console.log(`[GraphRAG-Lite] Truy xuất vector tính sẵn: ${entityId} -> ${precomputedVector ? '✓ Tìm thấy' : '✗ Không thấy'}`);
                 await this.addOrUpdateEntity(entityData, currentTurn, precomputedVector);
                 entityCount++;
             }
         }
 
-        // 2. 处理新关系
+        // 2. Xử lý quan hệ mới
         if (semanticUpsert.newRelations && Array.isArray(semanticUpsert.newRelations)) {
             for (const relData of semanticUpsert.newRelations) {
                 await this.addRelation(relData, currentTurn);
@@ -683,7 +678,7 @@ class GraphRAGLite {
             }
         }
 
-        // 3. 处理维度链接
+        // 3. Xử lý liên kết chiều hướng
         if (semanticUpsert.dimensionLinks && Array.isArray(semanticUpsert.dimensionLinks)) {
             for (const link of semanticUpsert.dimensionLinks) {
                 const dim = this.dimensions.get(link.dimension);
@@ -694,50 +689,50 @@ class GraphRAGLite {
             }
         }
 
-        this.log(`处理更新完成: ${entityCount}实体, ${relationCount}关系`);
+        this.log(`Xử lý cập nhật hoàn tất: ${entityCount} thực thể, ${relationCount} quan hệ`);
     }
 
-    // ==================== 构建上下文 ====================
+    // ==================== Xây dựng ngữ cảnh ====================
 
     /**
-     * 构建用于记忆调度器的GraphRAG上下文
-     * @param {string} userInput - 用户输入
-     * @param {string} lastAIReply - 上一条AI回复
+     * Xây dựng ngữ cảnh GraphRAG cho bộ điều phối bộ nhớ
+     * @param {string} userInput - Nhập liệu từ người dùng
+     * @param {string} lastAIReply - Phản hồi cuối cùng của AI
      */
     async buildContext(userInput, lastAIReply = '') {
         if (!this.config.enabled || this.entities.size === 0) {
             return null;
         }
 
-        // 组合查询
+        // Kết hợp truy vấn
         const query = userInput + (lastAIReply ? '\n' + lastAIReply.substring(0, 500) : '');
 
-        // 🔧 预先生成查询向量，避免localSearch和globalSearch重复计算
+        // 🔧 Tính trước vector truy vấn để tránh tính toán lặp lại trong local/global search
         const queryVector = await this.generateVector({ name: query, type: 'query' });
 
-        // 执行Local Search（传入已生成的向量）
+        // Thực hiện Local Search
         const localResult = await this.localSearch(query, null, null, queryVector);
 
-        // 判断是否需要Global Search（包含"有哪些"、"所有"等词）
-        const needGlobal = /有哪些|所有|全部|总共|统计/.test(userInput);
+        // Kiểm tra xem có cần Global Search không (dựa trên các từ khóa liệt kê)
+        const needGlobal = /có những ai|có những gì|tất cả|tổng cộng|thống kê/.test(userInput);
         let globalResult = null;
         if (needGlobal) {
             globalResult = await this.globalSearch(userInput, null, queryVector);
         }
 
-        // 格式化上下文
+        // Định dạng ngữ cảnh
         return this.formatContext(localResult, globalResult);
     }
 
     /**
-     * 格式化上下文为文本
+     * Định dạng ngữ cảnh thành văn bản
      */
     formatContext(localResult, globalResult) {
         let context = '';
 
-        // Local Search结果
+        // Kết quả Local Search
         if (localResult.entities.length > 0) {
-            context += '【🔍 相关实体】\n';
+            context += '【🔍 Thực thể liên quan】\n';
             localResult.entities.forEach(entity => {
                 const typeIcons = { person: '👤', place: '📍', item: '📦', event: '📅', faction: '🏛️', concept: '💡' };
                 const icon = typeIcons[entity.type] || '❓';
@@ -747,12 +742,12 @@ class GraphRAGLite {
                 }
                 context += '\n';
 
-                // 添加关键属性
+                // Thêm các thuộc tính then chốt
                 if (entity.attributes) {
                     const attrs = [];
-                    if (entity.attributes.personality) attrs.push(`性格:${entity.attributes.personality}`);
-                    if (entity.attributes.appearance) attrs.push(`外貌:${entity.attributes.appearance}`);
-                    if (entity.attributes.realm) attrs.push(`境界:${entity.attributes.realm}`);
+                    if (entity.attributes.personality) attrs.push(`Tính cách: ${entity.attributes.personality}`);
+                    if (entity.attributes.appearance) attrs.push(`Ngoại hình: ${entity.attributes.appearance}`);
+                    if (entity.attributes.realm) attrs.push(`Cảnh giới: ${entity.attributes.realm}`);
                     if (attrs.length > 0) {
                         context += `   ${attrs.join(' | ')}\n`;
                     }
@@ -760,23 +755,23 @@ class GraphRAGLite {
             });
         }
 
-        // 关系网络
+        // Mạng lưới quan hệ
         if (localResult.relations.length > 0) {
-            context += '\n【🔗 关系网络】\n';
+            context += '\n【🔗 Mạng lưới quan hệ】\n';
             localResult.relations.slice(0, 10).forEach(rel => {
                 context += `${rel.subject} --${rel.predicate}--> ${rel.object}\n`;
             });
         }
 
-        // 维度关联
+        // Liên kết chiều hướng
         if (localResult.dimensions.length > 0) {
-            context += '\n【🏷️ 共享维度】\n';
+            context += '\n【🏷️ Chiều hướng chung】\n';
             context += localResult.dimensions.slice(0, 5).join('、') + '\n';
         }
 
-        // Global Search结果
+        // Kết quả Global Search
         if (globalResult && globalResult.dimensions.length > 0) {
-            context += '\n【🌐 全局概览】\n';
+            context += '\n【🌐 Tổng quan toàn cục】\n';
             globalResult.dimensions.forEach(dim => {
                 context += `▸ ${dim.name}: ${dim.summary}\n`;
             });
@@ -785,15 +780,14 @@ class GraphRAGLite {
         return context.trim();
     }
 
-    // ==================== 向量相关 ====================
+    // ==================== Liên quan đến Vector ====================
 
     /**
-     * 生成向量（复用游戏设置中的向量化方法）
+     * Tạo vector (sử dụng phương thức vector hóa trong cài đặt trò chơi)
      */
     async generateVector(entity) {
         const text = `${entity.name} ${entity.type || ''} ${entity.description || ''}`.trim();
 
-        // 使用contextVectorManager的向量化方法
         if (window.contextVectorManager) {
             const method = window.contextVectorManager.embeddingMethod;
 
@@ -806,28 +800,26 @@ class GraphRAGLite {
             }
         }
 
-        // 降级：使用关键词向量
+        // Dự phòng: Sử dụng vector từ khóa đơn giản
         return this.createSimpleKeywordVector(text);
     }
 
     /**
-     * 批量生成向量（一次API调用处理多个实体）
-     * @param {Array<Object>} entities - 实体数组
-     * @returns {Promise<Map>} - entityId -> vector 的映射
+     * Tạo vector hàng loạt (một lần gọi API cho nhiều thực thể)
+     * @param {Array<Object>} entities - Mảng thực thể
+     * @returns {Promise<Map>} - Bản đồ mapping entityId -> vector
      */
     async generateBatchVectors(entities) {
         if (!entities || entities.length === 0) return new Map();
 
-        // 构建文本数组
         const texts = entities.map(entity =>
             `${entity.name} ${entity.type || ''} ${entity.description || ''}`.trim()
         );
 
-        // 使用批量API
         if (window.contextVectorManager?.getBatchEmbeddingsFromAPI &&
             window.contextVectorManager.embeddingMethod === 'api') {
             try {
-                console.log(`[GraphRAG-Lite] 批量生成向量: ${entities.length} 个实体`);
+                console.log(`[GraphRAG-Lite] Đang tạo vector hàng loạt cho ${entities.length} thực thể`);
                 const vectors = await window.contextVectorManager.getBatchEmbeddingsFromAPI(texts);
 
                 const result = new Map();
@@ -835,17 +827,15 @@ class GraphRAGLite {
                     if (vectors[i]) {
                         const key = entity.id || entity.name;
                         result.set(key, vectors[i]);
-                        console.log(`[GraphRAG-Lite] 批量向量已缓存: ${key}`);
+                        console.log(`[GraphRAG-Lite] Đã lưu đệm vector hàng loạt: ${key}`);
                     }
                 });
-                console.log(`[GraphRAG-Lite] 批量向量Map大小: ${result.size}`);
                 return result;
             } catch (e) {
-                console.warn('[GraphRAG-Lite] 批量向量生成失败，回退到单个处理:', e);
+                console.warn('[GraphRAG-Lite] Tạo vector hàng loạt thất bại, chuyển về xử lý từng mục:', e);
             }
         }
 
-        // 回退：使用关键词方法批量生成
         const result = new Map();
         for (const entity of entities) {
             const text = `${entity.name} ${entity.type || ''} ${entity.description || ''}`.trim();
@@ -856,7 +846,7 @@ class GraphRAGLite {
     }
 
     /**
-     * 简单关键词向量（降级方案）
+     * Vector từ khóa đơn giản (Phương án dự phòng)
      */
     createSimpleKeywordVector(text) {
         const words = text.toLowerCase().split(/\s+/).filter(w => w.length > 1);
@@ -868,7 +858,7 @@ class GraphRAGLite {
     }
 
     /**
-     * 计算余弦相似度
+     * Tính độ tương đồng Cosine
      */
     cosineSimilarity(vecA, vecB) {
         if (!vecA || !vecB) return 0;
@@ -876,7 +866,6 @@ class GraphRAGLite {
         const isArrayA = Array.isArray(vecA);
         const isArrayB = Array.isArray(vecB);
 
-        // 数组向量
         if (isArrayA && isArrayB) {
             let dotProduct = 0;
             let normA = 0;
@@ -893,7 +882,6 @@ class GraphRAGLite {
             return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
         }
 
-        // 对象向量（关键词）
         if (!isArrayA && !isArrayB) {
             const keysA = Object.keys(vecA);
             const keysB = Object.keys(vecB);
@@ -918,7 +906,7 @@ class GraphRAGLite {
         return 0;
     }
 
-    // ==================== 持久化 ====================
+    // ==================== Lưu trữ bền vững (Persistence) ====================
 
     async saveEntityToIndexedDB(entity) {
         if (!this.indexedDB) return;
@@ -944,7 +932,6 @@ class GraphRAGLite {
 
     async saveDimensionToIndexedDB(dimension) {
         if (!this.indexedDB) return;
-        // 将Set转为数组存储
         const dimToSave = {
             ...dimension,
             entities: Array.from(dimension.entities || [])
@@ -969,10 +956,10 @@ class GraphRAGLite {
         });
     }
 
-    // ==================== 数据操作 ====================
+    // ==================== Thao tác dữ liệu ====================
 
     /**
-     * 清空所有数据
+     * Xóa sạch toàn bộ dữ liệu
      */
     async clearAll() {
         this.entities.clear();
@@ -993,11 +980,11 @@ class GraphRAGLite {
             }
         }
 
-        this.log('已清空所有数据');
+        this.log('Đã xóa sạch toàn bộ dữ liệu');
     }
 
     /**
-     * 导出数据
+     * Xuất dữ liệu
      */
     export() {
         return {
@@ -1014,15 +1001,14 @@ class GraphRAGLite {
     }
 
     /**
-     * 导入数据
+     * Nhập dữ liệu
      */
     async import(data) {
         if (!data) return;
 
-        // 清空现有数据
         await this.clearAll();
 
-        // 导入实体
+        // Nhập thực thể
         if (data.entities) {
             for (const entity of data.entities) {
                 this.entities.set(entity.id, entity);
@@ -1033,7 +1019,7 @@ class GraphRAGLite {
             }
         }
 
-        // 导入关系
+        // Nhập quan hệ
         if (data.relations) {
             this.relations = data.relations;
             for (const rel of data.relations) {
@@ -1041,7 +1027,7 @@ class GraphRAGLite {
             }
         }
 
-        // 导入维度
+        // Nhập chiều hướng
         if (data.dimensions) {
             for (const dim of data.dimensions) {
                 const dimension = {
@@ -1053,21 +1039,21 @@ class GraphRAGLite {
             }
         }
 
-        // 导入配置
+        // Nhập cấu hình
         if (data.config) {
             this.config = { ...this.config, ...data.config };
         }
 
-        this.log(`导入完成: ${this.entities.size}实体, ${this.relations.length}关系, ${this.dimensions.size}维度`);
+        this.log(`Nhập dữ liệu hoàn tất: ${this.entities.size} thực thể, ${this.relations.length} quan hệ, ${this.dimensions.size} chiều hướng`);
     }
 
     /**
-     * 从人物图谱迁移
+     * Di trú dữ liệu từ Character Graph cũ
      */
     async migrateFromCharacterGraph() {
         const oldManager = window.characterGraphManager;
         if (!oldManager || !oldManager.characters) {
-            this.log('未找到人物图谱数据', 'warn');
+            this.log('Không tìm thấy dữ liệu Character Graph', 'warn');
             return 0;
         }
 
@@ -1091,17 +1077,17 @@ class GraphRAGLite {
             count++;
         }
 
-        this.log(`从人物图谱迁移: ${count}人`);
+        this.log(`Di trú từ Character Graph thành công: ${count} nhân vật`);
         return count;
     }
 
     /**
-     * 根据轮次范围删除
+     * Xóa theo dải lượt hội thoại
      */
     async deleteByTurnRange(startTurn, endTurn) {
         let deletedCount = 0;
 
-        // 删除实体
+        // Xóa thực thể
         for (const [id, entity] of this.entities) {
             if (entity.turnIndex >= startTurn && entity.turnIndex <= endTurn) {
                 await this.deleteEntity(entity.name);
@@ -1109,21 +1095,21 @@ class GraphRAGLite {
             }
         }
 
-        // 删除关系
+        // Xóa quan hệ
         this.relations = this.relations.filter(rel => {
             const keep = rel.turnIndex < startTurn || rel.turnIndex > endTurn;
             if (!keep) deletedCount++;
             return keep;
         });
 
-        this.log(`按轮次删除: ${startTurn}-${endTurn}, 共删除${deletedCount}条`);
+        this.log(`Xóa theo lượt: ${startTurn}-${endTurn}, tổng cộng đã xóa ${deletedCount} mục`);
         return deletedCount;
     }
 
-    // ==================== 工具方法 ====================
+    // ==================== Phương thức tiện ích ====================
 
     /**
-     * 获取统计信息
+     * Lấy thông tin thống kê
      */
     getStats() {
         const typeCount = {};
@@ -1142,15 +1128,15 @@ class GraphRAGLite {
     }
 
     /**
-     * 更新配置
+     * Cập nhật cấu hình
      */
     updateConfig(newConfig) {
         this.config = { ...this.config, ...newConfig };
-        this.log('配置已更新');
+        this.log('Cấu hình đã được cập nhật');
     }
 
     /**
-     * 日志输出
+     * Xuất nhật ký (Log)
      */
     log(message, level = 'log') {
         if (!this.config.debug && level !== 'error') return;
@@ -1164,11 +1150,10 @@ class GraphRAGLite {
         }
     }
 
-    // ==================== 存档集成方法 ====================
+    // ==================== Phương thức tích hợp Lưu trữ (Archive) ====================
 
     /**
-     * 导出所有数据（用于存档）
-     * @returns {Object} 可序列化的数据对象
+     * Xuất toàn bộ dữ liệu (Dùng cho lưu trữ game)
      */
     exportData() {
         return {
@@ -1180,7 +1165,6 @@ class GraphRAGLite {
                 summary: dim.summary,
                 createdAt: dim.createdAt,
                 updatedAt: dim.updatedAt
-                // 不导出vector，导入时会重新生成
             })),
             vectors: Array.from(this.vectors.entries()),
             stats: { ...this.stats }
@@ -1188,17 +1172,14 @@ class GraphRAGLite {
     }
 
     /**
-     * 导入数据（从存档恢复）
-     * @param {Object} data - 导出的数据对象
+     * Nhập dữ liệu (Khôi phục từ bản lưu trữ)
      */
     async importData(data) {
         if (!data) return;
 
         try {
-            // 先清除现有数据
             await this.clearAll();
 
-            // 导入实体
             if (data.entities) {
                 for (const [id, entity] of data.entities) {
                     this.entities.set(id, entity);
@@ -1206,7 +1187,6 @@ class GraphRAGLite {
                 }
             }
 
-            // 导入关系
             if (data.relations) {
                 this.relations = [...data.relations];
                 for (const rel of this.relations) {
@@ -1214,7 +1194,6 @@ class GraphRAGLite {
                 }
             }
 
-            // 导入维度
             if (data.dimensions) {
                 for (const dim of data.dimensions) {
                     this.dimensions.set(dim.name, {
@@ -1223,42 +1202,38 @@ class GraphRAGLite {
                         summary: dim.summary,
                         createdAt: dim.createdAt,
                         updatedAt: dim.updatedAt,
-                        vector: null  // 稍后重新生成
+                        vector: null
                     });
                     await this.saveDimensionToIndexedDB(this.dimensions.get(dim.name));
                 }
             }
 
-            // 导入向量
             if (data.vectors) {
                 for (const [id, vec] of data.vectors) {
                     this.vectors.set(id, vec);
                 }
             }
 
-            // 导入统计
             if (data.stats) {
                 this.stats = { ...this.stats, ...data.stats };
             }
 
-            console.log(`[GraphRAG-Lite] 数据已导入: ${this.entities.size}实体, ${this.relations.length}关系, ${this.dimensions.size}维度`);
+            console.log(`[GraphRAG-Lite] Dữ liệu đã được nhập: ${this.entities.size} thực thể, ${this.relations.length} quan hệ`);
         } catch (e) {
-            console.error('[GraphRAG-Lite] 导入数据失败:', e);
+            console.error('[GraphRAG-Lite] Nhập dữ liệu thất bại:', e);
         }
     }
 
     /**
-     * 清除所有数据（用于新游戏）
+     * Xóa sạch dữ liệu (Dùng khi bắt đầu game mới)
      */
     async clearAll() {
-        // 清除内存数据
         this.entities.clear();
         this.relations = [];
         this.dimensions.clear();
         this.vectors.clear();
         this.stats = { searchCount: 0, lastSearchAt: null };
 
-        // 清除IndexedDB
         if (this.db) {
             try {
                 const transaction = this.db.transaction(['entities', 'relations', 'dimensions'], 'readwrite');
@@ -1279,18 +1254,15 @@ class GraphRAGLite {
                         req.onerror = () => reject(req.error);
                     })
                 ]);
-                console.log('[GraphRAG-Lite] IndexedDB数据已清除');
+                console.log('[GraphRAG-Lite] Dữ liệu trong IndexedDB đã được xóa sạch');
             } catch (e) {
-                console.warn('[GraphRAG-Lite] 清除IndexedDB失败:', e);
+                console.warn('[GraphRAG-Lite] Xóa dữ liệu IndexedDB thất bại:', e);
             }
         }
 
-        console.log('[GraphRAG-Lite] 所有数据已清除');
+        console.log('[GraphRAG-Lite] Toàn bộ dữ liệu đã được dọn sạch');
     }
 
-    /**
-     * 保存维度到IndexedDB
-     */
     async saveDimensionToIndexedDB(dimension) {
         if (!this.db) return;
         try {
@@ -1305,17 +1277,17 @@ class GraphRAGLite {
             };
             store.put(data);
         } catch (e) {
-            console.warn('[GraphRAG-Lite] 保存维度失败:', e);
+            console.warn('[GraphRAG-Lite] Lưu chiều hướng thất bại:', e);
         }
     }
 }
 
-// 创建全局实例
+// Khởi tạo thực thể toàn cục
 if (typeof window !== 'undefined') {
     window.graphRAGLite = new GraphRAGLite();
-    console.log('[GraphRAG-Lite] 全局实例已创建: window.graphRAGLite');
+    console.log('[GraphRAG-Lite] Thực thể toàn cục đã được tạo: window.graphRAGLite');
 
-    // 自动初始化
+    // Tự động khởi tạo
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => {
             window.graphRAGLite.init();

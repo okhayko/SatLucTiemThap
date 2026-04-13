@@ -1,27 +1,27 @@
-// 查看向量库
-function viewVectorLibrary() {
-    if (!window.contextVectorManager) {
-        alert('向量管理器未初始化！');
-        return;
-    }
+// Xem thư viện Vector
+        function viewVectorLibrary() {
+            if (!window.contextVectorManager) {
+                alert('Trình quản lý Vector chưa được khởi tạo!');
+                return;
+            }
 
-    const embeddings = window.contextVectorManager.conversationEmbeddings;
-    const enableVectorRetrieval = document.getElementById('enableVectorRetrieval')?.checked || false;
+            const embeddings = window.contextVectorManager.conversationEmbeddings;
+            const enableVectorRetrieval = document.getElementById('enableVectorRetrieval')?.checked || false;
 
-    if (!enableVectorRetrieval) {
-        alert('向量检索未启用！\n\n请在游戏设置中启用"🧬 启用向量检索（智能记忆）"');
-        return;
-    }
+            if (!enableVectorRetrieval) {
+                alert('Truy xuất Vector chưa được bật!\n\nVui lòng bật "🧬 Kích hoạt truy xuất Vector (Bộ nhớ thông minh)" trong cài đặt game.');
+                return;
+            }
 
-    if (embeddings.length === 0) {
-        alert('向量库为空！\n\n请先进行游戏，系统会自动记录对话到向量库。');
-        return;
-    }
+            if (embeddings.length === 0) {
+                alert('Thư viện Vector đang trống!\n\nVui lòng chơi game trước, hệ thống sẽ tự động ghi lại các đoạn đối thoại vào thư viện.');
+                return;
+            }
 
-    // 构建HTML内容
-    let htmlContent = `
+            // Xây dựng nội dung HTML
+            let htmlContent = `
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <h2 style="color: #667eea; margin: 0;">🧬 向量库查看器</h2>
+                    <h2 style="color: #667eea; margin: 0;">🧬 Trình xem Thư viện Vector</h2>
                     <button onclick="document.getElementById('vectorLibraryModal').remove()" style="
                         padding: 8px 16px;
                         background: #dc3545;
@@ -30,32 +30,32 @@ function viewVectorLibrary() {
                         border-radius: 5px;
                         cursor: pointer;
                         font-size: 14px;
-                    ">关闭</button>
+                    ">Đóng</button>
                 </div>
                 
                 <div style="background: #f0f2ff; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
                     <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px;">
                         <div style="text-align: center;">
                             <div style="font-size: 24px; font-weight: bold; color: #667eea;">${embeddings.length}</div>
-                            <div style="font-size: 12px; color: #666;">总对话数</div>
+                            <div style="font-size: 12px; color: #666;">Tổng số đối thoại</div>
                         </div>
                         <div style="text-align: center;">
                             <div style="font-size: 24px; font-weight: bold; color: #764ba2;">${window.contextVectorManager.embeddingMethod}</div>
-                            <div style="font-size: 12px; color: #666;">向量化方法</div>
+                            <div style="font-size: 12px; color: #666;">Phương pháp Vector hóa</div>
                         </div>
                         <div style="text-align: center;">
                             <div style="font-size: 24px; font-weight: bold; color: #28a745;">${window.contextVectorManager.maxRetrieveCount}</div>
-                            <div style="font-size: 12px; color: #666;">检索数量</div>
+                            <div style="font-size: 12px; color: #666;">Số lượng truy xuất</div>
                         </div>
                         <div style="text-align: center;">
                             <div style="font-size: 24px; font-weight: bold; color: #ffc107;">${window.contextVectorManager.minSimilarityThreshold}</div>
-                            <div style="font-size: 12px; color: #666;">相似度阈值</div>
+                            <div style="font-size: 12px; color: #666;">Ngưỡng tương đồng</div>
                         </div>
                     </div>
                 </div>
 
                 <div style="margin-bottom: 15px;">
-                    <input type="text" id="vectorSearchInput" placeholder="🔍 输入关键词搜索相关对话..." 
+                    <input type="text" id="vectorSearchInput" placeholder="🔍 Nhập từ khóa để tìm kiếm đối thoại liên quan..." 
                         style="width: 100%; padding: 12px; border: 2px solid #667eea; border-radius: 8px; font-size: 14px;"
                         onkeyup="filterVectorList(this.value)">
                 </div>
@@ -63,12 +63,12 @@ function viewVectorLibrary() {
                 <div id="vectorListContainer" style="max-height: 500px; overflow-y: auto;">
             `;
 
-    embeddings.forEach((conv, index) => {
-        const date = new Date(conv.timestamp).toLocaleString('zh-CN');
-        const userPreview = conv.userMessage.length > 60 ? conv.userMessage.substring(0, 60) + '...' : conv.userMessage;
-        const aiPreview = conv.aiResponse.length > 100 ? conv.aiResponse.substring(0, 100) + '...' : conv.aiResponse;
-
-        htmlContent += `
+            embeddings.forEach((conv, index) => {
+                const date = new Date(conv.timestamp).toLocaleString('vi-VN');
+                const userPreview = conv.userMessage.length > 60 ? conv.userMessage.substring(0, 60) + '...' : conv.userMessage;
+                const aiPreview = conv.aiResponse.length > 100 ? conv.aiResponse.substring(0, 100) + '...' : conv.aiResponse;
+                
+                htmlContent += `
                     <div class="vector-item" data-index="${index}" style="
                         background: white;
                         padding: 15px;
@@ -82,37 +82,37 @@ function viewVectorLibrary() {
                        onclick="showVectorDetail(${index})">
                         
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                            <div style="font-weight: bold; color: #667eea;">第 ${conv.turnIndex} 轮对话</div>
+                            <div style="font-weight: bold; color: #667eea;">Đối thoại vòng thứ ${conv.turnIndex}</div>
                             <div style="font-size: 11px; color: #999;">${date}</div>
                         </div>
                         
                         <div style="background: #e7f5e9; padding: 10px; border-radius: 5px; margin-bottom: 8px;">
-                            <div style="font-size: 11px; color: #666; margin-bottom: 3px;">👤 玩家</div>
+                            <div style="font-size: 11px; color: #666; margin-bottom: 3px;">👤 Người chơi</div>
                             <div style="font-size: 13px; color: #333;">${userPreview}</div>
                         </div>
                         
                         <div style="background: #f0f2ff; padding: 10px; border-radius: 5px; margin-bottom: 8px;">
-                            <div style="font-size: 11px; color: #666; margin-bottom: 3px;">🤖 AI回复</div>
+                            <div style="font-size: 11px; color: #666; margin-bottom: 3px;">🤖 Phản hồi AI</div>
                             <div style="font-size: 13px; color: #333;">${aiPreview}</div>
                         </div>
                         
                         <div style="background: #fff3cd; padding: 8px; border-radius: 5px;">
-                            <div style="font-size: 11px; color: #856404;">📝 摘要：${conv.summary}</div>
+                            <div style="font-size: 11px; color: #856404;">📝 Tóm tắt: ${conv.summary}</div>
                         </div>
                         
                         ${conv.variables ? `
                             <div style="margin-top: 8px; font-size: 11px; color: #666;">
-                                📍 ${conv.variables.location || '未知'} | 
-                                ⚔️ ${conv.variables.realm || '未知'} |
-                                ${conv.variables.hasNewItems ? '🎒 获得物品' : ''} 
-                                ${conv.variables.hasNewRelationships ? '👥 新增关系' : ''}
+                                📍 ${conv.variables.location || 'Không rõ'} | 
+                                ⚔️ ${conv.variables.realm || 'Không rõ'} | 
+                                ${conv.variables.hasNewItems ? '🎒 Có vật phẩm mới' : ''} 
+                                ${conv.variables.hasNewRelationships ? '👥 Có quan hệ mới' : ''}
                             </div>
                         ` : ''}
                     </div>
                 `;
-    });
+            });
 
-    htmlContent += `
+            htmlContent += `
                 </div>
                 
                 <div style="margin-top: 20px; padding-top: 20px; border-top: 2px solid #ddd; display: flex; gap: 10px;">
@@ -126,7 +126,7 @@ function viewVectorLibrary() {
                         cursor: pointer;
                         font-size: 14px;
                         font-weight: bold;
-                    ">📤 导出向量库</button>
+                    ">📤 Xuất thư viện Vector</button>
                     
                     <button onclick="clearVectorLibraryConfirm()" style="
                         flex: 1;
@@ -138,15 +138,15 @@ function viewVectorLibrary() {
                         cursor: pointer;
                         font-size: 14px;
                         font-weight: bold;
-                    ">🗑️ 清空向量库</button>
+                    ">🗑️ Xóa thư viện Vector</button>
                 </div>
             `;
 
-    // 创建模态框
-    const modal = document.createElement('div');
-    modal.id = 'vectorLibraryModal';
-    modal.style.cssText = `
-                position: fixed;
+            // Tạo Modal
+            const modal = document.createElement('div');
+            modal.id = 'vectorLibraryModal';
+            modal.style.cssText = `
+                position: absolute;
                 top: 0;
                 left: 0;
                 width: 100%;
@@ -159,8 +159,8 @@ function viewVectorLibrary() {
                 padding: 20px;
             `;
 
-    const content = document.createElement('div');
-    content.style.cssText = `
+            const content = document.createElement('div');
+            content.style.cssText = `
                 background: white;
                 padding: 30px;
                 border-radius: 15px;
@@ -170,42 +170,42 @@ function viewVectorLibrary() {
                 overflow-y: auto;
                 box-shadow: 0 10px 50px rgba(0, 0, 0, 0.5);
             `;
-    content.innerHTML = htmlContent;
+            content.innerHTML = htmlContent;
 
-    modal.appendChild(content);
-    document.body.appendChild(modal);
+            modal.appendChild(content);
+            document.body.appendChild(modal);
 
-    // 点击背景关闭
-    modal.onclick = function (e) {
-        if (e.target === modal) {
-            modal.remove();
+            // Đóng khi click ra ngoài
+            modal.onclick = function (e) {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            };
         }
-    };
-}
 
-// 过滤向量列表
-function filterVectorList(keyword) {
-    const items = document.querySelectorAll('.vector-item');
-    const lowerKeyword = keyword.toLowerCase();
-
-    items.forEach(item => {
-        const text = item.textContent.toLowerCase();
-        if (text.includes(lowerKeyword)) {
-            item.style.display = 'block';
-        } else {
-            item.style.display = 'none';
+        // Lọc danh sách vector
+        function filterVectorList(keyword) {
+            const items = document.querySelectorAll('.vector-item');
+            const lowerKeyword = keyword.toLowerCase();
+            
+            items.forEach(item => {
+                const text = item.textContent.toLowerCase();
+                if (text.includes(lowerKeyword)) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
         }
-    });
-}
 
-// 显示向量详情
-function showVectorDetail(index) {
-    const conv = window.contextVectorManager.conversationEmbeddings[index];
-    if (!conv) return;
+        // Hiển thị chi tiết vector
+        function showVectorDetail(index) {
+            const conv = window.contextVectorManager.conversationEmbeddings[index];
+            if (!conv) return;
 
-    const detailHtml = `
+            const detailHtml = `
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <h2 style="color: #667eea; margin: 0;">📋 第 ${conv.turnIndex} 轮对话详情</h2>
+                    <h2 style="color: #667eea; margin: 0;">📋 Chi tiết đối thoại vòng thứ ${conv.turnIndex}</h2>
                     <button onclick="document.getElementById('vectorDetailModal').remove()" style="
                         padding: 8px 16px;
                         background: #dc3545;
@@ -214,38 +214,38 @@ function showVectorDetail(index) {
                         border-radius: 5px;
                         cursor: pointer;
                         font-size: 14px;
-                    ">关闭</button>
+                    ">Đóng</button>
                 </div>
                 
                 <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 15px;">
-                    <div style="font-weight: bold; color: #666; margin-bottom: 8px;">📊 元数据</div>
+                    <div style="font-weight: bold; color: #666; margin-bottom: 8px;">📊 Siêu dữ liệu (Metadata)</div>
                     <div style="font-size: 13px; line-height: 1.8;">
-                        🕐 时间：${new Date(conv.timestamp).toLocaleString('zh-CN')}<br>
-                        🔢 轮次：第 ${conv.turnIndex} 轮<br>
-                        📝 摘要：${conv.summary}
+                        🕐 Thời gian: ${new Date(conv.timestamp).toLocaleString('vi-VN')}<br>
+                        🔢 Vòng: Thứ ${conv.turnIndex}<br>
+                        📝 Tóm tắt: ${conv.summary}
                     </div>
                 </div>
 
                 <div style="background: #e7f5e9; padding: 15px; border-radius: 10px; margin-bottom: 15px;">
-                    <div style="font-weight: bold; color: #28a745; margin-bottom: 8px;">👤 玩家消息</div>
+                    <div style="font-weight: bold; color: #28a745; margin-bottom: 8px;">👤 Tin nhắn người chơi</div>
                     <div style="white-space: pre-wrap; font-size: 13px; line-height: 1.6;">${conv.userMessage}</div>
                 </div>
 
                 <div style="background: #f0f2ff; padding: 15px; border-radius: 10px; margin-bottom: 15px;">
-                    <div style="font-weight: bold; color: #667eea; margin-bottom: 8px;">🤖 AI回复</div>
+                    <div style="font-weight: bold; color: #667eea; margin-bottom: 8px;">🤖 Phản hồi AI</div>
                     <div style="white-space: pre-wrap; font-size: 13px; line-height: 1.6; max-height: 300px; overflow-y: auto;">${conv.aiResponse}</div>
                 </div>
 
                 ${conv.variables ? `
                     <div style="background: #fff3cd; padding: 15px; border-radius: 10px;">
-                        <div style="font-weight: bold; color: #856404; margin-bottom: 8px;">📍 关键变量</div>
+                        <div style="font-weight: bold; color: #856404; margin-bottom: 8px;">📍 Các biến quan trọng</div>
                         <div style="font-size: 13px; line-height: 1.8;">
-                            地点：${conv.variables.location || '未知'}<br>
-                            境界：${conv.variables.realm || '未知'}<br>
-                            体力：${conv.variables.hp || '?'}/${conv.variables.hpMax || '?'}<br>
-                            法力：${conv.variables.mp || '?'}/${conv.variables.mpMax || '?'}<br>
-                            ${conv.variables.hasNewItems ? '✅ 本轮获得新物品<br>' : ''}
-                            ${conv.variables.hasNewRelationships ? '✅ 本轮新增人际关系<br>' : ''}
+                            Địa điểm: ${conv.variables.location || 'Không rõ'}<br>
+                            Cảnh giới: ${conv.variables.realm || 'Không rõ'}<br>
+                            Sinh lực (HP): ${conv.variables.hp || '?'}/${conv.variables.hpMax || '?'}<br>
+                            Linh lực (MP): ${conv.variables.mp || '?'}/${conv.variables.mpMax || '?'}<br>
+                            ${conv.variables.hasNewItems ? '✅ Vòng này nhận được vật phẩm mới<br>' : ''}
+                            ${conv.variables.hasNewRelationships ? '✅ Vòng này có quan hệ nhân sự mới<br>' : ''}
                         </div>
                     </div>
                 ` : ''}
@@ -261,13 +261,13 @@ function showVectorDetail(index) {
                         cursor: pointer;
                         font-size: 14px;
                         font-weight: bold;
-                    ">🧪 测试与此对话的相似度</button>
+                    ">🧪 Kiểm tra độ tương đồng với đối thoại này</button>
                 </div>
             `;
 
-    const modal = document.createElement('div');
-    modal.id = 'vectorDetailModal';
-    modal.style.cssText = `
+            const modal = document.createElement('div');
+            modal.id = 'vectorDetailModal';
+            modal.style.cssText = `
                 position: absolute;
                 top: 0;
                 left: 0;
@@ -281,8 +281,8 @@ function showVectorDetail(index) {
                 padding: 20px;
             `;
 
-    const content = document.createElement('div');
-    content.style.cssText = `
+            const content = document.createElement('div');
+            content.style.cssText = `
                 background: white;
                 padding: 30px;
                 border-radius: 15px;
@@ -292,132 +292,132 @@ function showVectorDetail(index) {
                 overflow-y: auto;
                 box-shadow: 0 10px 50px rgba(0, 0, 0, 0.5);
             `;
-    content.innerHTML = detailHtml;
+            content.innerHTML = detailHtml;
 
-    modal.appendChild(content);
-    document.body.appendChild(modal);
+            modal.appendChild(content);
+            document.body.appendChild(modal);
 
-    modal.onclick = function (e) {
-        if (e.target === modal) {
-            modal.remove();
+            modal.onclick = function (e) {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            };
         }
-    };
-}
 
-// 测试相似度
-function testVectorSimilarity(targetIndex) {
-    const keyword = prompt('请输入测试关键词（如：青云宗、长老、修炼等）：');
-    if (!keyword) return;
+        // Kiểm tra độ tương đồng
+        function testVectorSimilarity(targetIndex) {
+            const keyword = prompt('Vui lòng nhập từ khóa kiểm tra (ví dụ: Thanh Vân Tông, Trưởng lão, Tu luyện...):');
+            if (!keyword) return;
 
-    const targetConv = window.contextVectorManager.conversationEmbeddings[targetIndex];
-    const testVector = window.contextVectorManager.createKeywordVector(keyword);
-    const similarity = window.contextVectorManager.calculateCosineSimilarity(testVector, targetConv.vector);
+            const targetConv = window.contextVectorManager.conversationEmbeddings[targetIndex];
+            const testVector = window.contextVectorManager.createKeywordVector(keyword);
+            const similarity = window.contextVectorManager.calculateCosineSimilarity(testVector, targetConv.vector);
 
-    alert(`🧪 相似度测试结果\n\n关键词："${keyword}"\n目标对话：第${targetConv.turnIndex}轮\n\n相似度：${(similarity * 100).toFixed(2)}%\n\n${similarity >= window.contextVectorManager.minSimilarityThreshold ? '✅ 高于阈值，会被检索到' : '❌ 低于阈值，不会被检索到'}`);
-}
+            alert(`🧪 Kết quả kiểm tra độ tương đồng\n\nTừ khóa: "${keyword}"\nĐối thoại mục tiêu: Vòng thứ ${targetConv.turnIndex}\n\nĐộ tương đồng: ${(similarity * 100).toFixed(2)}%\n\n${similarity >= window.contextVectorManager.minSimilarityThreshold ? '✅ Cao hơn ngưỡng, sẽ được tìm thấy' : '❌ Thấp hơn ngưỡng, sẽ không được tìm thấy'}`);
+        }
 
-// 导出向量库
-function exportVectorLibrary() {
-    const data = {
-        embeddings: window.contextVectorManager.conversationEmbeddings,
-        method: window.contextVectorManager.embeddingMethod,
-        exportTime: new Date().toISOString()
-    };
+        // Xuất thư viện Vector
+        function exportVectorLibrary() {
+            const data = {
+                embeddings: window.contextVectorManager.conversationEmbeddings,
+                method: window.contextVectorManager.embeddingMethod,
+                exportTime: new Date().toISOString()
+            };
 
-    const dataStr = JSON.stringify(data, null, 2);
-    const blob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
+            const dataStr = JSON.stringify(data, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
 
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `向量库_${new Date().toLocaleString('zh-CN').replace(/[/:]/g, '-')}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `ThuVienVector_${new Date().toLocaleString('vi-VN').replace(/[/:]/g, '-')}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
 
-    alert('✅ 向量库已导出！');
-}
+            alert('✅ Đã xuất thư viện Vector!');
+        }
 
-// 清空向量库确认
-function clearVectorLibraryConfirm() {
-    if (!confirm('⚠️ 确定要清空向量库吗？\n\n这将删除所有已存储的对话向量，此操作不可恢复！')) {
-        return;
-    }
+        // Xác nhận xóa thư viện Vector
+        function clearVectorLibraryConfirm() {
+            if (!confirm('⚠️ Bạn có chắc chắn muốn xóa thư viện Vector không?\n\nThao tác này sẽ xóa tất cả các vector đối thoại đã lưu, không thể khôi phục!')) {
+                return;
+            }
 
-    window.contextVectorManager.clear();
-    window.contextVectorManager.saveToIndexedDB().then(() => {
-        alert('✅ 向量库已清空！');
-        document.getElementById('vectorLibraryModal')?.remove();
-    }).catch(err => {
-        console.error('清空失败:', err);
-        alert('❌ 清空失败：' + err.message);
-    });
-}
+            window.contextVectorManager.clear();
+            window.contextVectorManager.saveToIndexedDB().then(() => {
+                alert('✅ Thư viện Vector đã được xóa!');
+                document.getElementById('vectorLibraryModal')?.remove();
+            }).catch(err => {
+                console.error('Xóa thất bại:', err);
+                alert('❌ Xóa thất bại: ' + err.message);
+            });
+        }
 
-// 🆕 诊断：检查实际渲染的消息数量
-function diagnoseMessageDisplay() {
-    const historyDiv = document.getElementById('gameHistory');
-    const userMessages = historyDiv.querySelectorAll('.user-message');
-    const aiMessages = historyDiv.querySelectorAll('.ai-message');
-    const dynamicMessages = historyDiv.querySelectorAll('.dynamic-world-message');
+        // 🆕 Chẩn đoán: Kiểm tra số lượng tin nhắn thực tế được render
+        function diagnoseMessageDisplay() {
+            const historyDiv = document.getElementById('gameHistory');
+            const userMessages = historyDiv.querySelectorAll('.user-message');
+            const aiMessages = historyDiv.querySelectorAll('.ai-message');
+            const dynamicMessages = historyDiv.querySelectorAll('.dynamic-world-message');
+            
+            const report = `
+━━━━━━━━━━ Báo cáo Chẩn đoán Hiển thị Tin nhắn ━━━━━━━━━━
 
-    const report = `
-━━━━━━━━━━ 消息显示诊断报告 ━━━━━━━━━━
+📊 Dữ liệu trong bộ nhớ:
+  - Tổng số conversationHistory: ${gameState.conversationHistory.length}
+  - Tin nhắn người chơi: ${gameState.conversationHistory.filter(m => m.role === 'user').length} tin
+  - Tin nhắn AI: ${gameState.conversationHistory.filter(m => m.role === 'assistant').length} tin
+  - Lịch sử quan trọng: ${gameState.variables.history ? gameState.variables.history.length : 0} tin
 
-📊 内存中的数据：
-  - conversationHistory 总条数: ${gameState.conversationHistory.length}
-  - 用户消息: ${gameState.conversationHistory.filter(m => m.role === 'user').length} 条
-  - AI消息: ${gameState.conversationHistory.filter(m => m.role === 'assistant').length} 条
-  - 重要历史记录: ${gameState.variables.history ? gameState.variables.history.length : 0} 条
+🖥️ Phần tử DOM thực tế đã render:
+  - Tổng số phần tử con trong gameHistory: ${historyDiv.children.length}
+  - Tin nhắn người chơi (.user-message): ${userMessages.length} tin
+  - Tin nhắn AI (.ai-message): ${aiMessages.length} tin
+  - Tin nhắn thế giới động (.dynamic-world-message): ${dynamicMessages.length} tin
 
-🖥️ 实际渲染的DOM元素：
-  - gameHistory 子元素总数: ${historyDiv.children.length}
-  - 用户消息 (.user-message): ${userMessages.length} 条
-  - AI消息 (.ai-message): ${aiMessages.length} 条
-  - 动态世界消息 (.dynamic-world-message): ${dynamicMessages.length} 条
+📝 Chi tiết conversationHistory:
+${gameState.conversationHistory.map((msg, i) => 
+    `  [${i+1}] ${msg.role === 'user' ? '👤Người chơi' : '🤖AI'}: ${msg.content.substring(0, 40)}...`
+).join('\n')}
 
-📝 conversationHistory 详情：
-${gameState.conversationHistory.map((msg, i) =>
-        `  [${i + 1}] ${msg.role === 'user' ? '👤用户' : '🤖AI'}: ${msg.content.substring(0, 40)}...`
-    ).join('\n')}
+📜 Lịch sử quan trọng (variables.history):
+${gameState.variables.history ? gameState.variables.history.map((h, i) => `  [${i+1}] ${h.substring(0, 50)}...`).join('\n') : '  (Không có)'}
 
-📜 重要历史 (variables.history)：
-${gameState.variables.history ? gameState.variables.history.map((h, i) => `  [${i + 1}] ${h.substring(0, 50)}...`).join('\n') : '  (无)'}
-
-💡 建议：
-  ${historyDiv.children.length === 0 ? '❌ 没有任何消息被渲染！请检查渲染函数是否正常工作。' : ''}
-  ${historyDiv.children.length < gameState.conversationHistory.length ? '⚠️ 渲染的消息数量少于存档中的数量，部分消息可能渲染失败。' : ''}
-  ${historyDiv.children.length === gameState.conversationHistory.length ? '✅ 消息数量匹配，如果看不到可能是CSS样式问题。' : ''}
-  ${gameState.variables.history && gameState.variables.history.length < gameState.conversationHistory.filter(m => m.role === 'user').length ? '⚠️ 重要历史记录数量少于对话轮数，建议使用"重建历史记录"功能。' : ''}
+💡 Đề xuất:
+  ${historyDiv.children.length === 0 ? '❌ Không có tin nhắn nào được render! Vui lòng kiểm tra hàm render.' : ''}
+  ${historyDiv.children.length < gameState.conversationHistory.length ? '⚠️ Số lượng tin nhắn được render ít hơn trong bộ nhớ, có thể một số tin nhắn bị lỗi render.' : ''}
+  ${historyDiv.children.length === gameState.conversationHistory.length ? '✅ Số lượng tin nhắn khớp, nếu không thấy có thể do lỗi CSS.' : ''}
+  ${gameState.variables.history && gameState.variables.history.length < gameState.conversationHistory.filter(m => m.role === 'user').length ? '⚠️ Số lượng lịch sử quan trọng ít hơn số vòng đối thoại, đề nghị dùng chức năng "Tái tạo lịch sử".' : ''}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
             `;
+            
+            console.log(report);
+            alert(report);
+        }
 
-    console.log(report);
-    alert(report);
-}
-
-// 🆕 查看History矩阵
-function viewHistoryMatrix() {
-    if (!window.contextVectorManager) {
-        alert('向量管理器未初始化！');
-        return;
-    }
-
-    if (!window.matrixManager) {
-        alert('矩阵管理器未初始化！');
-        return;
-    }
-
-    const historyVectorSize = window.contextVectorManager.historyEmbeddings.length;
-    const historyMatrixLayers = window.matrixManager.historyMatrix.layers.length;
-    const recentCount = window.contextVectorManager.recentHistoryCount;
-    const matrixCount = window.contextVectorManager.matrixHistoryCount;
-
-    // 构建HTML内容
-    let htmlContent = `
+        // 🆕 Xem Ma trận Lịch sử (History Matrix)
+        function viewHistoryMatrix() {
+            if (!window.contextVectorManager) {
+                alert('Trình quản lý Vector chưa được khởi tạo!');
+                return;
+            }
+            
+            if (!window.matrixManager) {
+                alert('Trình quản lý Ma trận chưa được khởi tạo!');
+                return;
+            }
+            
+            const historyVectorSize = window.contextVectorManager.historyEmbeddings.length;
+            const historyMatrixLayers = window.matrixManager.historyMatrix.layers.length;
+            const recentCount = window.contextVectorManager.recentHistoryCount;
+            const matrixCount = window.contextVectorManager.matrixHistoryCount;
+            
+            // Xây dựng nội dung HTML
+            let htmlContent = `
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <h2 style="color: #28a745; margin: 0;">📊 History矩阵查看器</h2>
+                    <h2 style="color: #28a745; margin: 0;">📊 Trình xem Ma trận Lịch sử</h2>
                     <button onclick="document.getElementById('historyMatrixModal').remove()" style="
                         padding: 8px 16px;
                         background: #dc3545;
@@ -426,32 +426,32 @@ function viewHistoryMatrix() {
                         border-radius: 5px;
                         cursor: pointer;
                         font-size: 14px;
-                    ">关闭</button>
+                    ">Đóng</button>
                 </div>
                 
                 <div style="background: #f0f8f0; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
                     <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px;">
                         <div style="text-align: center;">
                             <div style="font-size: 24px; font-weight: bold; color: #28a745;">${historyVectorSize}</div>
-                            <div style="font-size: 12px; color: #666;">History向量数</div>
+                            <div style="font-size: 12px; color: #666;">Số lượng Vector Lịch sử</div>
                         </div>
                         <div style="text-align: center;">
                             <div style="font-size: 24px; font-weight: bold; color: #17a2b8;">${historyMatrixLayers}</div>
-                            <div style="font-size: 12px; color: #666;">矩阵层数</div>
+                            <div style="font-size: 12px; color: #666;">Số lớp ma trận</div>
                         </div>
                         <div style="text-align: center;">
                             <div style="font-size: 24px; font-weight: bold; color: #ffc107;">${recentCount}</div>
-                            <div style="font-size: 12px; color: #666;">最近发送条数</div>
+                            <div style="font-size: 12px; color: #666;">Số tin gửi gần đây</div>
                         </div>
                         <div style="text-align: center;">
                             <div style="font-size: 24px; font-weight: bold; color: #6f42c1;">${matrixCount}</div>
-                            <div style="font-size: 12px; color: #666;">矩阵检索条数</div>
+                            <div style="font-size: 12px; color: #666;">Số tin truy xuất ma trận</div>
                         </div>
                     </div>
                 </div>
 
                 <div style="margin-bottom: 15px;">
-                    <input type="text" id="matrixSearchInput" placeholder="🔍 输入关键词搜索相关矩阵层..." 
+                    <input type="text" id="matrixSearchInput" placeholder="🔍 Nhập từ khóa để tìm kiếm lớp ma trận liên quan..." 
                         style="width: 100%; padding: 12px; border: 2px solid #28a745; border-radius: 8px; font-size: 14px;"
                         onkeyup="filterMatrixLayers(this.value)">
                 </div>
@@ -459,30 +459,30 @@ function viewHistoryMatrix() {
                 <div id="matrixLayersContainer" style="max-height: 400px; overflow-y: auto;">
             `;
 
-    // 显示矩阵层信息
-    if (historyMatrixLayers > 0) {
-        const layers = window.matrixManager.historyMatrix.layers;
-        layers.forEach((layer, index) => {
-            const weight = layer.weight ? layer.weight.toFixed(3) : '0.000';
-            const vectorCount = layer.vectors ? layer.vectors.length : 0;
-            const topic = layer.topic || '未分类';
-
-            // 获取该层第一个向量作为预览
-            let preview = '无数据';
-            if (layer.vectors && layer.vectors.length > 0) {
-                const firstVector = layer.vectors[0];
-                // History向量使用content字段，对话向量使用text字段
-                const textContent = firstVector.content || firstVector.text || firstVector.aiResponse;
-                if (textContent) {
-                    preview = textContent.length > 80 ?
-                        textContent.substring(0, 80) + '...' :
-                        textContent;
-                }
-            }
-
-            const createTime = layer.createTime ? new Date(layer.createTime).toLocaleString('zh-CN') : '未知';
-
-            htmlContent += `
+            // Hiển thị thông tin lớp ma trận
+            if (historyMatrixLayers > 0) {
+                const layers = window.matrixManager.historyMatrix.layers;
+                layers.forEach((layer, index) => {
+                    const weight = layer.weight ? layer.weight.toFixed(3) : '0.000';
+                    const vectorCount = layer.vectors ? layer.vectors.length : 0;
+                    const topic = layer.topic || 'Chưa phân loại';
+                    
+                    // Lấy vector đầu tiên của lớp này làm bản xem trước
+                    let preview = 'Không có dữ liệu';
+                    if (layer.vectors && layer.vectors.length > 0) {
+                        const firstVector = layer.vectors[0];
+                        // Vector History dùng trường content, vector đối thoại dùng trường text
+                        const textContent = firstVector.content || firstVector.text || firstVector.aiResponse;
+                        if (textContent) {
+                            preview = textContent.length > 80 ? 
+                                textContent.substring(0, 80) + '...' : 
+                                textContent;
+                        }
+                    }
+                    
+                    const createTime = layer.createTime ? new Date(layer.createTime).toLocaleString('vi-VN') : 'Không rõ';
+                    
+                    htmlContent += `
                         <div class="matrix-layer-item" data-index="${index}" style="
                             background: white;
                             padding: 15px;
@@ -494,28 +494,28 @@ function viewHistoryMatrix() {
                         " onmouseover="this.style.borderColor='#28a745'; this.style.background='#f8fff8';"
                            onmouseout="this.style.borderColor='#e0e0e0'; this.style.background='white';"
                            onclick="showMatrixLayerDetail(${index})">
-                            
+                           
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                                <div style="font-weight: bold; color: #28a745;">层 ${index + 1}: ${topic}</div>
-                                <div style="font-size: 11px; color: #999;">权重: ${weight}</div>
+                                <div style="font-weight: bold; color: #28a745;">Lớp ${index + 1}: ${topic}</div>
+                                <div style="font-size: 11px; color: #999;">Trọng số: ${weight}</div>
                             </div>
                             
                             <div style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin-bottom: 8px;">
-                                <div style="font-size: 11px; color: #666; margin-bottom: 3px;">📊 统计信息</div>
+                                <div style="font-size: 11px; color: #666; margin-bottom: 3px;">📊 Thông tin thống kê</div>
                                 <div style="font-size: 13px; color: #333;">
-                                    向量数量: ${vectorCount} | 创建时间: ${createTime}
+                                    Số lượng Vector: ${vectorCount} | Thời gian tạo: ${createTime}
                                 </div>
                             </div>
                             
                             <div style="background: #e7f5e9; padding: 10px; border-radius: 5px;">
-                                <div style="font-size: 11px; color: #666; margin-bottom: 3px;">📝 内容预览</div>
+                                <div style="font-size: 11px; color: #666; margin-bottom: 3px;">📝 Xem trước nội dung</div>
                                 <div style="font-size: 13px; color: #333;">${preview}</div>
                             </div>
                         </div>
                     `;
-        });
-    } else {
-        htmlContent += `
+                });
+            } else {
+                htmlContent += `
                     <div style="
                         background: #fff3cd;
                         padding: 20px;
@@ -523,18 +523,18 @@ function viewHistoryMatrix() {
                         text-align: center;
                         color: #856404;
                     ">
-                        <div style="font-size: 18px; margin-bottom: 10px;">⚠️ 矩阵为空</div>
-                        <div style="font-size: 14px; margin-bottom: 10px;">需要AI返回包含history的回复才能构建矩阵</div>
-                        <div style="font-size: 13px; margin-bottom: 15px;">💡 启用向量检索后，AI回复中的history会自动向量化并构建矩阵</div>
+                        <div style="font-size: 18px; margin-bottom: 10px;">⚠️ Ma trận trống</div>
+                        <div style="font-size: 14px; margin-bottom: 10px;">Cần AI trả lời có chứa thông tin lịch sử (history) để xây dựng ma trận</div>
+                        <div style="font-size: 13px; margin-bottom: 15px;">💡 Sau khi bật truy xuất vector, lịch sử trong phản hồi của AI sẽ tự động được vector hóa và xây dựng ma trận</div>
                         <div style="font-size: 12px; color: #856404; background: #fef5e7; padding: 10px; border-radius: 5px; margin-top: 10px;">
-                            <strong>当前状态：</strong><br>
-                            • History向量库：${historyVectorSize} 条数据<br>
-                            • 矩阵层数：${historyMatrixLayers} 层<br>
+                            <strong>Trạng thái hiện tại:</strong><br>
+                            • Thư viện Vector Lịch sử: ${historyVectorSize} dữ liệu<br>
+                            • Số lớp ma trận: ${historyMatrixLayers} lớp<br>
                             <br>
-                            <strong>可能原因：</strong><br>
-                            • 向量数量太少，尚未形成有意义的层<br>
-                            • 向量相似度不够高，无法聚类<br>
-                            • 矩阵构建需要更多对话积累
+                            <strong>Nguyên nhân có thể:</strong><br>
+                            • Số lượng vector quá ít, chưa hình thành lớp có ý nghĩa<br>
+                            • Độ tương đồng của vector không đủ cao, không thể phân cụm<br>
+                            • Việc xây dựng ma trận cần tích lũy nhiều đối thoại hơn
                         </div>
                         <button onclick="rebuildHistoryMatrix()" style="
                             margin-top: 15px;
@@ -545,27 +545,27 @@ function viewHistoryMatrix() {
                             border-radius: 5px;
                             cursor: pointer;
                             font-size: 13px;
-                        ">🔄 手动重建矩阵</button>
+                        ">🔄 Tái tạo ma trận thủ công</button>
                     </div>
                 `;
-    }
+            }
 
-    // 显示最近History
-    if (historyVectorSize > 0) {
-        htmlContent += `
-                    <div style="margin-top: 20px;">
-                        <h3 style="color: #6f42c1; margin-bottom: 10px;">📋 最近3条History</h3>
-                `;
-
-        for (let i = Math.max(0, historyVectorSize - 3); i < historyVectorSize; i++) {
-            const embedding = window.contextVectorManager.historyEmbeddings[i];
-            if (embedding && embedding.content) {
-                const preview = embedding.content.length > 100 ? embedding.content.substring(0, 100) + '...' : embedding.content;
-                const turnIndex = embedding.turnIndex || '?';
-                const historyIndex = embedding.historyIndex || '?';
-                const timestamp = embedding.timestamp ? new Date(embedding.timestamp).toLocaleString('zh-CN') : '未知时间';
-
+            // Hiển thị Lịch sử gần đây
+            if (historyVectorSize > 0) {
                 htmlContent += `
+                    <div style="margin-top: 20px;">
+                        <h3 style="color: #6f42c1; margin-bottom: 10px;">📋 3 bản ghi Lịch sử gần đây</h3>
+                `;
+                
+                for (let i = Math.max(0, historyVectorSize - 3); i < historyVectorSize; i++) {
+                    const embedding = window.contextVectorManager.historyEmbeddings[i];
+                    if (embedding && embedding.content) {
+                        const preview = embedding.content.length > 100 ? embedding.content.substring(0, 100) + '...' : embedding.content;
+                        const turnIndex = embedding.turnIndex || '?';
+                        const historyIndex = embedding.historyIndex || '?';
+                        const timestamp = embedding.timestamp ? new Date(embedding.timestamp).toLocaleString('vi-VN') : 'Không rõ thời gian';
+                        
+                        htmlContent += `
                             <div style="
                                 background: #f8f9ff;
                                 padding: 12px;
@@ -574,17 +574,17 @@ function viewHistoryMatrix() {
                                 border-left: 4px solid #6f42c1;
                             ">
                                 <div style="font-size: 11px; color: #666; margin-bottom: 5px;">
-                                    [轮${turnIndex}-条${historyIndex}] ${timestamp}
+                                    [Vòng ${turnIndex}-Mục ${historyIndex}] ${timestamp}
                                 </div>
                                 <div style="font-size: 13px; color: #333;">${preview}</div>
                             </div>
                         `;
+                    }
+                }
+                htmlContent += `</div>`;
             }
-        }
-        htmlContent += `</div>`;
-    }
-
-    htmlContent += `
+            
+            htmlContent += `
                 </div>
                 
                 <div style="margin-top: 20px; padding-top: 20px; border-top: 2px solid #ddd; display: flex; gap: 10px;">
@@ -598,7 +598,7 @@ function viewHistoryMatrix() {
                         cursor: pointer;
                         font-size: 14px;
                         font-weight: bold;
-                    ">🧪 测试矩阵检索</button>
+                    ">🧪 Kiểm tra truy xuất ma trận</button>
                     
                     <button onclick="rebuildHistoryMatrix()" style="
                         flex: 1;
@@ -610,7 +610,7 @@ function viewHistoryMatrix() {
                         cursor: pointer;
                         font-size: 14px;
                         font-weight: bold;
-                    ">🔄 重建矩阵</button>
+                    ">🔄 Tái tạo ma trận</button>
                     
                     <button onclick="exportHistoryMatrix()" style="
                         flex: 1;
@@ -622,23 +622,23 @@ function viewHistoryMatrix() {
                         cursor: pointer;
                         font-size: 14px;
                         font-weight: bold;
-                    ">📤 导出矩阵</button>
+                    ">📤 Xuất ma trận</button>
                 </div>
                 
                 <div style="margin-top: 15px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
-                    <div style="font-size: 12px; color: #666; margin-bottom: 8px;">💡 控制台命令：</div>
+                    <div style="font-size: 12px; color: #666; margin-bottom: 8px;">💡 Lệnh Console:</div>
                     <div style="font-size: 11px; font-family: monospace; color: #333;">
-                        • HistoryMatrixTest.runFullTest() - 完整测试<br>
-                        • window.matrixManager.visualizeHistory() - 可视化矩阵
+                        • HistoryMatrixTest.runFullTest() - Kiểm tra toàn diện<br>
+                        • window.matrixManager.visualizeHistory() - Trực quan hóa ma trận
                     </div>
                 </div>
             `;
 
-    // 创建模态框
-    const modal = document.createElement('div');
-    modal.id = 'historyMatrixModal';
-    modal.style.cssText = `
-                position: fixed;
+            // Tạo Modal
+            const modal = document.createElement('div');
+            modal.id = 'historyMatrixModal';
+            modal.style.cssText = `
+                position: absolute;
                 top: 0;
                 left: 0;
                 width: 100%;
@@ -651,8 +651,8 @@ function viewHistoryMatrix() {
                 
             `;
 
-    const content = document.createElement('div');
-    content.style.cssText = `
+            const content = document.createElement('div');
+            content.style.cssText = `
                 background: white;
                 padding: 30px;
                 border-radius: 15px;
@@ -662,15 +662,15 @@ function viewHistoryMatrix() {
                 overflow-y: auto;
                 box-shadow: 0 10px 50px rgba(0, 0, 0, 0.5);
             `;
-    content.innerHTML = htmlContent;
+            content.innerHTML = htmlContent;
 
-    modal.appendChild(content);
-    document.body.appendChild(modal);
+            modal.appendChild(content);
+            document.body.appendChild(modal);
 
-    // 点击背景关闭
-    modal.onclick = function (e) {
-        if (e.target === modal) {
-            modal.remove();
+            // Đóng khi click ra ngoài
+            modal.onclick = function (e) {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            };
         }
-    };
-}

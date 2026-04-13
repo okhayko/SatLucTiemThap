@@ -1,30 +1,29 @@
 /**
- * 数据隔离模块
- * 为不同游戏模式提供localStorage和IndexedDB隔离
- * 
- * @author 重构自game.html和game-bhz.html的重复代码
+ * Module cô lập dữ liệu
+ * Cung cấp khả năng cô lập localStorage và IndexedDB cho các chế độ trò chơi khác nhau
+ * * @author Tái cấu trúc từ mã lặp lại của game.html và game-bhz.html
  * @version 1.0.0
  */
 
 /**
- * 初始化数据隔离
- * @param {Object} config - 配置对象
- * @param {string} config.prefix - localStorage键前缀 (例如: 'game_' 或 'bhz_')
- * @param {string} config.dbName - IndexedDB数据库名 (例如: 'game_xiuxian_dlc_db')
- * @param {string} config.vectorDbName - 向量数据库名 (例如: 'game_VectorDB')
- * @param {string} [config.dlcFile] - DLC配置文件名 (可选)
- * @returns {Object} 返回配置对象,包含数据库名称等信息
+ * Khởi tạo cô lập dữ liệu
+ * @param {Object} config - Đối tượng cấu hình
+ * @param {string} config.prefix - Tiền tố khóa localStorage (Ví dụ: 'game_' hoặc 'bhz_')
+ * @param {string} config.dbName - Tên cơ sở dữ liệu IndexedDB (Ví dụ: 'game_xiuxian_dlc_db')
+ * @param {string} config.vectorDbName - Tên cơ sở dữ liệu Vector (Ví dụ: 'game_VectorDB')
+ * @param {string} [config.dlcFile] - Tên tệp cấu hình DLC (tùy chọn)
+ * @returns {Object} Trả về đối tượng cấu hình chứa thông tin tên DB, v.v.
  */
 window.initDataIsolation = function(config) {
     const { prefix, dbName, vectorDbName, dlcFile } = config;
     
-    console.log(`[数据隔离] 初始化 - 前缀: ${prefix}, DB: ${dbName}`);
+    console.log(`[Cô lập dữ liệu] Khởi tạo - Tiền tố: ${prefix}, DB: ${dbName}`);
     
     // ============================================================
-    // localStorage 数据隔离
+    // Cô lập dữ liệu localStorage
     // ============================================================
     
-    // 保存原始localStorage方法
+    // Lưu lại các phương thức localStorage gốc
     const originalLocalStorage = {
         getItem: Storage.prototype.getItem,
         setItem: Storage.prototype.setItem,
@@ -33,21 +32,21 @@ window.initDataIsolation = function(config) {
         key: Storage.prototype.key
     };
     
-    // 重写localStorage.getItem，添加前缀
+    // Ghi đè localStorage.getItem, thêm tiền tố vào khóa
     Storage.prototype.getItem = function(key) {
-        // 特殊键不添加前缀（用于跨游戏共享的配置）
+        // Các khóa đặc biệt không thêm tiền tố (dùng cho cấu hình chia sẻ giữa các game)
         if (key === 'sharedAPIConfig' || key === 'sharedExtraAPIConfig') {
             return originalLocalStorage.getItem.call(this, key);
         }
         const prefixedKey = prefix + key;
         const value = originalLocalStorage.getItem.call(this, prefixedKey);
-        console.debug(`[localStorage GET] ${key} → ${prefixedKey}`, value ? '✅ 存在' : '❌ 不存在');
+        console.debug(`[localStorage GET] ${key} → ${prefixedKey}`, value ? '✅ Tồn tại' : '❌ Không tồn tại');
         return value;
     };
     
-    // 重写localStorage.setItem，添加前缀
+    // Ghi đè localStorage.setItem, thêm tiền tố vào khóa
     Storage.prototype.setItem = function(key, value) {
-        // 特殊键不添加前缀
+        // Các khóa đặc biệt không thêm tiền tố
         if (key === 'sharedAPIConfig' || key === 'sharedExtraAPIConfig') {
             return originalLocalStorage.setItem.call(this, key, value);
         }
@@ -56,7 +55,7 @@ window.initDataIsolation = function(config) {
         return originalLocalStorage.setItem.call(this, prefixedKey, value);
     };
     
-    // 重写localStorage.removeItem，添加前缀
+    // Ghi đè localStorage.removeItem, thêm tiền tố vào khóa
     Storage.prototype.removeItem = function(key) {
         if (key === 'sharedAPIConfig' || key === 'sharedExtraAPIConfig') {
             return originalLocalStorage.removeItem.call(this, key);
@@ -66,9 +65,9 @@ window.initDataIsolation = function(config) {
         return originalLocalStorage.removeItem.call(this, prefixedKey);
     };
     
-    // 重写localStorage.clear（只清除带前缀的键）
+    // Ghi đè localStorage.clear (chỉ xóa các khóa có tiền tố tương ứng)
     Storage.prototype.clear = function() {
-        console.warn(`[localStorage CLEAR] 清除所有 ${prefix} 前缀的键`);
+        console.warn(`[localStorage CLEAR] Xóa tất cả các khóa có tiền tố ${prefix}`);
         const keysToRemove = [];
         for (let i = 0; i < localStorage.length; i++) {
             const key = originalLocalStorage.key.call(this, i);
@@ -77,10 +76,10 @@ window.initDataIsolation = function(config) {
             }
         }
         keysToRemove.forEach(key => originalLocalStorage.removeItem.call(this, key));
-        console.log(`[localStorage CLEAR] 已清除 ${keysToRemove.length} 个键`);
+        console.log(`[localStorage CLEAR] Đã xóa ${keysToRemove.length} khóa`);
     };
     
-    // 重写localStorage.key（只返回带前缀的键）
+    // Ghi đè localStorage.key (chỉ trả về các khóa có tiền tố tương ứng)
     Storage.prototype.key = function(index) {
         const keys = [];
         for (let i = 0; i < localStorage.length; i++) {
@@ -92,7 +91,7 @@ window.initDataIsolation = function(config) {
         return keys[index] || null;
     };
     
-    // 重写length属性（只计算带前缀的键）
+    // Ghi đè thuộc tính length (chỉ tính các khóa có tiền tố tương ứng)
     Object.defineProperty(Storage.prototype, 'length', {
         get: function() {
             let count = 0;
@@ -106,10 +105,10 @@ window.initDataIsolation = function(config) {
         }
     });
     
-    console.log(`✅ [数据隔离] localStorage隔离已启用 - 前缀: ${prefix}`);
+    console.log(`✅ [Cô lập dữ liệu] Đã kích hoạt cô lập localStorage - Tiền tố: ${prefix}`);
     
     // ============================================================
-    // 返回配置对象
+    // Trả về đối tượng cấu hình
     // ============================================================
     
     const isolationConfig = {
@@ -123,20 +122,20 @@ window.initDataIsolation = function(config) {
         isolationConfig.dlcFile = dlcFile;
     }
     
-    // 存储到全局变量，供其他模块使用
+    // Lưu vào biến toàn cục để các module khác sử dụng
     window.dataIsolationConfig = isolationConfig;
     
-    console.log(`✅ [数据隔离] 初始化完成`, isolationConfig);
+    console.log(`✅ [Cô lập dữ liệu] Khởi tạo hoàn tất`, isolationConfig);
     
     return isolationConfig;
 };
 
 /**
- * 恢复原始localStorage方法（用于调试或特殊场景）
+ * Khôi phục các phương thức localStorage gốc (dùng để debug hoặc trong cảnh đặc biệt)
  */
 window.restoreOriginalLocalStorage = function() {
     if (!window.dataIsolationConfig || !window.dataIsolationConfig.originalLocalStorage) {
-        console.warn('[数据隔离] 无法恢复：未找到原始localStorage方法');
+        console.warn('[Cô lập dữ liệu] Không thể khôi phục: Không tìm thấy phương thức localStorage gốc');
         return false;
     }
     
@@ -147,16 +146,16 @@ window.restoreOriginalLocalStorage = function() {
     Storage.prototype.clear = original.clear;
     Storage.prototype.key = original.key;
     
-    console.log('✅ [数据隔离] 已恢复原始localStorage方法');
+    console.log('✅ [Cô lập dữ liệu] Đã khôi phục các phương thức localStorage gốc');
     return true;
 };
 
 /**
- * 获取当前所有带前缀的localStorage键
+ * Lấy tất cả các khóa localStorage hiện tại có tiền tố cô lập
  */
 window.getIsolatedKeys = function() {
     if (!window.dataIsolationConfig) {
-        console.warn('[数据隔离] 未初始化');
+        console.warn('[Cô lập dữ liệu] Chưa khởi tạo');
         return [];
     }
     
@@ -174,4 +173,4 @@ window.getIsolatedKeys = function() {
     return keys;
 };
 
-console.log('📦 [模块加载] data-isolation.js 已加载');
+console.log('📦 [Module Load] data-isolation.js đã được tải');
