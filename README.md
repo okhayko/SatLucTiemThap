@@ -1,5 +1,8 @@
 ## **【Tóm tắt chung】**
 Sát Lục Tiêm Tháp là một trò chơi phiêu lưu dị thế giới kết hợp giữa thể loại leo tháp Roguelike, xây dựng bài (deck-building) và tự sự hướng người lớn. Trong ngọn tháp khổng lồ được đồn đại là nối liền Thần Vực và vực sâu này, vô số nhà thám hiểm tuyệt vọng đã bước vào để tìm kiếm phép màu, sức mạnh hoặc sự cứu rỗi—nhưng họ cũng thường đánh mất chính mình trong dục vọng và bóng tối.
+<p align="center">
+<img src="https://cdn.discordapp.com/attachments/779648663412146190/1493474053225320559/image.png?ex=69df1999&amp;is=69ddc819&amp;hm=d36cebd457c64a963af23d76660530da80c920c401ae76729b99601984b0f8e2" alt="project-screenshot" width="1117" height="530/">
+</p>
 
 ## **:star2: TỔNG QUAN & CÁC NGHỀ NGHIỆP :star2:**
 7 Nghề nghiệp:
@@ -13,6 +16,9 @@ Trò chơi cung cấp bảy nghề nghiệp với phong cách khác nhau để n
 6. **Chiến binh (Warrior)**: Lực lượng chính trên mặt trận tiền tuyến, dùng thể chất cường tráng và võ kỹ điêu luyện để chống lại kẻ địch.
 7. **Quỷ tộc (Succubus/Demoness)**: Sinh vật quyến rũ đến từ vực sâu, lấy sức mạnh từ sự mê hoặc và dục vọng trong quá trình sa ngã.
 
+<p align="center"><img src="https://cdn.discordapp.com/attachments/1395354277303685181/1493451692010766566/image.png?ex=69df04c6&amp;is=69ddb346&amp;hm=b0fd3e35716b37a1ea2a749e67fd0dbd46d340d718a56ac255b1edd50d2b6c16&amp;" alt="project-screenshot" width="400" height="400/"></p>
+
+
 ## **:gear: CƠ CHẾ CHƠI CỐT LÕI :crossed_swords:**
 
 1. Khám phá leo tháp (Tower Climbing):
@@ -25,6 +31,8 @@ Trò chơi cung cấp bảy nghề nghiệp với phong cách khác nhau để n
 - Có hệ thống điểm "Sa Ngã". Tích lũy khi nhận sự kiện đặc biệt, bị đánh bại hoặc đưa ra lựa chọn quan trọng.
 - Ảnh hưởng đến cốt truyện, thay đổi trạng thái cơ thể, tâm lý và kỹ năng nhân vật, mở ra các nhánh kết thúc khác nhau.
 
+<p align="center"><img src="https://cdn.discordapp.com/attachments/1395354277303685181/1493451693294223491/image.png?ex=69df04c6&amp;is=69ddb346&amp;hm=e6b34b06546203c1dfb96d0065b0965c6d4fa1cdf383c5d288b898ac17b488ef&amp;" alt="project-screenshot" width="1117" height="541/"></p>
+
 ## **:sparkles: HỆ THỐNG ĐẶC SẮC :sparkles:**
 
 - H Kỹ năng (H Skill System): Các kỹ năng hướng người lớn được mở khóa theo diễn biến cốt truyện và mức độ sa ngã. Mỗi nghề có cây kỹ năng H riêng, phản ánh con đường sa ngã độc đáo của mình.
@@ -34,3 +42,5 @@ Trò chơi cung cấp bảy nghề nghiệp với phong cách khác nhau để n
 
 ## **:scroll: DANH SÁCH TRẠNG THÁI ĐẶC BIỆT**:
 Đá trứng, Hình xăm dâm mỹ, Khuyên vú, Vòng cổ nô lệ, Dây trinh tiết, Dư lượng thuốc kích tình, Trang phục khiêm nhường, Ấn ký chủ nhân... (Mỗi trạng thái có cơ chế và miêu tả riêng).
+
+
